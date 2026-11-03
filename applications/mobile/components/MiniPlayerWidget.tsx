@@ -1,6 +1,6 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import { Link } from "expo-router"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   TouchableOpacity,
   View,
@@ -17,6 +17,7 @@ import Animated, {
 import { scheduleOnRN } from "react-native-worklets"
 import { useCSSVariable } from "uniwind"
 
+import { playerPositionSeeked } from "@/store/actions"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useGetBookQuery } from "@/store/localApi"
 import {
@@ -35,6 +36,9 @@ import { AudiobookCover } from "./AudiobookCover"
 import { PlayPause } from "./PlayPause"
 import { WaveProgress } from "./WaveProgress"
 import { Text } from "./ui/text"
+
+/** How far a sideways swipe moves the audio, in seconds per pixel. */
+const SECONDS_PER_PIXEL = 1
 
 export function MiniPlayerWidget() {
   const progress = useAppSelector(getPosition)
@@ -58,8 +62,10 @@ export function MiniPlayerWidget() {
     return `${formattedEagerProgress} / ${formattedDuration}`
   }, [formattedEagerProgress, formattedDuration])
 
+  // While a finger is scrubbing, playback updates must not move the bar.
+  const scrubbing = useRef(false)
   useEffect(() => {
-    setEagerProgress(progress)
+    if (!scrubbing.current) setEagerProgress(progress)
   }, [progress])
 
   const bookUuid = useAppSelector(getCurrentlyPlayingBookUuid)
@@ -68,41 +74,78 @@ export function MiniPlayerWidget() {
     bookUuid ? { uuid: bookUuid } : skipToken,
   )
 
-  function onPanEnd() {
+  function dismiss() {
     dispatch(bookshelfSlice.actions.miniPlayerWidgetSwiped())
-    translateX.set(0)
+    translateY.set(0)
   }
 
-  const translateX = useSharedValue(0)
+  const translateY = useSharedValue(0)
 
-  const panGesture = Gesture.Pan()
+  // Swiping sideways across the card seeks: one second of audio per pixel,
+  // starting from where the audio is when the finger lands.
+  const seekStart = useRef(0)
+  const seekGesture = Gesture.Pan()
+    .runOnJS(true)
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-12, 12])
+    .onBegin(() => {
+      seekStart.current = eagerProgress
+      scrubbing.current = true
+    })
+    .onUpdate((event) => {
+      setEagerProgress(
+        Math.min(
+          endPosition,
+          Math.max(
+            0,
+            seekStart.current + event.translationX * SECONDS_PER_PIXEL,
+          ),
+        ),
+      )
+    })
+    .onEnd((event) => {
+      const next = Math.min(
+        endPosition,
+        Math.max(0, seekStart.current + event.translationX * SECONDS_PER_PIXEL),
+      )
+      setEagerProgress(next)
+      dispatch(playerPositionSeeked({ progress: next }))
+    })
+    .onFinalize(() => {
+      scrubbing.current = false
+    })
+
+  // A vertical flick, up or down, dismisses the player.
+  const dismissGesture = Gesture.Pan()
+    .activeOffsetY([-12, 12])
+    .failOffsetX([-12, 12])
     .onUpdate((event) => {
       "worklet"
 
-      translateX.set(event.translationX)
+      translateY.set(event.translationY)
     })
     .onEnd((event) => {
       "worklet"
 
-      if (Math.abs(event.translationX) > dimensions.width * 0.25) {
-        translateX.value = withTiming(
-          dimensions.width * (event.translationX < 1 ? -2 : 2),
-          {
-            duration: 1200,
-            easing: Easing.out(Easing.quad),
-          },
+      const flicked = Math.abs(event.velocityY) > 800
+      if (flicked || Math.abs(event.translationY) > 60) {
+        translateY.value = withTiming(
+          event.translationY < 0 ? -dimensions.height : dimensions.height,
+          { duration: 350, easing: Easing.out(Easing.quad) },
         )
-        scheduleOnRN(onPanEnd)
+        scheduleOnRN(dismiss)
       } else {
-        translateX.value = withTiming(0, {
+        translateY.value = withTiming(0, {
           duration: 150,
           easing: Easing.out(Easing.quad),
         })
       }
     })
 
+  const gesture = Gesture.Exclusive(seekGesture, dismissGesture)
+
   const widgetAnimatedStyle = useAnimatedStyle((): ViewStyle => ({
-    transform: [{ translateX: translateX.value }],
+    transform: [{ translateY: translateY.value }],
   }))
 
   if (format === "ebook") return null
@@ -125,8 +168,8 @@ export function MiniPlayerWidget() {
         }}
       >
         {book && (
-          <View>
-            <GestureDetector gesture={panGesture}>
+          <GestureDetector gesture={gesture}>
+            <View>
               <View className="my-2 flex-row items-center justify-between gap-3 pr-3">
                 <Link
                   href={{
@@ -158,17 +201,17 @@ export function MiniPlayerWidget() {
                 </Link>
                 <PlayPause />
               </View>
-            </GestureDetector>
-            <WaveProgress
-              accessibilityLabel="Mini player progress"
-              className="mx-4 mb-2"
-              height={14}
-              paused={!isPlaying}
-              start={startPosition}
-              stop={endPosition}
-              progress={eagerProgress}
-            />
-          </View>
+              <WaveProgress
+                accessibilityLabel="Mini player progress"
+                className="mx-4 mb-2"
+                height={14}
+                paused={!isPlaying}
+                start={startPosition}
+                stop={endPosition}
+                progress={eagerProgress}
+              />
+            </View>
+          </GestureDetector>
         )}
       </View>
     </Animated.View>
