@@ -1,9 +1,19 @@
 name: Android APK
 
 # Builds an installable Android APK on GitHub's runners, with no Expo account.
-# It runs on every push to the branch below, and from the Actions tab once it
-# is on the default branch. The APK is attached to the run under "Artifacts". It is signed with Expo's default debug key, which is fine
-# for installing on your own phone but not for the Play Store.
+#
+# It runs on pushes to the branch below (a commit message with [skip ci] skips
+# it) and from the Actions tab once the workflow is on the default branch.
+#
+# Signing
+#   With the two secrets below set, the APK is signed with your own key and
+#   published as a GitHub Release (storyteller-<run number>), so you get one
+#   download link and later builds install over earlier ones.
+#     STORYTELLER_KEYSTORE_B64   the keystore file, base64 encoded
+#     STORYTELLER_KEYSTORE_PASS  the keystore and key password
+#   Without them the APK is signed with Expo's public debug key and only
+#   attached to the run as an artifact. An app signed with the debug key cannot
+#   be updated by one signed with your key: you would have to uninstall first.
 on:
   workflow_dispatch:
   push:
@@ -12,6 +22,9 @@ on:
       - "applications/mobile/**"
       - ".github/workflows/android-apk.yml"
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -19,12 +32,10 @@ jobs:
     env:
       # "preview" is a standalone app (JavaScript bundled in, no dev server).
       APP_VARIANT: preview
-      # Installs next to the official app. Change it if you like.
       ANDROID_PACKAGE: com.christingeorge.storyteller
-      # The lockfile is not changed by this build, but the mobile manifest is
-      # edited below, so do not insist on a frozen lockfile.
       YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
       EXPO_NO_TELEMETRY: "1"
+      HAVE_KEY: ${{ secrets.STORYTELLER_KEYSTORE_B64 != '' && secrets.STORYTELLER_KEYSTORE_PASS != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,12 +65,47 @@ jobs:
       - name: Prebuild
         run: yarn workspace @storyteller-platform/mobile expo prebuild -p android
 
+      - name: Use your signing key
+        if: env.HAVE_KEY == 'true'
+        working-directory: applications/mobile
+        env:
+          KEYSTORE_B64: ${{ secrets.STORYTELLER_KEYSTORE_B64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/storyteller.keystore"
+          python3 scripts/sign-android-release.py android/app/build.gradle
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/storyteller.keystore" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASS=${{ secrets.STORYTELLER_KEYSTORE_PASS }}" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=storyteller" >> "$GITHUB_ENV"
+
+      - name: No signing key
+        if: env.HAVE_KEY != 'true'
+        run: echo "::warning::No signing secrets found. Building with the public debug key; this APK cannot be updated by a later one signed with your key."
+
+      # arm64-v8a is every current phone; building one chip type instead of
+      # four makes the native compile a lot faster.
       - name: Build APK
         working-directory: applications/mobile/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" --no-daemon
+
+      - name: Name the APK
+        run: |
+          mkdir -p dist
+          cp applications/mobile/android/app/build/outputs/apk/release/app-release.apk "dist/Storyteller-${{ github.run_number }}.apk"
+          ls -la dist
 
       - uses: actions/upload-artifact@v4
         with:
           name: storyteller-apk
-          path: applications/mobile/android/app/build/outputs/apk/release/*.apk
+          path: dist/*.apk
           if-no-files-found: error
+
+      - name: Publish a Release
+        if: env.HAVE_KEY == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "storyteller-${{ github.run_number }}" "dist/Storyteller-${{ github.run_number }}.apk" \
+            --repo "${{ github.repository }}" \
+            --title "Storyteller build ${{ github.run_number }}" \
+            --notes "Built from ${{ github.sha }} on ${{ github.ref_name }}." \
+            --prerelease
