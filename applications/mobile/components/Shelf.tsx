@@ -12,36 +12,22 @@ interface Props {
   label: string
   href?: string | HrefObject | undefined
   books: BookWithRelations[]
-  /** Make the first book larger, for a "continue" row. */
-  featuredFirst?: boolean
+  /** Show a thin progress line under books that are in progress. */
   showProgress?: boolean
-  cardWidth?: number
-  /** The main shelf gets a bigger heading and more room than the rest. */
-  primary?: boolean
 }
 
-const FEATURED_WIDTH = 190
+/** Every cover in a row is the same size, with 24px between books. */
+const COVER_WIDTH = 92
 
-export function Shelf({
-  label,
-  href,
-  books,
-  featuredFirst = false,
-  showProgress = false,
-  cardWidth = 116,
-  primary = false,
-}: Props) {
+export function Shelf({ label, href, books, showProgress = false }: Props) {
   const router = useRouter()
 
   if (!books.length) return null
 
   return (
-    <Stack className={primary ? "gap-4" : "gap-3"}>
-      <View className="flex-row items-baseline justify-between pr-3">
-        <Text
-          variant={primary ? "h2" : "h3"}
-          className={primary ? "text-2xl" : "text-lg"}
-        >
+    <Stack className="gap-3">
+      <View className="flex-row items-baseline justify-between">
+        <Text variant="h3" className="text-base">
           {label}
         </Text>
 
@@ -50,10 +36,9 @@ export function Shelf({
             accessibilityLabel={`View all ${label} books`}
             accessibilityRole="button"
             onPress={() => router.push(href)}
-            className="flex-row items-center"
           >
-            <Text className="text-primary text-sm font-medium">
-              View all ({books.length})
+            <Text className="text-primary text-xs font-semibold">
+              All ({books.length})
             </Text>
           </TouchableOpacity>
         )}
@@ -62,15 +47,13 @@ export function Shelf({
       <FlatList
         horizontal
         data={books.slice(0, 25)}
-        contentContainerClassName="gap-4 pr-6"
+        contentContainerClassName="gap-6 pr-5"
         showsHorizontalScrollIndicator={false}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        renderItem={({ item: book, index }) => (
+        renderItem={({ item: book }) => (
           <BookThumbnail
             book={book}
             showProgress={showProgress}
-            width={featuredFirst && index === 0 ? FEATURED_WIDTH : cardWidth}
+            width={COVER_WIDTH}
           />
         )}
       />

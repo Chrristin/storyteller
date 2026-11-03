@@ -192,6 +192,7 @@ export default function BookDetailsScreen() {
             }}
           >
             <BookCover
+              badge={false}
               book={book}
               className="rounded-none border-0"
               height={Math.min(Math.round(windowWidth * 1.25), 520)}

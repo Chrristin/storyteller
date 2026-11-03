@@ -13,9 +13,8 @@ export function getFormatKinds(book: BookWithRelations) {
 }
 
 /**
- * Small icons for what a book offers: a book for text, headphones for audio,
- * both for a book that has both. Shown in the line under the cover, never on
- * top of it.
+ * A dark pill on the cover's bottom-left corner with a book icon, a
+ * headphones icon, or both.
  */
 export function FormatBadge({ book }: { book: BookWithRelations }) {
   const { hasText, hasAudio } = getFormatKinds(book)
@@ -30,24 +29,10 @@ export function FormatBadge({ book }: { book: BookWithRelations }) {
             ? "Book"
             : "Audiobook"
       }
-      className="flex-row items-center gap-1"
+      className="absolute bottom-1.5 left-1.5 flex-row items-center gap-1 rounded-full bg-black/80 px-2 py-1"
     >
-      {hasText && (
-        <Icon
-          as={BookOpen}
-          className="text-primary"
-          size={13}
-          strokeWidth={2}
-        />
-      )}
-      {hasAudio && (
-        <Icon
-          as={Headphones}
-          className="text-primary"
-          size={13}
-          strokeWidth={2}
-        />
-      )}
+      {hasText && <Icon as={BookOpen} className="text-white" size={12} />}
+      {hasAudio && <Icon as={Headphones} className="text-white" size={12} />}
     </View>
   )
 }

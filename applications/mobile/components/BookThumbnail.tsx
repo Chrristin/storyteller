@@ -13,7 +13,6 @@ import {
 
 import { BookCover } from "./BookCover"
 import { DownloadingIndicator } from "./DownloadingIndicator"
-import { FormatBadge } from "./FormatBadge"
 import { Menu, type MenuAction } from "./ui/menu"
 import { Text } from "./ui/text"
 
@@ -191,18 +190,13 @@ export function BookThumbnail({
           >
             {book.title}
           </Text>
-          <View className="mt-1 flex-row items-center gap-1.5">
-            <FormatBadge book={book} />
-            <Text
-              className="text-muted-foreground shrink"
-              numberOfLines={1}
-              style={{ fontSize: authorFontSize }}
-            >
-              {percent !== null
-                ? `${percent}% · ${book.authors[0]?.name ?? ""}`
-                : book.authors[0]?.name}
-            </Text>
-          </View>
+          <Text
+            className="text-muted-foreground mt-0.5"
+            numberOfLines={1}
+            style={{ fontSize: authorFontSize, maxWidth: width }}
+          >
+            {book.authors[0]?.name}
+          </Text>
         </Pressable>
       </Menu>
     </View>

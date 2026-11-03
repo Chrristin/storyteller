@@ -335,7 +335,9 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
                 numberOfLines={1}
                 className="text-muted-foreground text-sm"
               >
-                {formattedProgress} ·{" "}
+                {bookPrefs.detailView?.mode === "audio"
+                  ? `${formattedProgress} · `
+                  : ""}
                 {Math.round((locator?.locations?.totalProgression ?? 0) * 100)}%
               </Text>
             </TouchableOpacity>

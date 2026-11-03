@@ -1,11 +1,9 @@
 import * as DocumentPicker from "expo-document-picker"
 import { Link, useRouter } from "expo-router"
 import { StatusBar } from "expo-status-bar"
-import { EllipsisVertical } from "lucide-react-native"
+import { EllipsisVertical, Search } from "lucide-react-native"
 import { useEffect, useMemo, useRef } from "react"
 import {
-  Image,
-  Pressable,
   RefreshControl,
   ScrollView,
   type ScrollViewInstance,
@@ -13,12 +11,11 @@ import {
   View,
 } from "react-native"
 
+import { ContinueCard } from "@/components/ContinueCard"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { Shelf } from "@/components/Shelf"
-import { Group } from "@/components/ui/Group"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
-import { Input } from "@/components/ui/input"
 import { Menu } from "@/components/ui/menu"
 import { Text } from "@/components/ui/text"
 import { type BookWithRelations } from "@/database/books"
@@ -99,7 +96,7 @@ export default function Home() {
   return (
     <View className="pt-safe flex-1 items-center gap-2 bg-transparent">
       <StatusBar verticalBarBehaviorIOS="disabled" />
-      <Group className="pr-safe-or-2 pl-safe-or-4 items-center gap-2">
+      <View className="pr-safe-or-4 pl-safe-or-5 w-full flex-row items-center justify-between pt-2 pb-3">
         <TouchableOpacity
           accessibilityLabel="Scroll to top"
           accessibilityRole="button"
@@ -107,52 +104,48 @@ export default function Home() {
             scrollViewRef.current?.scrollTo({ y: 0, animated: true })
           }}
         >
-          <Image
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            source={require("../../assets/Storyteller_Logo.png")}
-            className="h-10 w-10 rounded-lg"
-          />
+          <Text className="text-[26px] font-bold tracking-tight">Library</Text>
         </TouchableOpacity>
-        <Link href="/search" asChild>
-          <Pressable className="grow" accessibilityLabel="Search books">
-            <Input
-              className="text-sm opacity-100"
-              editable={false}
-              focusable={false}
-              pointerEvents="none"
-              placeholder="Search"
-            />
-          </Pressable>
-        </Link>
-        <Menu
-          actions={[
-            {
-              id: "import-book",
-              title: "Import book",
-              onPress: async () => {
-                const uri = await pickBookFile()
-                if (uri) dispatch(bookImported({ url: uri, from: "home" }))
+        <View className="flex-row items-center gap-2">
+          <Link href="/search" asChild>
+            <Button
+              variant="secondary"
+              size="icon"
+              accessibilityLabel="Search books"
+            >
+              <Icon as={Search} size={20} />
+            </Button>
+          </Link>
+          <Menu
+            actions={[
+              {
+                id: "import-book",
+                title: "Import book",
+                onPress: async () => {
+                  const uri = await pickBookFile()
+                  if (uri) dispatch(bookImported({ url: uri, from: "home" }))
+                },
               },
-            },
-            {
-              id: "settings",
-              title: "Settings",
-              onPress: () => router.push("/settings"),
-            },
-          ]}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            accessibilityLabel="Open home menu"
+              {
+                id: "settings",
+                title: "Settings",
+                onPress: () => router.push("/settings"),
+              },
+            ]}
           >
-            <Icon as={EllipsisVertical} size={22} className="text-foreground" />
-          </Button>
-        </Menu>
-      </Group>
+            <Button
+              variant="secondary"
+              size="icon"
+              accessibilityLabel="Open home menu"
+            >
+              <Icon as={EllipsisVertical} size={20} />
+            </Button>
+          </Menu>
+        </View>
+      </View>
       <ScrollView
-        className="pl-safe-or-6 pr-safe w-full"
-        contentContainerClassName="gap-10"
+        className="pl-safe-or-5 pr-safe-or-5 w-full"
+        contentContainerClassName="gap-8"
         ref={scrollViewRef}
         refreshControl={
           <RefreshControl
@@ -163,13 +156,11 @@ export default function Home() {
           />
         }
       >
+        {currentlyReading[0] && <ContinueCard book={currentlyReading[0]} />}
         <Shelf
-          label="Continue"
-          books={currentlyReading}
-          primary
-          featuredFirst
+          label="Also in progress"
+          books={currentlyReading.slice(1)}
           showProgress
-          cardWidth={120}
           href={{
             pathname: "/shelf/[type]",
             params: { type: "currently-reading" },
@@ -178,7 +169,6 @@ export default function Home() {
         <Shelf
           label="Up next"
           books={startReading}
-          cardWidth={104}
           href={{
             pathname: "/shelf/[type]",
             params: { type: "start-reading" },
