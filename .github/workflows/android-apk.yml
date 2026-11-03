@@ -70,12 +70,29 @@ jobs:
         working-directory: applications/mobile
         env:
           KEYSTORE_B64: ${{ secrets.STORYTELLER_KEYSTORE_B64 }}
+          KEYSTORE_PASS: ${{ secrets.STORYTELLER_KEYSTORE_PASS }}
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/storyteller.keystore"
+          KS="$RUNNER_TEMP/storyteller.keystore"
+          echo "$KEYSTORE_B64" | base64 --decode > "$KS"
+
+          # Check the key now, so a wrong password or alias fails in seconds
+          # instead of after the 30 minute compile. The alias is read from the
+          # keystore itself, so it does not have to be called "storyteller".
+          ALIAS=$(keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASS" 2>/dev/null | awk -F, '/PrivateKeyEntry/ {print $1; exit}')
+          if [ -z "$ALIAS" ]; then
+            echo "::error::Could not open the keystore with STORYTELLER_KEYSTORE_PASS, or it holds no private key."
+            exit 1
+          fi
+          if ! keytool -keypasswd -alias "$ALIAS" -keystore "$KS" -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" -new "$KEYSTORE_PASS" >/dev/null 2>&1; then
+            echo "::error::The key '$ALIAS' does not use the same password as the keystore. This build needs one password for both."
+            exit 1
+          fi
+          echo "Using the key '$ALIAS'"
+
           python3 scripts/sign-android-release.py android/app/build.gradle
-          echo "KEYSTORE_PATH=$RUNNER_TEMP/storyteller.keystore" >> "$GITHUB_ENV"
-          echo "KEYSTORE_PASS=${{ secrets.STORYTELLER_KEYSTORE_PASS }}" >> "$GITHUB_ENV"
-          echo "KEY_ALIAS=storyteller" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASS=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
 
       - name: No signing key
         if: env.HAVE_KEY != 'true'
