@@ -78,9 +78,13 @@ jobs:
           # Check the key now, so a wrong password or alias fails in seconds
           # instead of after the 30 minute compile. The alias is read from the
           # keystore itself, so it does not have to be called "storyteller".
-          ALIAS=$(keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASS" 2>/dev/null | awk -F, '/PrivateKeyEntry/ {print $1; exit}')
+          echo "Keystore file is $(stat -c %s "$KS") bytes"
+          LIST=$(keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASS" 2>&1 || true)
+          ALIAS=$(echo "$LIST" | awk -F, '/PrivateKeyEntry/ {print $1; exit}')
           if [ -z "$ALIAS" ]; then
-            echo "::error::Could not open the keystore with STORYTELLER_KEYSTORE_PASS, or it holds no private key."
+            # keytool's own message never contains the password.
+            echo "::error::Could not use the keystore. keytool said: $(echo "$LIST" | grep -iE 'error|exception|incorrect|invalid|tampered' | head -2 | tr '\n' ' ')"
+            echo "::error::If it says the password was incorrect, STORYTELLER_KEYSTORE_PASS is wrong. If it says the format is invalid, STORYTELLER_KEYSTORE_B64 was not copied whole."
             exit 1
           fi
           if ! keytool -keypasswd -alias "$ALIAS" -keystore "$KS" -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" -new "$KEYSTORE_PASS" >/dev/null 2>&1; then
