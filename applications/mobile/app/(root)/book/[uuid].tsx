@@ -26,6 +26,7 @@ import {
 import { BackButton } from "@/components/BackButton"
 import BookDescription from "@/components/BookDescription"
 import { BookCover } from "@/components/BookCover"
+import { BookNotes } from "@/components/BookNotes"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { ScreenBackButton } from "@/components/ScreenBackButton"
@@ -317,6 +318,10 @@ export default function BookDetailsScreen() {
                 />
               </Pressable>
             </View>
+            <BookNotes
+              review={prefs.review ?? ""}
+              onSave={(review) => void prefActions.setReview(book, review)}
+            />
             <Group className="mb-4 items-center justify-between self-stretch">
               {book.status && (
                 <Select

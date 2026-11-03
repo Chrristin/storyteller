@@ -14,11 +14,13 @@ export type BookPrefs = {
   lastFormat?: BookFormat
   closed?: boolean
   rating?: number
+  /** Your own notes on the book, kept as the review on the server. */
+  review?: string
   favourite?: boolean
   /** The server this book belongs to, set while a change is waiting to sync. */
   server?: string
   /** Changes made on the phone that the server has not confirmed yet. */
-  dirty?: { rating?: boolean; favourite?: boolean }
+  dirty?: { rating?: boolean; favourite?: boolean; review?: boolean }
 }
 
 const STORAGE_KEY = "storyteller.bookPrefs.v1"

@@ -145,20 +145,24 @@ export const serverApi = createApi({
       }),
     }),
     listUserRatings: build.query<
-      { bookUuid: UUID; rating: number | null }[],
+      { bookUuid: UUID; rating: number | null; review: string | null }[],
       { serverUuid: UUID }
     >({
       query: ({ serverUuid }) => ({ url: "/user/ratings", serverUuid }),
     }),
     setBookRating: build.mutation<
       void,
-      { bookUuid: UUID; serverUuid: UUID; rating: number }
+      {
+        bookUuid: UUID
+        serverUuid: UUID
+        body: { rating?: number | null; review?: string | null }
+      }
     >({
-      query: ({ bookUuid, serverUuid, rating }) => ({
+      query: ({ bookUuid, serverUuid, body }) => ({
         url: `/books/${bookUuid}/rating`,
         serverUuid,
         method: "PUT",
-        body: { rating },
+        body,
       }),
     }),
     deleteBookRating: build.mutation<

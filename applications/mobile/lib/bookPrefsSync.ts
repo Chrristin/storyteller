@@ -5,12 +5,14 @@ import { useListServersQuery } from "@/store/localApi"
 import { serverApi } from "@/store/serverApi"
 import { type UUID } from "@/uuid"
 
-import { getAllBookPrefs, setBookPrefs } from "./bookPrefs"
+import { type BookPrefs, getAllBookPrefs, setBookPrefs } from "./bookPrefs"
 
 /**
- * Keeps rating and favourite in step with the server, using what it already
- * has: the per-user rating API for ratings, and a shelf named "Favourites"
- * for favourites (so they also show up as a shelf in the web app).
+ * Keeps rating, notes and favourite in step with the server. They are stored
+ * there, per user, using what the server already has: the per-user rating and
+ * review for ratings and notes, and a shelf named "Favourites" for favourites
+ * (so they also show up as a shelf in the web app). The phone keeps a copy so
+ * the book page works offline.
  *
  * A change is saved on the phone first and sent right away. If the server
  * cannot be reached it stays marked as waiting and is sent on the next sync.
@@ -18,6 +20,7 @@ import { getAllBookPrefs, setBookPrefs } from "./bookPrefs"
 export const FAVOURITES_SHELF = "Favourites"
 
 type Dispatch = ReturnType<typeof useAppDispatch>
+type BookRef = { uuid: UUID; serverUuid: UUID | null }
 
 async function findFavouritesShelf(dispatch: Dispatch, serverUuid: UUID) {
   const shelves = await dispatch(
@@ -31,18 +34,54 @@ async function findFavouritesShelf(dispatch: Dispatch, serverUuid: UUID) {
   )
 }
 
+/**
+ * The server keeps one row per user and book with a rating and a review, and
+ * deletes the row when both are empty. "No rating" with a note is a rating
+ * of 0, which the phone reads back as no rating.
+ */
 async function pushRating(
   dispatch: Dispatch,
   serverUuid: UUID,
   bookUuid: UUID,
   rating: number,
+  hasReview: boolean,
 ) {
-  if (rating > 0) {
+  if (rating > 0 || hasReview) {
     await dispatch(
       serverApi.endpoints.setBookRating.initiate({
         serverUuid,
         bookUuid,
-        rating,
+        body: { rating },
+      }),
+    ).unwrap()
+  } else {
+    await dispatch(
+      serverApi.endpoints.deleteBookRating.initiate({ serverUuid, bookUuid }),
+    ).unwrap()
+  }
+}
+
+async function pushReview(
+  dispatch: Dispatch,
+  serverUuid: UUID,
+  bookUuid: UUID,
+  review: string,
+  rating: number,
+) {
+  if (review) {
+    await dispatch(
+      serverApi.endpoints.setBookRating.initiate({
+        serverUuid,
+        bookUuid,
+        body: { review },
+      }),
+    ).unwrap()
+  } else if (rating > 0) {
+    await dispatch(
+      serverApi.endpoints.setBookRating.initiate({
+        serverUuid,
+        bookUuid,
+        body: { rating, review: null },
       }),
     ).unwrap()
   } else {
@@ -82,55 +121,63 @@ async function pushFavourite(
   ).unwrap()
 }
 
-/** Rating and favourite changes for books that live on a server. */
+type Field = "rating" | "review" | "favourite"
+
+function markDirty(uuid: string, field: Field, value: boolean) {
+  setBookPrefs(uuid, {
+    dirty: { ...getAllBookPrefs()[uuid]?.dirty, [field]: value },
+  })
+}
+
+async function push(
+  dispatch: Dispatch,
+  serverUuid: UUID,
+  bookUuid: UUID,
+  field: Field,
+  prefs: BookPrefs,
+) {
+  const rating = prefs.rating ?? 0
+  const review = prefs.review ?? ""
+  if (field === "rating") {
+    await pushRating(dispatch, serverUuid, bookUuid, rating, !!review)
+  } else if (field === "review") {
+    await pushReview(dispatch, serverUuid, bookUuid, review, rating)
+  } else {
+    await pushFavourite(dispatch, serverUuid, bookUuid, !!prefs.favourite)
+  }
+}
+
+/** Rating, notes and favourite changes for a book. */
 export function useBookPrefActions() {
   const dispatch = useAppDispatch()
 
+  async function change(book: BookRef, field: Field, patch: BookPrefs) {
+    const serverUuid = book.serverUuid
+    setBookPrefs(book.uuid, patch)
+    if (!serverUuid) return
+    setBookPrefs(book.uuid, { server: serverUuid })
+    markDirty(book.uuid, field, true)
+    try {
+      await push(
+        dispatch,
+        serverUuid,
+        book.uuid,
+        field,
+        getAllBookPrefs()[book.uuid] ?? {},
+      )
+      markDirty(book.uuid, field, false)
+    } catch {
+      // Stays marked as waiting; the next sync sends it.
+    }
+  }
+
   return {
-    async setRating(
-      book: { uuid: UUID; serverUuid: UUID | null },
-      rating: number,
-    ) {
-      const serverUuid = book.serverUuid
-      setBookPrefs(book.uuid, {
-        rating,
-        ...(serverUuid && {
-          server: serverUuid,
-          dirty: { ...getAllBookPrefs()[book.uuid]?.dirty, rating: true },
-        }),
-      })
-      if (!serverUuid) return
-      try {
-        await pushRating(dispatch, serverUuid, book.uuid, rating)
-        setBookPrefs(book.uuid, {
-          dirty: { ...getAllBookPrefs()[book.uuid]?.dirty, rating: false },
-        })
-      } catch {
-        // Stays marked as waiting; the next sync sends it.
-      }
-    },
-    async setFavourite(
-      book: { uuid: UUID; serverUuid: UUID | null },
-      favourite: boolean,
-    ) {
-      const serverUuid = book.serverUuid
-      setBookPrefs(book.uuid, {
-        favourite,
-        ...(serverUuid && {
-          server: serverUuid,
-          dirty: { ...getAllBookPrefs()[book.uuid]?.dirty, favourite: true },
-        }),
-      })
-      if (!serverUuid) return
-      try {
-        await pushFavourite(dispatch, serverUuid, book.uuid, favourite)
-        setBookPrefs(book.uuid, {
-          dirty: { ...getAllBookPrefs()[book.uuid]?.dirty, favourite: false },
-        })
-      } catch {
-        // Stays marked as waiting; the next sync sends it.
-      }
-    },
+    setRating: (book: BookRef, rating: number) =>
+      change(book, "rating", { rating }),
+    setReview: (book: BookRef, review: string) =>
+      change(book, "review", { review: review.trim() }),
+    setFavourite: (book: BookRef, favourite: boolean) =>
+      change(book, "favourite", { favourite }),
   }
 }
 
@@ -138,27 +185,25 @@ async function syncServer(dispatch: Dispatch, serverUuid: UUID) {
   // 1. Send what is waiting.
   for (const [uuid, prefs] of Object.entries(getAllBookPrefs())) {
     if (prefs.server !== serverUuid || !prefs.dirty) continue
-    const bookUuid = uuid as UUID
-    try {
-      if (prefs.dirty.rating) {
-        await pushRating(dispatch, serverUuid, bookUuid, prefs.rating ?? 0)
-        setBookPrefs(uuid, {
-          dirty: { ...getAllBookPrefs()[uuid]?.dirty, rating: false },
-        })
+    for (const field of ["rating", "review", "favourite"] as const) {
+      if (!prefs.dirty[field]) continue
+      try {
+        await push(
+          dispatch,
+          serverUuid,
+          uuid as UUID,
+          field,
+          getAllBookPrefs()[uuid] ?? prefs,
+        )
+        markDirty(uuid, field, false)
+      } catch {
+        // Server unreachable: leave it for next time.
       }
-      if (prefs.dirty.favourite) {
-        await pushFavourite(dispatch, serverUuid, bookUuid, !!prefs.favourite)
-        setBookPrefs(uuid, {
-          dirty: { ...getAllBookPrefs()[uuid]?.dirty, favourite: false },
-        })
-      }
-    } catch {
-      // Server unreachable: leave it for next time.
     }
   }
 
   // 2. Take the server's values for everything that is not waiting.
-  const ratings = await dispatch(
+  const rows = await dispatch(
     serverApi.endpoints.listUserRatings.initiate(
       { serverUuid },
       { forceRefetch: true, subscribe: false },
@@ -166,10 +211,10 @@ async function syncServer(dispatch: Dispatch, serverUuid: UUID) {
   ).unwrap()
   const shelf = await findFavouritesShelf(dispatch, serverUuid)
 
-  const ratingByBook = new Map(ratings.map((r) => [r.bookUuid, r.rating ?? 0]))
+  const byBook = new Map(rows.map((r) => [r.bookUuid, r]))
   const favourites = new Set(shelf?.books.map((b) => b.bookUuid) ?? [])
   const known = new Set<string>([
-    ...ratingByBook.keys(),
+    ...byBook.keys(),
     ...favourites,
     ...Object.entries(getAllBookPrefs())
       .filter(([, p]) => p.server === serverUuid)
@@ -178,10 +223,15 @@ async function syncServer(dispatch: Dispatch, serverUuid: UUID) {
 
   for (const uuid of known) {
     const current = getAllBookPrefs()[uuid]
-    const patch: { rating?: number; favourite?: boolean; server?: string } = {}
+    const row = byBook.get(uuid as UUID)
+    const patch: BookPrefs = {}
     if (!current?.dirty?.rating) {
-      const rating = ratingByBook.get(uuid as UUID) ?? 0
+      const rating = row?.rating ?? 0
       if ((current?.rating ?? 0) !== rating) patch.rating = rating
+    }
+    if (!current?.dirty?.review) {
+      const review = row?.review ?? ""
+      if ((current?.review ?? "") !== review) patch.review = review
     }
     if (!current?.dirty?.favourite) {
       const favourite = favourites.has(uuid as UUID)
