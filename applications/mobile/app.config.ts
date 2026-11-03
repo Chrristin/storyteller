@@ -33,7 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: IS_DEV ? "Storyteller (dev)" : "Storyteller",
     slug: "storyteller",
     version: packageInfo.version,
-    icon: "./assets/Storyteller_Logo.png",
+    icon: "./assets/Storyteller_Icon.png",
     userInterfaceStyle: "automatic",
     scheme: "storyteller",
     experiments: {
@@ -216,8 +216,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     android: {
       package: IS_DEV ? `${ANDROID_PACKAGE}.dev` : ANDROID_PACKAGE,
       adaptiveIcon: {
-        foregroundImage: "./assets/Storyteller_Logo.png",
-        backgroundColor: "#ffffff",
+        foregroundImage: "./assets/Storyteller_Adaptive.png",
+        backgroundColor: "#FFF8EE",
       },
       permissions: [
         "android.permission.FOREGROUND_SERVICE",
