@@ -72,6 +72,14 @@ export async function register() {
     logger.error(err)
   }
 
+  try {
+    const { getBookLinkScheduler } = await import("./bookLinkScheduler")
+    await getBookLinkScheduler().refresh()
+  } catch (err) {
+    logger.error("Failed to initiate book linking scheduler")
+    logger.error(err)
+  }
+
   if (env.STORYTELLER_SYNC_CHANGELOG) {
     // i guess no real reason why we need to wait for this to complete
     void syncChangelog().catch((err: unknown) => {

@@ -80,3 +80,21 @@ npx eas-cli build --platform android --profile development
 Override the package id with `ANDROID_PACKAGE` if you want a different one.
 Sentry is only used by the `*-sentry` profiles and needs `SENTRY_AUTH_TOKEN`;
 the development profile does not need it.
+
+## Server: automatic ebook and audiobook linking
+
+`applications/web/src/bookLinker.ts` finds an ebook and an audiobook that were
+imported as two separate books and merges them into one book with both
+formats. It runs every night at 03:30 server time.
+
+- It links only on a shared ISBN/ASIN, or on a near-identical title plus a
+  matching author, and only when the pair is each other's clear best match.
+  Numbers in titles and series positions must agree. Anything unclear is left
+  alone.
+- Reading status, rating, shelf entries and progress of the merged-away book
+  are kept.
+- `STORYTELLER_AUTO_LINK=false` turns it off. `STORYTELLER_AUTO_LINK_CRON`
+  changes the schedule.
+- To run it now: `POST /api/v2/books/auto-link?dryRun=true` shows what it
+  would link; without `dryRun` it links. Needs a login with book-create
+  permission.
