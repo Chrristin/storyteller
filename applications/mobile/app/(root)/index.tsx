@@ -152,7 +152,7 @@ export default function Home() {
       </Group>
       <ScrollView
         className="pl-safe-or-6 pr-safe w-full"
-        contentContainerClassName="gap-6"
+        contentContainerClassName="gap-10"
         ref={scrollViewRef}
         refreshControl={
           <RefreshControl
@@ -166,6 +166,7 @@ export default function Home() {
         <Shelf
           label="Continue"
           books={currentlyReading}
+          primary
           featuredFirst
           showProgress
           cardWidth={120}

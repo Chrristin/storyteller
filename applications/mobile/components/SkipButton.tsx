@@ -15,7 +15,7 @@ type Props = {
  * Skip control: two arrows pointing the way the audio moves, with the number of
  * seconds underneath.
  */
-export function SkipButton({ direction, seconds, size = 30, onPress }: Props) {
+export function SkipButton({ direction, seconds, size = 28, onPress }: Props) {
   const foreground = useCSSVariable("--color-foreground") as string
   const muted = useCSSVariable("--color-muted-foreground") as string
   const label =
@@ -35,21 +35,22 @@ export function SkipButton({ direction, seconds, size = 30, onPress }: Props) {
           <Path
             d={
               direction === "back"
-                ? "M11 6.5v11L3.5 12zM20.5 6.5v11L13 12z"
-                : "M13 6.5v11L20.5 12zM3.5 6.5v11L11 12z"
+                ? "M11 6 5 12l6 6M19 6l-6 6 6 6"
+                : "M13 6l6 6-6 6M5 6l6 6-6 6"
             }
-            fill={foreground}
+            fill="none"
             stroke={foreground}
+            strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth={1.4}
+            strokeWidth={1.5}
           />
         </Svg>
         <Text
           style={{
             color: muted,
-            fontSize: 11,
+            fontSize: 12,
             fontVariant: ["tabular-nums"],
-            fontWeight: "700",
+            fontWeight: "500",
           }}
         >
           {seconds}

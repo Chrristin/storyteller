@@ -1,4 +1,4 @@
-import { FastForward, Rewind } from "lucide-react-native"
+import { ChevronsLeft, ChevronsRight } from "lucide-react-native"
 import { useMemo, useRef } from "react"
 import { TouchableOpacity, View } from "react-native"
 
@@ -197,7 +197,7 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
         <HideableView
           hidden={hidden}
           className={cn(
-            "ios:pb-[max(calc(env(safe-area-inset-bottom)_-_--spacing(4)),--spacing(2))] android:pb-2 z-3 px-safe-or-3",
+            "ios:pb-[max(calc(env(safe-area-inset-bottom)_-_--spacing(4)),--spacing(2))] android:pb-2 z-3 px-safe-or-3 pt-10",
             {
               "bg-background ios:bottom-0 android:bottom-safe absolute right-0 left-0":
                 floatingToolbar,
@@ -205,7 +205,7 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
             },
           )}
         >
-          <View className="-mr-3 flex-row items-center gap-0">
+          <View className="-mr-3 -ml-1 flex-row items-center gap-0">
             {bookPrefs?.detailView?.mode === "audio" ? (
               <WaveProgress
                 accessibilityLabel="Mini player progress"
@@ -283,7 +283,12 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
                     dispatch(previousFragmentPressed())
                   }}
                 >
-                  <Icon as={Rewind} size={20} />
+                  <Icon
+                    as={ChevronsLeft}
+                    className="text-muted-foreground"
+                    size={20}
+                    strokeWidth={1.5}
+                  />
                 </Button>
                 <PlayPause automaticRewind={false} buttonSize="default" />
                 <Button
@@ -293,40 +298,27 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
                     dispatch(nextFragmentPressed())
                   }}
                 >
-                  <Icon as={FastForward} size={20} />
+                  <Icon
+                    as={ChevronsRight}
+                    className="text-muted-foreground"
+                    size={20}
+                    strokeWidth={1.5}
+                  />
                 </Button>
               </>
             )}
           </View>
 
-          <View className="pr-safe-or-6 pl-safe-or-3 flex-row items-center justify-between gap-3">
+          <View className="pr-safe-or-6 flex-row items-start gap-3 pt-1">
+            <View
+              className={
+                bookPrefs.detailView?.mode === "audio" ? "w-[88px]" : "w-[76px]"
+              }
+            />
             <TouchableOpacity
               accessibilityLabel={`Open details for ${title}`}
               accessibilityRole="button"
-              className="w-14 p-0"
-              onPress={() => {
-                dispatch(bookDetailPressed({ bookUuid: book.uuid, format }))
-              }}
-            >
-              <View
-                className={cn(
-                  "border-border m-auto overflow-hidden rounded-md border",
-                  bookPrefs.detailView?.mode === "audio"
-                    ? "h-14 w-14"
-                    : "h-[84px] w-14",
-                )}
-              >
-                {bookPrefs.detailView?.mode === "audio" ? (
-                  <AudiobookCover book={book} />
-                ) : (
-                  <EbookCover book={book} />
-                )}
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityLabel={`Open details for ${title}`}
-              accessibilityRole="button"
-              className="flex-1 flex-col items-stretch"
+              className="min-h-14 flex-1 flex-col items-stretch justify-center"
               onPress={() => {
                 dispatch(bookDetailPressed({ bookUuid: book.uuid, format }))
               }}
@@ -348,6 +340,25 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
               </Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            accessibilityLabel={`Open details for ${title}`}
+            accessibilityRole="button"
+            className="border-border bg-secondary absolute bottom-2 left-4 overflow-hidden rounded-lg border"
+            onPress={() => {
+              dispatch(bookDetailPressed({ bookUuid: book.uuid, format }))
+            }}
+            style={
+              bookPrefs.detailView?.mode === "audio"
+                ? { height: 88, width: 88 }
+                : { height: 120, width: 80 }
+            }
+          >
+            {bookPrefs.detailView?.mode === "audio" ? (
+              <AudiobookCover book={book} />
+            ) : (
+              <EbookCover book={book} />
+            )}
+          </TouchableOpacity>
         </HideableView>
       </View>
     )

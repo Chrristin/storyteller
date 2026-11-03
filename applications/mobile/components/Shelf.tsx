@@ -16,9 +16,11 @@ interface Props {
   featuredFirst?: boolean
   showProgress?: boolean
   cardWidth?: number
+  /** The main shelf gets a bigger heading and more room than the rest. */
+  primary?: boolean
 }
 
-const FEATURED_WIDTH = 168
+const FEATURED_WIDTH = 190
 
 export function Shelf({
   label,
@@ -27,15 +29,21 @@ export function Shelf({
   featuredFirst = false,
   showProgress = false,
   cardWidth = 116,
+  primary = false,
 }: Props) {
   const router = useRouter()
 
   if (!books.length) return null
 
   return (
-    <Stack className="gap-3">
+    <Stack className={primary ? "gap-4" : "gap-3"}>
       <View className="flex-row items-baseline justify-between pr-3">
-        <Text variant="h3">{label}</Text>
+        <Text
+          variant={primary ? "h2" : "h3"}
+          className={primary ? "text-2xl" : "text-lg"}
+        >
+          {label}
+        </Text>
 
         {href && (
           <TouchableOpacity
@@ -54,7 +62,7 @@ export function Shelf({
       <FlatList
         horizontal
         data={books.slice(0, 25)}
-        contentContainerClassName="gap-3"
+        contentContainerClassName="gap-4 pr-6"
         showsHorizontalScrollIndicator={false}
         snapToAlignment="start"
         decelerationRate="fast"

@@ -13,6 +13,7 @@ import {
 
 import { BookCover } from "./BookCover"
 import { DownloadingIndicator } from "./DownloadingIndicator"
+import { FormatBadge } from "./FormatBadge"
 import { Menu, type MenuAction } from "./ui/menu"
 import { Text } from "./ui/text"
 
@@ -172,7 +173,7 @@ export function BookThumbnail({
             />
           )}
           {percent !== null && (
-            <View className="bg-secondary mt-2 h-1 overflow-hidden rounded-full">
+            <View className="bg-secondary mt-3 h-1 overflow-hidden rounded-full">
               <View
                 className="bg-primary h-full"
                 style={{ width: `${percent}%` }}
@@ -180,7 +181,7 @@ export function BookThumbnail({
             </View>
           )}
           <Text
-            className="mt-2 font-semibold"
+            className="mt-3 font-semibold"
             numberOfLines={2}
             style={{
               fontSize: titleFontSize,
@@ -190,15 +191,18 @@ export function BookThumbnail({
           >
             {book.title}
           </Text>
-          <Text
-            className="text-muted-foreground"
-            numberOfLines={1}
-            style={{ fontSize: authorFontSize, maxWidth: width }}
-          >
-            {percent !== null
-              ? `${percent}% · ${book.authors[0]?.name ?? ""}`
-              : book.authors[0]?.name}
-          </Text>
+          <View className="mt-1 flex-row items-center gap-1.5">
+            <FormatBadge book={book} />
+            <Text
+              className="text-muted-foreground shrink"
+              numberOfLines={1}
+              style={{ fontSize: authorFontSize }}
+            >
+              {percent !== null
+                ? `${percent}% · ${book.authors[0]?.name ?? ""}`
+                : book.authors[0]?.name}
+            </Text>
+          </View>
         </Pressable>
       </Menu>
     </View>
