@@ -1,11 +1,16 @@
 name: Android APK
 
 # Builds an installable Android APK on GitHub's runners, with no Expo account.
-# Run it from the Actions tab (Run workflow). The APK is attached to the run
-# under "Artifacts". It is signed with Expo's default debug key, which is fine
+# It runs on every push to the branch below, and from the Actions tab once it
+# is on the default branch. The APK is attached to the run under "Artifacts". It is signed with Expo's default debug key, which is fine
 # for installing on your own phone but not for the Play Store.
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/admiring-fermat-g4o3nd]
+    paths:
+      - "applications/mobile/**"
+      - ".github/workflows/android-apk.yml"
 
 jobs:
   apk:
