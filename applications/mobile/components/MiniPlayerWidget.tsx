@@ -2,7 +2,6 @@ import { skipToken } from "@reduxjs/toolkit/query"
 import { Link } from "expo-router"
 import { useEffect, useMemo, useState } from "react"
 import {
-  Platform,
   TouchableOpacity,
   View,
   type ViewStyle,
@@ -16,8 +15,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import { scheduleOnRN } from "react-native-worklets"
+import { useCSSVariable } from "uniwind"
 
-import { playerPositionSeeked } from "@/store/actions"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useGetBookQuery } from "@/store/localApi"
 import {
@@ -26,6 +25,7 @@ import {
   getCurrentlyPlayingBookUuid,
   getCurrentlyPlayingFormat,
   getFormattedDuration,
+  getIsPlaying,
   getPlaybackRate,
   getPosition,
 } from "@/store/selectors/bookshelfSelectors"
@@ -33,7 +33,7 @@ import { bookshelfSlice } from "@/store/slices/bookshelfSlice"
 
 import { AudiobookCover } from "./AudiobookCover"
 import { PlayPause } from "./PlayPause"
-import { ProgressBar } from "./ProgressBar"
+import { WaveProgress } from "./WaveProgress"
 import { Text } from "./ui/text"
 
 export function MiniPlayerWidget() {
@@ -41,13 +41,14 @@ export function MiniPlayerWidget() {
   const startPosition = 0
   const endPosition = useAppSelector(getCurrentTrackDuration)
   const rate = useAppSelector(getPlaybackRate)
+  const isPlaying = useAppSelector(getIsPlaying)
+  const primaryColor = useCSSVariable("--color-primary") as string
   const formattedDuration = useAppSelector(getFormattedDuration)
 
   const dimensions = useWindowDimensions()
 
   const dispatch = useAppDispatch()
   const [eagerProgress, setEagerProgress] = useState(progress)
-  const [progressBarHeight, setProgressBarHeight] = useState(0)
 
   const formattedEagerProgress = useMemo(() => {
     return formatTime(eagerProgress, rate)
@@ -114,48 +115,19 @@ export function MiniPlayerWidget() {
       style={widgetAnimatedStyle}
     >
       <View
-        className={
-          "bg-card border-border ios:rounded-t-none overflow-hidden rounded-xl border"
-        }
+        className="bg-card ios:rounded-t-none rounded-xl border"
+        style={{
+          borderColor: primaryColor + "66",
+          elevation: 10,
+          shadowColor: primaryColor,
+          shadowOpacity: 0.45,
+          shadowRadius: 12,
+        }}
       >
         {book && (
           <View>
-            <View
-              onLayout={(event) => {
-                const { height } = event.nativeEvent.layout
-                setProgressBarHeight((currentHeight) =>
-                  currentHeight === height ? currentHeight : height,
-                )
-              }}
-              style={{
-                transform: [
-                  {
-                    translateY: Platform.select({
-                      ios: -progressBarHeight / 2 + 3,
-                      default: -progressBarHeight / 3 + 3,
-                    }),
-                  },
-                ],
-                marginBottom: Platform.select({
-                  ios: -progressBarHeight / 2 + 2,
-                  default: undefined,
-                }),
-              }}
-            >
-              <ProgressBar
-                accessibilityLabel="Mini player progress"
-                start={startPosition}
-                stop={endPosition}
-                progress={eagerProgress}
-                onProgressChange={(value) => {
-                  setEagerProgress(value)
-                  dispatch(playerPositionSeeked({ progress: value }))
-                }}
-              />
-            </View>
-
             <GestureDetector gesture={panGesture}>
-              <View className="mb-2 flex-row items-center justify-between gap-3 pr-3">
+              <View className="my-2 flex-row items-center justify-between gap-3 pr-3">
                 <Link
                   href={{
                     pathname: "/listen/[uuid]",
@@ -187,6 +159,15 @@ export function MiniPlayerWidget() {
                 <PlayPause />
               </View>
             </GestureDetector>
+            <WaveProgress
+              accessibilityLabel="Mini player progress"
+              className="mx-4 mb-2"
+              height={14}
+              paused={!isPlaying}
+              start={startPosition}
+              stop={endPosition}
+              progress={eagerProgress}
+            />
           </View>
         )}
       </View>

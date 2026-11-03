@@ -1,23 +1,17 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import { router, useLocalSearchParams } from "expo-router"
 import { StatusBar, useVerticalBarEdgeIOS } from "expo-status-bar"
-import {
-  ChevronDown,
-  RotateCcw,
-  RotateCw,
-  SkipBack,
-  SkipForward,
-} from "lucide-react-native"
+import { ChevronDown } from "lucide-react-native"
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import { TouchableOpacity, View } from "react-native"
+import { Pressable, TouchableOpacity, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { AudiobookCover } from "@/components/AudiobookCover"
 import { LoadingView } from "@/components/LoadingView"
 import { PlayPause } from "@/components/PlayPause"
-import { ProgressBar } from "@/components/ProgressBar"
+import { SkipButton } from "@/components/SkipButton"
 import { Toolbar } from "@/components/Toolbar"
-import { Button } from "@/components/ui/button"
+import { WaveProgress } from "@/components/WaveProgress"
 import { Icon } from "@/components/ui/icon"
 import { PortalHost } from "@/components/ui/portal-context"
 import { Text } from "@/components/ui/text"
@@ -29,10 +23,8 @@ import {
   areLocatorsEqual,
   getAudiobookLocatorPosition,
 } from "@/modules/readium"
-import {
-  type ReadiumLink,
-  type StorytellerTrack,
-} from "@/modules/readium/src/Readium.types"
+import { type StorytellerTrack } from "@/modules/readium/src/Readium.types"
+import { setBookPrefs } from "@/lib/bookPrefs"
 import { playerPositionSeeked } from "@/store/actions"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useGetBookBookmarksQuery, useGetBookQuery } from "@/store/localApi"
@@ -42,6 +34,7 @@ import {
   getCurrentTrackIndex,
   getHumanFormattedRemainingTime,
   getIsAudioLoading,
+  getIsPlaying,
   getPlaybackRate,
   getPosition,
   getTracks,
@@ -80,6 +73,7 @@ export default function PlayerScreen() {
 
   const dispatch = useAppDispatch()
   const isLoading = useAppSelector(getIsAudioLoading)
+  const isPlaying = useAppSelector(getIsPlaying)
   const duration = useAppSelector(getCurrentTrackDuration)
   const position = useAppSelector(getPosition)
   const remainingTime = useAppSelector(getHumanFormattedRemainingTime)
@@ -128,6 +122,7 @@ export default function PlayerScreen() {
   }, [dispatch])
 
   useEffect(() => {
+    setBookPrefs(uuid, { lastFormat: format, closed: false })
     dispatch(bookshelfSlice.actions.bookOpened({ bookUuid: uuid, format }))
   }, [dispatch, format, uuid])
 
@@ -239,15 +234,14 @@ export default function PlayerScreen() {
   const chapterTitle =
     currentChapterIndex >= 0 ? chapters[currentChapterIndex]?.title : undefined
 
-  const singleTrack = tracks.length === 1
-
-  const seekToChapter = (chapter: ReadiumLink) => {
-    const [relativeUri, fragment] = chapter.href.split("#t=")
-    const target = parseFloat(fragment ?? "0")
-    setEagerProgress(target)
-    dispatch(bookshelfSlice.actions.audioPositionChanged({ position: target }))
-    Storyteller.seekTo(relativeUri!, target)
-  }
+  // Many audiobooks name their only chapter after the book; showing it again
+  // under the title just repeats the title.
+  const chapterLine =
+    chapterTitle &&
+    !book?.title.toLowerCase().startsWith(chapterTitle.toLowerCase()) &&
+    !chapterTitle.toLowerCase().startsWith(book?.title.toLowerCase() ?? "\0")
+      ? chapterTitle
+      : undefined
 
   if (!book) return null
 
@@ -296,24 +290,34 @@ export default function PlayerScreen() {
               },
             }) => setCoverRegion({ height, width })}
           >
-            <View
-              className="overflow-hidden rounded-xl"
+            <Pressable
+              accessibilityLabel={isPlaying ? "Pause" : "Play"}
+              accessibilityRole="button"
+              className="border-border overflow-hidden rounded-xl border"
+              onPress={() => {
+                if (isPlaying) Storyteller.pause()
+                else Storyteller.play(true)
+              }}
               style={{ height: coverSize, width: coverSize }}
             >
               <AudiobookCover book={book} />
-            </View>
+            </Pressable>
           </View>
           <View className="w-full px-6 pt-6">
-            <Text variant="h4" numberOfLines={2}>
+            <Text variant="h3" numberOfLines={2}>
               {book.title}
             </Text>
-            <Text numberOfLines={1} className="mb-4">
-              {chapterTitle}
-            </Text>
+            {chapterLine && (
+              <Text numberOfLines={1} className="text-muted-foreground mt-0.5">
+                {chapterLine}
+              </Text>
+            )}
           </View>
           <View className="my-4 w-full px-6">
-            <ProgressBar
+            <WaveProgress
               accessibilityLabel="Playback position"
+              height={28}
+              paused={!isPlaying}
               start={0}
               stop={duration}
               progress={eagerProgress}
@@ -338,70 +342,22 @@ export default function PlayerScreen() {
               {remainingProgressTime}
             </Text>
           </View>
-          <View className="mt-6 flex-row items-center gap-6 pb-6">
-            <Button
-              accessibilityLabel="Previous track"
-              variant="ghost"
-              size="icon"
-              onPress={() => {
-                if (singleTrack && currentChapterIndex >= 0) {
-                  const current = chapters[currentChapterIndex]!
-                  const startPos = parseFloat(
-                    current.href.split("#t=")[1] ?? "0",
-                  )
-                  if (position - startPos > 3) {
-                    seekToChapter(current)
-                  } else if (currentChapterIndex > 0) {
-                    seekToChapter(chapters[currentChapterIndex - 1]!)
-                  } else {
-                    seekToChapter(current)
-                  }
-                } else {
-                  Storyteller.prev()
-                }
-              }}
-            >
-              <Icon as={SkipBack} size={32} />
-            </Button>
-            <Button
-              accessibilityLabel="Rewind 15 seconds"
-              variant="ghost"
-              size="icon"
+          <View className="mt-6 flex-row items-center gap-8 pb-6">
+            <SkipButton
+              direction="back"
+              seconds={15}
               onPress={() => {
                 Storyteller.seekBy(-15)
               }}
-            >
-              <Icon as={RotateCcw} size={32} />
-            </Button>
-            <PlayPause size={80} />
-            <Button
-              accessibilityLabel="Forward 30 seconds"
-              variant="ghost"
-              size="icon"
+            />
+            <PlayPause filled size={34} />
+            <SkipButton
+              direction="forward"
+              seconds={15}
               onPress={() => {
-                Storyteller.seekBy(30)
+                Storyteller.seekBy(15)
               }}
-            >
-              <Icon as={RotateCw} size={32} />
-            </Button>
-            <Button
-              accessibilityLabel="Next track"
-              variant="ghost"
-              size="icon"
-              onPress={() => {
-                if (
-                  singleTrack &&
-                  currentChapterIndex >= 0 &&
-                  currentChapterIndex < chapters.length - 1
-                ) {
-                  seekToChapter(chapters[currentChapterIndex + 1]!)
-                } else {
-                  Storyteller.next()
-                }
-              }}
-            >
-              <Icon as={SkipForward} size={32} />
-            </Button>
+            />
           </View>
         </View>
       </PortalHost>

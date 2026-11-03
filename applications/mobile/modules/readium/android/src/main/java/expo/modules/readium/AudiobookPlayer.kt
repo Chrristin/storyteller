@@ -241,7 +241,7 @@ class PlaybackService : MediaLibraryService() {
             .setHandleAudioBecomingNoisy(true)
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .setSeekBackIncrementMs(15.seconds.inWholeMilliseconds)
-            .setSeekForwardIncrementMs(30.seconds.inWholeMilliseconds)
+            .setSeekForwardIncrementMs(15.seconds.inWholeMilliseconds)
             .setName("Storyteller")
             .build()
 
@@ -277,25 +277,15 @@ class PlaybackService : MediaLibraryService() {
                 setId(packageName)
                 setMediaButtonPreferences(
                     listOf(
-                        CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD)
-                            .setDisplayName("Seek forward")
+                        CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD_15)
+                            .setDisplayName("Skip forward 15 seconds")
                             .setPlayerCommand(Player.COMMAND_SEEK_FORWARD)
                             .setSlots(CommandButton.SLOT_FORWARD)
                             .build(),
-                        CommandButton.Builder(CommandButton.ICON_SKIP_BACK)
-                            .setDisplayName("Seek back")
+                        CommandButton.Builder(CommandButton.ICON_SKIP_BACK_15)
+                            .setDisplayName("Skip back 15 seconds")
                             .setPlayerCommand(Player.COMMAND_SEEK_BACK)
                             .setSlots(CommandButton.SLOT_BACK)
-                            .build(),
-                        CommandButton.Builder(CommandButton.ICON_PREVIOUS)
-                            .setDisplayName("Skip to previous")
-                            .setPlayerCommand(Player.COMMAND_SEEK_TO_PREVIOUS)
-                            .setSlots(CommandButton.SLOT_OVERFLOW)
-                            .build(),
-                        CommandButton.Builder(CommandButton.ICON_NEXT)
-                            .setDisplayName("Skip to next")
-                            .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT)
-                            .setSlots(CommandButton.SLOT_OVERFLOW)
                             .build(),
                         // TODO: Add bookmark/highlight commands
                     )

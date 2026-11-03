@@ -24,6 +24,7 @@ import {
   getBookPosition,
   getCurrentTrackDuration,
   getCurrentTrackIndex,
+  getIsPlaying,
   getPlaybackRate,
   getPosition,
   getTrackCount,
@@ -32,7 +33,8 @@ import {
 import { AudiobookCover } from "./AudiobookCover"
 import { EbookCover } from "./EbookCover"
 import { PlayPause } from "./PlayPause"
-import { ProgressBar } from "./ProgressBar"
+import { ReadingProgress } from "./ReadingProgress"
+import { WaveProgress } from "./WaveProgress"
 import { HideableView } from "./ui/HideableView"
 import { Button } from "./ui/button"
 import { Icon } from "./ui/icon"
@@ -49,6 +51,7 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
   const locator = book.position?.locator
   const { data: bookPrefs } = useGetBookPreferencesQuery({ uuid: book.uuid })
   const position = useAppSelector(getPosition)
+  const isPlaying = useAppSelector(getIsPlaying)
   const bookPosition = useAppSelector(getBookPosition)
   const bookDuration = useAppSelector(getBookDuration)
   const currentTrackIndex = useAppSelector(getCurrentTrackIndex)
@@ -196,45 +199,81 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
           className={cn(
             "ios:pb-[max(calc(env(safe-area-inset-bottom)_-_--spacing(4)),--spacing(2))] android:pb-2 z-3 px-safe-or-3",
             {
-              "bg-background border-t-foreground ios:bottom-0 android:bottom-safe absolute right-0 left-0 border-t":
+              "bg-background ios:bottom-0 android:bottom-safe absolute right-0 left-0":
                 floatingToolbar,
               "android:mb-safe-or-2": !floatingToolbar,
             },
           )}
         >
           <View className="-mr-3 flex-row items-center gap-0">
-            <ProgressBar
-              accessibilityLabel="Mini player progress"
-              className="grow"
-              start={progressStart}
-              stop={progressEnd ?? 0}
-              progress={progress}
-              onProgressChange={
-                bookPrefs?.detailView?.scope === "book"
-                  ? undefined
-                  : (value) => {
-                      if (bookPrefs?.detailView?.mode === "audio") {
-                        if (bookPrefs?.detailView?.scope === "book") {
-                          dispatch(
-                            playerTotalPositionSeeked({ progress: value }),
-                          )
+            {bookPrefs?.detailView?.mode === "audio" ? (
+              <WaveProgress
+                accessibilityLabel="Mini player progress"
+                height={22}
+                paused={!isPlaying}
+                start={progressStart}
+                stop={progressEnd ?? 0}
+                progress={progress}
+                onProgressChange={
+                  bookPrefs?.detailView?.scope === "book"
+                    ? undefined
+                    : (value) => {
+                        if (bookPrefs?.detailView?.mode === "audio") {
+                          if (bookPrefs?.detailView?.scope === "book") {
+                            dispatch(
+                              playerTotalPositionSeeked({ progress: value }),
+                            )
+                          } else {
+                            dispatch(playerPositionSeeked({ progress: value }))
+                          }
                         } else {
-                          dispatch(playerPositionSeeked({ progress: value }))
+                          const nextLocator = chapterPositions[value - 1]
+                          if (nextLocator === undefined) return
+                          dispatch(
+                            miniPlayerSliderChapterPositionChanged({
+                              bookUuid: book.uuid,
+                              locator: nextLocator,
+                              timestamp: Date.now(),
+                            }),
+                          )
                         }
-                      } else {
-                        const nextLocator = chapterPositions[value - 1]
-                        if (nextLocator === undefined) return
-                        dispatch(
-                          miniPlayerSliderChapterPositionChanged({
-                            bookUuid: book.uuid,
-                            locator: nextLocator,
-                            timestamp: Date.now(),
-                          }),
-                        )
                       }
-                    }
-              }
-            />
+                }
+              />
+            ) : (
+              <ReadingProgress
+                accessibilityLabel="Mini player progress"
+                className="grow"
+                start={progressStart}
+                stop={progressEnd ?? 0}
+                progress={progress}
+                onProgressChange={
+                  bookPrefs?.detailView?.scope === "book"
+                    ? undefined
+                    : (value) => {
+                        if (bookPrefs?.detailView?.mode === "audio") {
+                          if (bookPrefs?.detailView?.scope === "book") {
+                            dispatch(
+                              playerTotalPositionSeeked({ progress: value }),
+                            )
+                          } else {
+                            dispatch(playerPositionSeeked({ progress: value }))
+                          }
+                        } else {
+                          const nextLocator = chapterPositions[value - 1]
+                          if (nextLocator === undefined) return
+                          dispatch(
+                            miniPlayerSliderChapterPositionChanged({
+                              bookUuid: book.uuid,
+                              locator: nextLocator,
+                              timestamp: Date.now(),
+                            }),
+                          )
+                        }
+                      }
+                }
+              />
+            )}
             {format !== "ebook" && (
               <>
                 <Button
@@ -264,15 +303,17 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
             <TouchableOpacity
               accessibilityLabel={`Open details for ${title}`}
               accessibilityRole="button"
-              className="w-10 p-0"
+              className="w-14 p-0"
               onPress={() => {
                 dispatch(bookDetailPressed({ bookUuid: book.uuid, format }))
               }}
             >
               <View
                 className={cn(
-                  "m-auto h-10 overflow-hidden rounded-sm",
-                  bookPrefs.detailView?.mode === "audio" ? "w-10" : "w-[26px]",
+                  "border-border m-auto overflow-hidden rounded-md border",
+                  bookPrefs.detailView?.mode === "audio"
+                    ? "h-14 w-14"
+                    : "h-[84px] w-14",
                 )}
               >
                 {bookPrefs.detailView?.mode === "audio" ? (
@@ -292,26 +333,19 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
             >
               <Text
                 maxFontSizeMultiplier={1.25}
-                numberOfLines={1}
-                className="text-sm"
+                numberOfLines={2}
+                className="text-base font-semibold"
               >
-                {title}
+                {book.title}
               </Text>
-              <View className="grow flex-row justify-between">
-                <Text
-                  maxFontSizeMultiplier={1.25}
-                  numberOfLines={1}
-                  className="text-sm"
-                >
-                  {formattedProgress}
-                </Text>
-                <Text maxFontSizeMultiplier={1.25} className="text-sm">
-                  {Math.round(
-                    (locator?.locations?.totalProgression ?? 0) * 100,
-                  )}
-                  %
-                </Text>
-              </View>
+              <Text
+                maxFontSizeMultiplier={1.25}
+                numberOfLines={1}
+                className="text-muted-foreground text-sm"
+              >
+                {formattedProgress} ·{" "}
+                {Math.round((locator?.locations?.totalProgression ?? 0) * 100)}%
+              </Text>
             </TouchableOpacity>
           </View>
         </HideableView>

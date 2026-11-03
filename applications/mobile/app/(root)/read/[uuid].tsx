@@ -7,6 +7,7 @@ import { LoadingView } from "@/components/LoadingView"
 import { useSpansFold } from "@/lib/pose"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useIsNotBackground } from "@/hooks/useIsNotBackground"
+import { setBookPrefs } from "@/lib/bookPrefs"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useGetBookQuery } from "@/store/localApi"
 import { bookshelfSlice } from "@/store/slices/bookshelfSlice"
@@ -43,6 +44,7 @@ export default function BookScreen() {
     !isAudioLoading
 
   useEffect(() => {
+    setBookPrefs(uuid, { lastFormat: format, closed: false })
     dispatch(bookshelfSlice.actions.bookOpened({ bookUuid: uuid, format }))
   }, [dispatch, format, uuid])
 

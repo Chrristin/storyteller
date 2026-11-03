@@ -1,5 +1,6 @@
 import { Pause, Play } from "lucide-react-native"
 import { ActivityIndicator } from "react-native"
+import { useCSSVariable } from "uniwind"
 
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { Storyteller } from "@/modules/readium"
@@ -16,16 +17,24 @@ type Props = {
   size?: number | undefined
   automaticRewind?: boolean
   buttonSize?: ButtonProps["size"]
+  /** A solid accent circle, for the full player. */
+  filled?: boolean
 }
 
 export function PlayPause({
   size = 24,
   automaticRewind = true,
   buttonSize = "icon",
+  filled = false,
 }: Props) {
   const isPlaying = useAppSelector(getIsPlaying)
   const isLoading = useAppSelector(getIsAudioLoading)
   const { foreground } = useColorTheme()
+  const onPrimary = useCSSVariable("--color-primary-foreground") as string
+  const iconFill = filled ? onPrimary : foreground
+  const filledStyle = filled
+    ? { height: size * 2, width: size * 2, borderRadius: size }
+    : undefined
 
   if (isLoading) {
     return (
@@ -40,27 +49,34 @@ export function PlayPause({
   return isPlaying ? (
     <Button
       accessibilityLabel="Pause"
-      variant="ghost"
+      variant={filled ? "default" : "ghost"}
       size={buttonSize}
+      style={filledStyle}
       onPress={() => {
         Storyteller.pause()
       }}
     >
-      <Icon as={Pause} fill={foreground} size={size} />
+      <Icon
+        as={Pause}
+        className={filled ? "text-primary-foreground" : ""}
+        fill={iconFill}
+        size={size}
+      />
     </Button>
   ) : (
     <Button
       accessibilityLabel="Play"
-      variant="ghost"
+      variant={filled ? "default" : "ghost"}
       size={buttonSize}
+      style={filledStyle}
       onPress={() => {
         Storyteller.play(automaticRewind)
       }}
     >
       <Icon
         as={Play}
-        fill={foreground}
-        className="bg-transparent"
+        fill={iconFill}
+        className={filled ? "text-primary-foreground" : "bg-transparent"}
         size={size}
       />
     </Button>

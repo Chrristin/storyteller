@@ -37,7 +37,7 @@ import { getShouldKeepReaderAwake } from "@/store/selectors/sleepTimerSelectors"
 import { bookshelfSlice } from "@/store/slices/bookshelfSlice"
 import { type UUID } from "@/uuid"
 
-import { BackButton } from "./BackButton"
+import { CloseBookButton } from "./CloseBookButton"
 import { LoadingView } from "./LoadingView"
 import { MiniPlayer } from "./MiniPlayer"
 import { SelectionMenu } from "./SelectionMenu"
@@ -197,7 +197,7 @@ export function Epub({ book, format, locator }: Props) {
             hidden={!preferences?.showReaderUi}
             className="items-center gap-1"
           >
-            <BackButton />
+            <CloseBookButton bookUuid={book.uuid} />
             <Toolbar mode="text" activeBookmarks={activeBookmarks} vertical />
           </HideableView>
         </View>
@@ -208,8 +208,7 @@ export function Epub({ book, format, locator }: Props) {
               "px-safe-or-4 z-3 flex-row items-center",
               inlineBar ? "gap-4" : "justify-between",
               {
-                "bg-background border-b-foreground absolute right-0 left-0 border-b":
-                  floatingToolbar,
+                "bg-background absolute right-0 left-0": floatingToolbar,
               },
             )}
             style={{
@@ -221,7 +220,7 @@ export function Epub({ book, format, locator }: Props) {
               setToolbarHeight(event.nativeEvent.layout.height)
             }}
           >
-            <BackButton />
+            <CloseBookButton bookUuid={book.uuid} />
             <Toolbar mode="text" activeBookmarks={activeBookmarks} />
           </Group>
         </HideableView>

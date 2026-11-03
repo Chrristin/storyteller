@@ -32,12 +32,7 @@ import {
   useListCollectionsQuery,
 } from "@/store/localApi"
 
-import {
-  filterCurrentlyReading,
-  filterNextUp,
-  filterRecentlyAdded,
-  filterStartReading,
-} from "./shelf/[type]"
+import { filterCurrentlyReading, filterStartReading } from "./shelf/[type]"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
 const EMPTY_COLLECTIONS: Collection[] = []
@@ -72,29 +67,11 @@ export default function Home() {
     }
   }, [isFocused, liveBooks])
 
-  const onDevice = useMemo(() => {
-    return books
-      .filter(
-        (book) =>
-          book.audiobook?.downloadStatus === "DOWNLOADED" ||
-          book.ebook?.downloadStatus === "DOWNLOADED" ||
-          book.readaloud?.downloadStatus === "DOWNLOADED",
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
-      )
-  }, [books])
-
   const currentlyReading = useMemo(() => {
     return filterCurrentlyReading(books)
   }, [books])
 
-  const nextUp = useMemo(() => filterNextUp(books), [books])
-
   const startReading = useMemo(() => filterStartReading(books), [books])
-
-  const recentlyAdded = useMemo(() => filterRecentlyAdded(books), [books])
 
   const booksByCollection = useMemo(
     () =>
@@ -185,37 +162,23 @@ export default function Home() {
         }
       >
         <Shelf
-          label="On this device"
-          books={onDevice}
-          href={{ pathname: "/shelf/[type]", params: { type: "on-device" } }}
-        />
-        <Shelf
-          label="Currently reading"
+          label="Continue"
           books={currentlyReading}
+          featuredFirst
+          showProgress
+          cardWidth={120}
           href={{
             pathname: "/shelf/[type]",
             params: { type: "currently-reading" },
           }}
         />
         <Shelf
-          label="Next up"
-          books={nextUp}
-          href={{ pathname: "/shelf/[type]", params: { type: "next-up" } }}
-        />
-        <Shelf
-          label="Start reading"
+          label="Up next"
           books={startReading}
+          cardWidth={104}
           href={{
             pathname: "/shelf/[type]",
             params: { type: "start-reading" },
-          }}
-        />
-        <Shelf
-          label="Recently added"
-          books={recentlyAdded}
-          href={{
-            pathname: "/shelf/[type]",
-            params: { type: "recently-added" },
           }}
         />
         {collections.map((collection) => (

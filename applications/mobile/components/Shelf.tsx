@@ -12,9 +12,22 @@ interface Props {
   label: string
   href?: string | HrefObject | undefined
   books: BookWithRelations[]
+  /** Make the first book larger, for a "continue" row. */
+  featuredFirst?: boolean
+  showProgress?: boolean
+  cardWidth?: number
 }
 
-export function Shelf({ label, href, books }: Props) {
+const FEATURED_WIDTH = 168
+
+export function Shelf({
+  label,
+  href,
+  books,
+  featuredFirst = false,
+  showProgress = false,
+  cardWidth = 116,
+}: Props) {
   const router = useRouter()
 
   if (!books.length) return null
@@ -42,7 +55,16 @@ export function Shelf({ label, href, books }: Props) {
         horizontal
         data={books.slice(0, 25)}
         contentContainerClassName="gap-3"
-        renderItem={({ item: book }) => <BookThumbnail book={book} />}
+        showsHorizontalScrollIndicator={false}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        renderItem={({ item: book, index }) => (
+          <BookThumbnail
+            book={book}
+            showProgress={showProgress}
+            width={featuredFirst && index === 0 ? FEATURED_WIDTH : cardWidth}
+          />
+        )}
       />
     </Stack>
   )

@@ -2,18 +2,30 @@ import { Link, useLocalSearchParams, useRouter } from "expo-router"
 import {
   ChevronDown,
   ChevronLeft,
+  BookOpen,
   ChevronRight,
   CircleX,
+  Download,
+  Headphones,
+  Heart,
+  Star,
+  Trash2,
   LibraryBig,
   LibrarySquare,
   Tag,
 } from "lucide-react-native"
 import { Fragment, useState } from "react"
-import { RefreshControl, ScrollView, View } from "react-native"
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from "react-native"
 
 import { BackButton } from "@/components/BackButton"
 import BookDescription from "@/components/BookDescription"
-import { BookThumbnailImage } from "@/components/BookThumbnail"
+import { BookCover } from "@/components/BookCover"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { ScreenBackButton } from "@/components/ScreenBackButton"
@@ -43,6 +55,9 @@ import { useAvailableFormats } from "@/hooks/useAvailableFormats"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
+import { pickFormat, useOpenBook } from "@/hooks/useOpenBook"
+import { setBookPrefs, useBookPrefs } from "@/lib/bookPrefs"
+import { useOpenLibraryExcerpt } from "@/lib/openLibrary"
 import { usesSystemHeader } from "@/lib/nativeChrome"
 import {
   useCancelDownloadMutation,
@@ -84,6 +99,14 @@ export default function BookDetailsScreen() {
   const onlyFormat = availableFormats[0]
 
   const { refetch } = useListAllServerBooks()
+  const { openFormat } = useOpenBook()
+  const { width: windowWidth } = useWindowDimensions()
+  const prefs = useBookPrefs(book?.uuid)
+  const excerpt = useOpenLibraryExcerpt(
+    uuid,
+    book?.title ?? "",
+    book?.authors[0]?.name,
+  )
 
   if (isLoading || isUninitialized) return <LoadingView />
 
@@ -106,6 +129,8 @@ export default function BookDetailsScreen() {
       </View>
     )
   }
+
+  const openableFormat = pickFormat(book)
 
   const numberOfTagsToShow = 6
   const tagsMoreNeeded = book.tags.length > numberOfTagsToShow
@@ -151,14 +176,41 @@ export default function BookDetailsScreen() {
               <BackButton />
             </View>
           )}
-          <Stack className="px-safe-or-8 items-start">
-            <BookThumbnailImage
-              className="self-center"
+          <Pressable
+            accessibilityLabel={
+              openableFormat ? `Open ${book.title}` : `Download ${book.title}`
+            }
+            accessibilityRole="button"
+            onPress={() => {
+              if (openableFormat) {
+                openFormat(book, openableFormat)
+              } else if (onlyFormat) {
+                downloadBook({ bookUuid: book.uuid, format: onlyFormat })
+              }
+            }}
+          >
+            <BookCover
               book={book}
-              height={352}
-              width={232}
+              className="rounded-none border-0"
+              height={Math.min(Math.round(windowWidth * 1.25), 520)}
+              width={windowWidth}
             />
-            <Text className="mt-6 mb-1 text-2xl" variant="h1">
+            <View className="bg-primary absolute right-4 bottom-4 size-14 items-center justify-center rounded-full">
+              <Icon
+                as={
+                  !openableFormat
+                    ? Download
+                    : openableFormat === "audiobook"
+                      ? Headphones
+                      : BookOpen
+                }
+                className="text-primary-foreground"
+                size={24}
+              />
+            </View>
+          </Pressable>
+          <Stack className="px-safe-or-8 items-start">
+            <Text className="mt-5 mb-1 text-2xl" variant="h1">
               {book.title}
             </Text>
             {book.subtitle && (
@@ -216,6 +268,51 @@ export default function BookDetailsScreen() {
                 </Text>
               )}
             </Stack>
+            <View className="mb-4 flex-row items-center gap-2 self-stretch">
+              <View className="bg-secondary h-10 flex-row items-center rounded-xl px-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Pressable
+                    key={star}
+                    accessibilityLabel={`Rate ${star} out of 5`}
+                    accessibilityRole="button"
+                    className="size-8 items-center justify-center"
+                    onPress={() =>
+                      setBookPrefs(book.uuid, {
+                        rating: prefs.rating === star ? 0 : star,
+                      })
+                    }
+                  >
+                    <Icon
+                      as={Star}
+                      className="text-primary"
+                      fill={
+                        (prefs.rating ?? 0) >= star ? "currentColor" : "none"
+                      }
+                      size={18}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+              <Pressable
+                accessibilityLabel={
+                  prefs.favourite
+                    ? "Remove from favourites"
+                    : "Add to favourites"
+                }
+                accessibilityRole="button"
+                className="bg-secondary size-10 items-center justify-center rounded-xl"
+                onPress={() =>
+                  setBookPrefs(book.uuid, { favourite: !prefs.favourite })
+                }
+              >
+                <Icon
+                  as={Heart}
+                  className="text-primary"
+                  fill={prefs.favourite ? "currentColor" : "none"}
+                  size={20}
+                />
+              </Pressable>
+            </View>
             <Group className="mb-4 items-center justify-between self-stretch">
               {book.status && (
                 <Select
@@ -371,13 +468,21 @@ export default function BookDetailsScreen() {
                             }
                           >
                             {book[onlyFormat]?.downloadStatus === "DOWNLOADED"
-                              ? `Remove ${onlyFormat}`
+                              ? ""
                               : book[onlyFormat]?.downloadStatus ===
                                     "DOWNLOADING" ||
                                   book[onlyFormat]?.downloadStatus === "QUEUED"
                                 ? "Cancel download"
                                 : `Download ${onlyFormat}`}
                           </Text>
+                          {book[onlyFormat]?.downloadStatus ===
+                            "DOWNLOADED" && (
+                            <Icon
+                              as={Trash2}
+                              size={18}
+                              className="text-destructive"
+                            />
+                          )}
                           {(book[onlyFormat]?.downloadStatus ===
                             "DOWNLOADING" ||
                             book[onlyFormat]?.downloadStatus === "QUEUED") && (
@@ -545,6 +650,19 @@ export default function BookDetailsScreen() {
               </>
             )}
           </Stack>
+          {excerpt && (
+            <View className="px-safe-or-8 mb-4 gap-1">
+              <Text className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                About
+              </Text>
+              <Text className="text-muted-foreground text-sm leading-5">
+                {excerpt}
+              </Text>
+              <Text className="text-muted-foreground/70 text-xs">
+                Excerpt from Open Library
+              </Text>
+            </View>
+          )}
           <View className="pb-safe px-safe-or-8">
             <BookDescription
               description={book.description}

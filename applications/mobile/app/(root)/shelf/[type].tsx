@@ -17,9 +17,9 @@ type ShelfType =
 
 const SHELF_TITLES: Record<ShelfType, string> = {
   "on-device": "On this device",
-  "currently-reading": "Currently reading",
+  "currently-reading": "Continue",
   "next-up": "Next up",
-  "start-reading": "Start reading",
+  "start-reading": "Up next",
   "recently-added": "Recently added",
 }
 
@@ -79,7 +79,9 @@ export function filterNextUp(books: BookWithRelations[]) {
 
 export function filterStartReading(books: BookWithRelations[]) {
   return books
-    .filter((book) => book.status?.name === "To read")
+    .filter(
+      (book) => book.status?.name !== "Reading" && book.status?.name !== "Read",
+    )
     .sort(
       (a, b) =>
         new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),

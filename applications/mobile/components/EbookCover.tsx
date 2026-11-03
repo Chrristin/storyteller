@@ -13,9 +13,10 @@ import { getCoverUrl } from "@/store/serverApi"
 interface Props {
   book: BookWithRelations
   style?: StyleProp<ImageStyle>
+  contentFit?: "cover" | "contain"
 }
 
-export function EbookCover({ book, style }: Props) {
+export function EbookCover({ book, style, contentFit = "cover" }: Props) {
   const { data: server } = useGetServerQuery(
     book?.serverUuid ? { uuid: book.serverUuid } : skipToken,
   )
@@ -46,6 +47,7 @@ export function EbookCover({ book, style }: Props) {
         style,
       ]}
       alt=""
+      contentFit={contentFit}
       aria-hidden
       source={{
         uri: ebookCoverUrl,

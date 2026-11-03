@@ -4,6 +4,7 @@ import { BookOpen, Headphones } from "lucide-react-native"
 import { View } from "react-native"
 
 import { type Bookmark } from "@/database/bookmarks"
+import { setBookPrefs } from "@/lib/bookPrefs"
 import { cn } from "@/lib/utils"
 import { useAppSelector } from "@/store/appState"
 import { useGetBookQuery } from "@/store/localApi"
@@ -60,6 +61,38 @@ export function Toolbar({ mode, activeBookmarks, vertical = false }: Props) {
         <SpeedItem />
         <NavigationItem mode={mode} />
         <BookmarkItem activeBookmarks={activeBookmarks} />
+        {format !== "readaloud" &&
+          book.ebook?.downloadStatus === "DOWNLOADED" &&
+          book.audiobook?.downloadStatus === "DOWNLOADED" && (
+            <Link
+              asChild
+              replace
+              href={{
+                pathname: mode === "audio" ? "/read/[uuid]" : "/listen/[uuid]",
+                params: {
+                  uuid: book.uuid,
+                  format: mode === "audio" ? "ebook" : "audiobook",
+                },
+              }}
+              onPress={() =>
+                setBookPrefs(book.uuid, {
+                  lastFormat: mode === "audio" ? "ebook" : "audiobook",
+                })
+              }
+            >
+              <Button
+                accessibilityLabel={
+                  mode === "audio"
+                    ? `Switch to the book ${book.title}`
+                    : `Switch to the audiobook ${book.title}`
+                }
+                variant="ghost"
+                size="icon"
+              >
+                <Icon as={mode === "audio" ? BookOpen : Headphones} size={24} />
+              </Button>
+            </Link>
+          )}
         {format === "readaloud" &&
           (mode === "audio" ? (
             <Link
