@@ -79,9 +79,7 @@ export function filterNextUp(books: BookWithRelations[]) {
 
 export function filterStartReading(books: BookWithRelations[]) {
   return books
-    .filter(
-      (book) => book.status?.name !== "Reading" && book.status?.name !== "Read",
-    )
+    .filter((book) => book.status?.name === "To read")
     .sort(
       (a, b) =>
         new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),

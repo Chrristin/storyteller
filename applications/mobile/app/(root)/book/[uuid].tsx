@@ -26,6 +26,7 @@ import {
 import { BackButton } from "@/components/BackButton"
 import BookDescription from "@/components/BookDescription"
 import { BookCover } from "@/components/BookCover"
+import { DownloadingIndicator } from "@/components/DownloadingIndicator"
 import { BookNotes } from "@/components/BookNotes"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
@@ -134,6 +135,9 @@ export default function BookDetailsScreen() {
   }
 
   const openableFormat = pickFormat(book)
+  const downloadingFormat = [book.readaloud, book.ebook, book.audiobook].find(
+    (format) => format?.downloadStatus === "DOWNLOADING",
+  )
 
   const numberOfTagsToShow = 6
   const tagsMoreNeeded = book.tags.length > numberOfTagsToShow
@@ -199,6 +203,14 @@ export default function BookDetailsScreen() {
               height={Math.min(Math.round(windowWidth * 1.25), 520)}
               width={windowWidth}
             />
+            {downloadingFormat && (
+              <DownloadingIndicator
+                className="absolute z-50"
+                progress={downloadingFormat.downloadProgress}
+                size={40}
+                style={{ right: 16, top: 16 }}
+              />
+            )}
             <View className="bg-primary absolute right-4 bottom-4 size-14 items-center justify-center rounded-full">
               <Icon
                 as={

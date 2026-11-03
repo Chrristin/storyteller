@@ -328,7 +328,7 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
                 numberOfLines={2}
                 className="text-base font-semibold"
               >
-                {book.title}
+                {title || book.title}
               </Text>
               <Text
                 maxFontSizeMultiplier={1.25}

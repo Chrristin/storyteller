@@ -39,10 +39,6 @@ export function BookThumbnail({
   const downloadedFormats = useDownloadedFormats(book)
   const availableFormats = useAvailableFormats(book)
 
-  const audioOnly =
-    !downloadedFormats.includes("ebook") &&
-    !downloadedFormats.includes("readaloud")
-
   const [downloadBook] = useDownloadBookMutation()
   const [deleteBook] = useDeleteBookMutation()
 
@@ -73,20 +69,28 @@ export function BookThumbnail({
       title: "Book details",
       onPress: openBookDetails,
     },
-    ...(downloadedFormats.length
+    ...(downloadedFormats.includes("readaloud") ||
+    downloadedFormats.includes("ebook")
       ? [
           {
             id: "open-book",
-            title: audioOnly ? "Play audiobook" : "Open book",
+            title: "Open book",
             onPress: () => {
               openFormat(
                 book,
-                audioOnly
-                  ? "audiobook"
-                  : downloadedFormats.includes("readaloud")
-                    ? "readaloud"
-                    : "ebook",
+                downloadedFormats.includes("readaloud") ? "readaloud" : "ebook",
               )
+            },
+          },
+        ]
+      : []),
+    ...(downloadedFormats.includes("audiobook")
+      ? [
+          {
+            id: "play-audiobook",
+            title: "Play audiobook",
+            onPress: () => {
+              openFormat(book, "audiobook")
             },
           },
         ]
