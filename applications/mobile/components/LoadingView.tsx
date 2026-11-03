@@ -1,9 +1,11 @@
-import { ActivityIndicator, View } from "react-native"
+import { View } from "react-native"
 
 import { useColorTheme } from "@/hooks/useColorTheme"
 
+import { CampfireLoader } from "./CampfireLoader"
+
 export function LoadingView() {
-  const { background, foreground } = useColorTheme()
+  const { background } = useColorTheme()
 
   return (
     <View
@@ -37,11 +39,7 @@ export function LoadingView() {
           },
         ]}
       >
-        <ActivityIndicator
-          color={foreground}
-          size={"small"}
-          style={{ flex: 1 }}
-        />
+        <CampfireLoader size={96} />
       </View>
     </View>
   )
