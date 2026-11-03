@@ -107,3 +107,19 @@ No server change was needed.
 - **Favourites** are the books on a shelf named "Favourites" that the app creates on first use (`/shelves`). It also appears as a shelf in the web app. If you already have a shelf called "Favourites" with no filter, the app uses it.
 - A change is saved on the phone first and sent straight away. If the server cannot be reached it is marked as waiting and sent the next time the home screen opens. Otherwise the server's values win.
 - Books that exist only on the phone (imported files) keep their rating and favourite locally.
+
+## Signing the Android app
+
+The APK is built on GitHub (`.github/workflows/android-apk.yml`) and signed with
+your own key, then published as a Release named `storyteller-<run number>`.
+
+- The key (a keystore with the alias `storyteller`) is made and kept by you, on
+  your NAS. It is never committed.
+- Two repository secrets give the build the key: `STORYTELLER_KEYSTORE_B64`
+  (the keystore file, base64 encoded) and `STORYTELLER_KEYSTORE_PASS` (the
+  password, used for both the keystore and the key).
+- Android only installs an update over an app signed with the same key. If the
+  keystore or its password is lost, the app has to be uninstalled and its
+  downloaded books are lost. Keep a copy somewhere other than the NAS.
+- Without the two secrets the workflow still builds, signed with Expo's public
+  debug key, and attaches the APK to the run instead of publishing a Release.
