@@ -144,6 +144,66 @@ export const serverApi = createApi({
         },
       }),
     }),
+    listUserRatings: build.query<
+      { bookUuid: UUID; rating: number | null }[],
+      { serverUuid: UUID }
+    >({
+      query: ({ serverUuid }) => ({ url: "/user/ratings", serverUuid }),
+    }),
+    setBookRating: build.mutation<
+      void,
+      { bookUuid: UUID; serverUuid: UUID; rating: number }
+    >({
+      query: ({ bookUuid, serverUuid, rating }) => ({
+        url: `/books/${bookUuid}/rating`,
+        serverUuid,
+        method: "PUT",
+        body: { rating },
+      }),
+    }),
+    deleteBookRating: build.mutation<
+      void,
+      { bookUuid: UUID; serverUuid: UUID }
+    >({
+      query: ({ bookUuid, serverUuid }) => ({
+        url: `/books/${bookUuid}/rating`,
+        serverUuid,
+        method: "DELETE",
+      }),
+    }),
+    listShelves: build.query<
+      {
+        uuid: UUID
+        name: string
+        filter?: unknown
+        books: { bookUuid: UUID }[]
+      }[],
+      { serverUuid: UUID }
+    >({
+      query: ({ serverUuid }) => ({ url: "/shelves", serverUuid }),
+    }),
+    createShelf: build.mutation<
+      { uuid: UUID },
+      { serverUuid: UUID; name: string; books: UUID[] }
+    >({
+      query: ({ serverUuid, name, books }) => ({
+        url: "/shelves",
+        serverUuid,
+        method: "POST",
+        body: { name, books },
+      }),
+    }),
+    setShelfBooks: build.mutation<
+      unknown,
+      { serverUuid: UUID; shelfUuid: UUID; books: UUID[] }
+    >({
+      query: ({ serverUuid, shelfUuid, books }) => ({
+        url: `/shelves/${shelfUuid}`,
+        serverUuid,
+        method: "PUT",
+        body: { books },
+      }),
+    }),
   }),
 })
 

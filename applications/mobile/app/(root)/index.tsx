@@ -25,6 +25,7 @@ import { type BookWithRelations } from "@/database/books"
 import { type Collection } from "@/database/collections"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
+import { useBookPrefsSync } from "@/lib/bookPrefsSync"
 import { bookImported } from "@/store/actions"
 import { useAppDispatch } from "@/store/appState"
 import {
@@ -53,6 +54,7 @@ export default function Home() {
   const dispatch = useAppDispatch()
 
   const { isLoading, refetch } = useListAllServerBooks()
+  useBookPrefsSync()
   const { data: liveBooks = EMPTY_BOOKS } = useListLocalBooksQuery()
   const { data: collections = EMPTY_COLLECTIONS } = useListCollectionsQuery()
 

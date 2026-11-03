@@ -98,3 +98,12 @@ formats. It runs every night at 03:30 server time.
 - To run it now: `POST /api/v2/books/auto-link?dryRun=true` shows what it
   would link; without `dryRun` it links. Needs a login with book-create
   permission.
+
+## Rating and favourites sync
+
+No server change was needed.
+
+- **Rating** uses the server's per-user rating API (`PUT/DELETE /books/{id}/rating`, `GET /user/ratings`). It is the same rating the web app shows.
+- **Favourites** are the books on a shelf named "Favourites" that the app creates on first use (`/shelves`). It also appears as a shelf in the web app. If you already have a shelf called "Favourites" with no filter, the app uses it.
+- A change is saved on the phone first and sent straight away. If the server cannot be reached it is marked as waiting and sent the next time the home screen opens. Otherwise the server's values win.
+- Books that exist only on the phone (imported files) keep their rating and favourite locally.

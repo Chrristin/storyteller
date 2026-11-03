@@ -5,7 +5,8 @@ import { useSyncExternalStore } from "react"
  * Per-book choices that live only on this phone: the format used last, whether
  * the book was closed (so opening it shows its page instead of resuming), a
  * rating and a favourite flag. They are kept out of the database on purpose,
- * so the schema and server sync stay as upstream has them.
+ * so the schema and server sync stay as upstream has them. Rating and
+ * favourite are also sent to the server (see bookPrefsSync.ts).
  */
 export type BookFormat = "readaloud" | "ebook" | "audiobook"
 
@@ -14,6 +15,10 @@ export type BookPrefs = {
   closed?: boolean
   rating?: number
   favourite?: boolean
+  /** The server this book belongs to, set while a change is waiting to sync. */
+  server?: string
+  /** Changes made on the phone that the server has not confirmed yet. */
+  dirty?: { rating?: boolean; favourite?: boolean }
 }
 
 const STORAGE_KEY = "storyteller.bookPrefs.v1"
@@ -37,6 +42,10 @@ AsyncStorage.getItem(STORAGE_KEY)
 
 export function getBookPrefs(uuid: string): BookPrefs {
   return prefs[uuid] ?? EMPTY
+}
+
+export function getAllBookPrefs(): Record<string, BookPrefs> {
+  return prefs
 }
 
 export function setBookPrefs(uuid: string, patch: BookPrefs) {

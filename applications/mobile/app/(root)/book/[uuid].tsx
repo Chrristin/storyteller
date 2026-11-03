@@ -56,7 +56,8 @@ import { useColorTheme } from "@/hooks/useColorTheme"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 import { pickFormat, useOpenBook } from "@/hooks/useOpenBook"
-import { setBookPrefs, useBookPrefs } from "@/lib/bookPrefs"
+import { useBookPrefs } from "@/lib/bookPrefs"
+import { useBookPrefActions } from "@/lib/bookPrefsSync"
 import { useOpenLibraryExcerpt } from "@/lib/openLibrary"
 import { usesSystemHeader } from "@/lib/nativeChrome"
 import {
@@ -102,6 +103,7 @@ export default function BookDetailsScreen() {
   const { openFormat } = useOpenBook()
   const { width: windowWidth } = useWindowDimensions()
   const prefs = useBookPrefs(book?.uuid)
+  const prefActions = useBookPrefActions()
   const excerpt = useOpenLibraryExcerpt(
     uuid,
     book?.title ?? "",
@@ -277,9 +279,10 @@ export default function BookDetailsScreen() {
                     accessibilityRole="button"
                     className="size-8 items-center justify-center"
                     onPress={() =>
-                      setBookPrefs(book.uuid, {
-                        rating: prefs.rating === star ? 0 : star,
-                      })
+                      void prefActions.setRating(
+                        book,
+                        prefs.rating === star ? 0 : star,
+                      )
                     }
                   >
                     <Icon
@@ -302,7 +305,7 @@ export default function BookDetailsScreen() {
                 accessibilityRole="button"
                 className="bg-secondary size-10 items-center justify-center rounded-xl"
                 onPress={() =>
-                  setBookPrefs(book.uuid, { favourite: !prefs.favourite })
+                  void prefActions.setFavourite(book, !prefs.favourite)
                 }
               >
                 <Icon
