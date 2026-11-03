@@ -20,11 +20,9 @@ export function Shelf({ label, href, books }: Props) {
   if (!books.length) return null
 
   return (
-    <Stack>
+    <Stack className="gap-3">
       <View className="flex-row items-baseline justify-between pr-3">
-        <Text variant="h3" className="font-youngserif">
-          {label}
-        </Text>
+        <Text variant="h3">{label}</Text>
 
         {href && (
           <TouchableOpacity
@@ -33,7 +31,7 @@ export function Shelf({ label, href, books }: Props) {
             onPress={() => router.push(href)}
             className="flex-row items-center"
           >
-            <Text className="text-primary text-sm">
+            <Text className="text-primary text-sm font-medium">
               View all ({books.length})
             </Text>
           </TouchableOpacity>
@@ -43,7 +41,7 @@ export function Shelf({ label, href, books }: Props) {
       <FlatList
         horizontal
         data={books.slice(0, 25)}
-        contentContainerClassName="gap-4"
+        contentContainerClassName="gap-3"
         renderItem={({ item: book }) => <BookThumbnail book={book} />}
       />
     </Stack>

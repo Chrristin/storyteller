@@ -133,14 +133,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: 1000,
     flexDirection: "row",
-    borderRadius: 8,
-    shadowRadius: 4,
-    shadowOpacity: 0.3,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowColor: "black",
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#88888866",
+    overflow: "hidden",
   },
   backdrop: {
     position: "absolute",

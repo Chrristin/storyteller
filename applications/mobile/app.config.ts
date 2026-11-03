@@ -4,10 +4,32 @@ import packageInfo from "./package.json"
 
 const IS_DEV = process.env["APP_VARIANT"] === "development"
 
+// Fork configuration. Nothing here points at the upstream Expo account.
+//
+// - EXPO_OWNER: your Expo username (or organization). Left unset until you run
+//   `eas init`; Expo then falls back to the logged-in account.
+// - EAS_PROJECT_ID: the project id `eas init` prints (also stored in your EAS
+//   project settings). Without it, `eas build` cannot link this app to a project.
+// - ANDROID_PACKAGE: base Android application id for your fork. The development
+//   variant appends ".dev" so it installs beside the release build, and neither
+//   collides with upstream's dev.smoores.Storyteller.
+//
+// A value starting with "YOUR_" counts as unset, so a copied placeholder does
+// not become the owner by accident.
+function envValue(name: string) {
+  const value = process.env[name]
+  return value && !value.startsWith("YOUR_") ? value : undefined
+}
+
+const EXPO_OWNER = envValue("EXPO_OWNER")
+const EAS_PROJECT_ID = envValue("EAS_PROJECT_ID")
+const ANDROID_PACKAGE =
+  process.env["ANDROID_PACKAGE"] ?? "com.christingeorge.storyteller"
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
-    owner: "storyteller-platform",
+    ...(EXPO_OWNER ? { owner: EXPO_OWNER } : {}),
     name: IS_DEV ? "Storyteller (dev)" : "Storyteller",
     slug: "storyteller",
     version: packageInfo.version,
@@ -192,9 +214,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       },
     },
     android: {
-      package: IS_DEV
-        ? "dev.smoores.Storyteller.dev"
-        : "dev.smoores.Storyteller",
+      package: IS_DEV ? `${ANDROID_PACKAGE}.dev` : ANDROID_PACKAGE,
       adaptiveIcon: {
         foregroundImage: "./assets/Storyteller_Logo.png",
         backgroundColor: "#ffffff",
@@ -239,9 +259,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
     },
     extra: {
-      eas: {
-        projectId: "3cc95011-19af-4637-a666-e1bec160c0f8",
-      },
+      ...(EAS_PROJECT_ID ? { eas: { projectId: EAS_PROJECT_ID } } : {}),
     },
   }
 }

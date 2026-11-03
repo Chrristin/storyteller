@@ -38,18 +38,18 @@ export default function Settings() {
   if (!preferences) return <LoadingView />
 
   return (
-    <View className="px-safe-or-6 flex-1 items-start">
+    <View className="px-safe-or-4 flex-1 items-start">
       {/* Contributes header options, it does not render a view. */}
       <ScreenBackButton />
       <ScrollView
-        className="w-full pt-4"
+        className="w-full pt-2"
         contentInsetAdjustmentBehavior={
           usesSystemHeader ? "automatic" : "never"
         }
       >
-        <View>
+        <View className="bg-card border-border mb-4 rounded-xl border p-4">
           <Text variant="h2">Servers</Text>
-          <View className="pt-4">
+          <View className="pt-3">
             {servers?.map((server) => {
               const serverUrl = new URL(server.baseUrl)
               const homepageUrl = new URL("/", serverUrl.origin)
@@ -102,15 +102,15 @@ export default function Settings() {
             </Button>
           </Link>
         </View>
-        <View className="mt-8">
+        <View className="bg-card border-border mb-4 rounded-xl border p-4">
           <Text variant="h2">Automatic Rewind</Text>
-          <Text variant="p" className="text-sm">
+          <Text variant="p" className="text-muted-foreground text-sm">
             Storyteller can automatically rewind a few seconds after long breaks
             (a pause greater than five minutes) or audio interruptions (phone
             calls, voice assistants, navigation, etc.).
           </Text>
           <View className="my-3 w-full flex-row items-center gap-10">
-            <Text maxFontSizeMultiplier={1} className="text-lg">
+            <Text maxFontSizeMultiplier={1} className="text-base">
               Enabled
             </Text>
             <Switch
@@ -129,7 +129,7 @@ export default function Settings() {
           </View>
           <View className="my-3 w-full gap-2">
             <View className="w-full flex-row items-center justify-between gap-4">
-              <Text maxFontSizeMultiplier={1} className="text-lg">
+              <Text maxFontSizeMultiplier={1} className="text-base">
                 Long break
               </Text>
               <Text maxFontSizeMultiplier={1} className="shrink-0 text-sm">
@@ -158,7 +158,7 @@ export default function Settings() {
           </View>
           <View className="my-3 w-full gap-2">
             <View className="w-full flex-row items-center justify-between gap-4">
-              <Text maxFontSizeMultiplier={1} className="text-lg">
+              <Text maxFontSizeMultiplier={1} className="text-base">
                 Interruption
               </Text>
               <Text maxFontSizeMultiplier={1} className="shrink-0 text-sm">
@@ -187,7 +187,7 @@ export default function Settings() {
           </View>
         </View>
         <ReadingSettings />
-        <View className="mt-8 gap-4">
+        <View className="bg-card border-border mb-4 gap-3 rounded-xl border p-4">
           <Text variant="h2">Logging</Text>
           <Button
             accessibilityLabel={
@@ -220,7 +220,7 @@ export default function Settings() {
             </Button>
           </Link>
         </View>
-        <View className="my-8">
+        <View className="bg-card border-border mb-4 rounded-xl border p-4">
           <Text variant="h2">About</Text>
 
           <Text variant="p" className="text-muted-foreground mt-2 text-sm">
@@ -228,7 +228,7 @@ export default function Settings() {
           </Text>
 
           <View className="mt-4 gap-3">
-            <View className="flex-row items-center justify-start gap-2 rounded-lg">
+            <View className="flex-row items-center justify-start gap-2">
               <Icon
                 as={BookOpenIcon}
                 size={20}
@@ -247,8 +247,8 @@ export default function Settings() {
               />
             </View>
 
-            <View className="flex-row items-center justify-start gap-2 rounded-lg">
-              <Icon as={BugIcon} size={20} className="text-orange-500" />
+            <View className="flex-row items-center justify-start gap-2">
+              <Icon as={BugIcon} size={20} className="text-muted-foreground" />
               <Link
                 href="https://gitlab.com/storyteller-platform/storyteller/-/issues/new?type=ISSUE"
                 className="ml-1 text-base"
@@ -262,7 +262,7 @@ export default function Settings() {
               />
             </View>
 
-            <View className="flex-row items-center justify-start gap-2 rounded-lg">
+            <View className="flex-row items-center justify-start gap-2">
               <DiscordIcon size={20} />
               <Link href="https://discord.gg/KhSvFqcrza" className="text-base">
                 <Text>Join us on Discord</Text>

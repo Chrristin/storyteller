@@ -57,9 +57,9 @@ function ReadOnlyProgressBar({
         {...progressBarProps}
         className={cn("relative min-h-8 justify-center", className)}
       >
-        <View className="bg-secondary h-4 rounded-xl">
+        <View className="bg-secondary h-1.5 rounded-full">
           <View
-            className="bg-primary h-full rounded-xl"
+            className="bg-primary h-full rounded-full"
             style={{ width: `${progressValue * 100}%` }}
           />
         </View>

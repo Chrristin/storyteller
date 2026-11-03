@@ -144,7 +144,7 @@ export function SelectTrigger({
           accessibilityState={{ disabled }}
           disabled={disabled}
           className={cn(
-            "border-input bg-background dark:bg-input/30 dark:active:bg-input/50 flex flex-row items-center justify-between gap-2 rounded-md border px-3 py-2 shadow-xs shadow-black/5",
+            "bg-secondary active:bg-muted flex flex-row items-center justify-between gap-2 rounded-lg px-3 py-2",
             Platform.select({
               web: "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive focus-visible:border-ring focus-visible:ring-ring/50 dark:hover:bg-input/50 w-fit text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:shrink-0",
             }),

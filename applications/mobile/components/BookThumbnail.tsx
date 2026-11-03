@@ -174,19 +174,23 @@ export function BookThumbnail({
   const renderMetadata = (maxWidth: number) => (
     <>
       <Text
+        className="font-semibold"
+        numberOfLines={2}
+        style={{
+          maxWidth,
+          fontSize: titleFontSize,
+          lineHeight: titleFontSize + 4,
+        }}
+      >
+        {book.title}
+      </Text>
+
+      <Text
         className="text-muted-foreground"
         numberOfLines={1}
         style={{ maxWidth, fontSize: authorFontSize }}
       >
         {book.authors[0]?.name}
-      </Text>
-
-      <Text
-        className="leading-none font-semibold"
-        numberOfLines={2}
-        style={{ maxWidth, fontSize: titleFontSize }}
-      >
-        {book.title}
       </Text>
     </>
   )
@@ -360,7 +364,7 @@ function BookThumbnailActionButtons({
           >
             <Button
               accessibilityLabel={`Read ${book.title}`}
-              className="bg-background rounded-full"
+              className="bg-background border-border rounded-full border"
               style={{
                 height: height / 5,
                 width: height / 5,
@@ -390,7 +394,7 @@ function BookThumbnailActionButtons({
           >
             <Button
               accessibilityLabel={`Listen to ${book.title}`}
-              className="bg-background rounded-full"
+              className="bg-background border-border rounded-full border"
               style={{
                 height: height / 5,
                 width: height / 5,
@@ -425,7 +429,7 @@ function EbookCoverImage({
   return (
     <Stack
       className={cn(
-        "bg-secondary items-center justify-center overflow-hidden rounded-lg",
+        "bg-secondary border-border items-center justify-center overflow-hidden rounded-md border",
         className,
       )}
       style={{ height, width, ...style }}
@@ -451,7 +455,7 @@ function AudiobookCoverImage({
   return (
     <Stack
       className={cn(
-        "bg-secondary items-center justify-center overflow-hidden rounded-lg",
+        "bg-secondary border-border items-center justify-center overflow-hidden rounded-md border",
         className,
       )}
       style={{ height, width, ...style }}

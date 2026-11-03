@@ -158,7 +158,7 @@ export default function BookDetailsScreen() {
               height={352}
               width={232}
             />
-            <Text className="font-youngserif mt-4 mb-1 text-2xl" variant="h1">
+            <Text className="mt-6 mb-1 text-2xl" variant="h1">
               {book.title}
             </Text>
             {book.subtitle && (
@@ -295,15 +295,14 @@ export default function BookDetailsScreen() {
                       })}
                     >
                       <Button
-                        variant="outline"
-                        className="border-primary dark:border-primary"
+                        variant="default"
                         accessibilityLabel="Open download options"
                       >
-                        <Text className="text-primary">Downloads</Text>
+                        <Text>Downloads</Text>
                         <Icon
                           as={ChevronDown}
                           size={16}
-                          className="text-primary"
+                          className="text-primary-foreground"
                         />
                       </Button>
                     </Menu>
@@ -311,7 +310,14 @@ export default function BookDetailsScreen() {
                     onlyFormat && (
                       <>
                         <Button
-                          variant="outline"
+                          variant={
+                            book[onlyFormat]?.downloadStatus === "DOWNLOADED" ||
+                            book[onlyFormat]?.downloadStatus ===
+                              "DOWNLOADING" ||
+                            book[onlyFormat]?.downloadStatus === "QUEUED"
+                              ? "outline"
+                              : "default"
+                          }
                           accessibilityLabel={
                             book[onlyFormat]?.downloadStatus === "DOWNLOADED"
                               ? `Remove ${onlyFormat}`
@@ -327,7 +333,7 @@ export default function BookDetailsScreen() {
                               "DOWNLOADING" ||
                             book[onlyFormat]?.downloadStatus === "QUEUED"
                               ? "border-destructive dark:border-destructive"
-                              : "border-primary dark:border-primary"
+                              : ""
                           }
                           onPress={() => {
                             const status = book[onlyFormat]?.downloadStatus
@@ -361,7 +367,7 @@ export default function BookDetailsScreen() {
                                 "DOWNLOADING" ||
                               book[onlyFormat]?.downloadStatus === "QUEUED"
                                 ? "text-destructive"
-                                : "text-primary"
+                                : "text-primary-foreground"
                             }
                           >
                             {book[onlyFormat]?.downloadStatus === "DOWNLOADED"
@@ -504,7 +510,7 @@ export default function BookDetailsScreen() {
                       <Button
                         accessibilityLabel={`Open collection ${collection.name}`}
                         variant="secondary"
-                        className="flex flex-row items-center gap-2 rounded-md px-4 py-0"
+                        className="flex flex-row items-center gap-2 rounded-full px-4 py-0"
                       >
                         <Text>{collection.name}</Text>
                       </Button>

@@ -110,12 +110,12 @@ export function MiniPlayerWidget() {
 
   return (
     <Animated.View
-      className="mb-safe-offset-2 right-safe-or-3 left-safe-or-3 absolute bottom-0 z-90 rounded-lg"
+      className="mb-safe-offset-2 right-safe-or-3 left-safe-or-3 absolute bottom-0 z-90 rounded-xl"
       style={widgetAnimatedStyle}
     >
       <View
         className={
-          "bg-background shadow-foreground/50 ios:rounded-t-none rounded-lg shadow-sm"
+          "bg-card border-border ios:rounded-t-none overflow-hidden rounded-xl border"
         }
       >
         {book && (
@@ -155,7 +155,7 @@ export function MiniPlayerWidget() {
             </View>
 
             <GestureDetector gesture={panGesture}>
-              <View className="mb-2 flex-row items-center justify-between gap-6 pr-8">
+              <View className="mb-2 flex-row items-center justify-between gap-3 pr-3">
                 <Link
                   href={{
                     pathname: "/listen/[uuid]",
@@ -166,16 +166,19 @@ export function MiniPlayerWidget() {
                   <TouchableOpacity
                     accessibilityLabel={`Open audio player for ${book.title}`}
                     accessibilityRole="button"
-                    className="shrink flex-row items-center justify-between gap-6 px-6"
+                    className="shrink flex-row items-center justify-between gap-3 px-3"
                   >
                     <View className="h-10 w-10">
-                      <AudiobookCover book={book} style={{ borderRadius: 4 }} />
+                      <AudiobookCover book={book} style={{ borderRadius: 6 }} />
                     </View>
                     <View>
-                      <Text numberOfLines={1} className="text-sm">
+                      <Text numberOfLines={1} className="text-sm font-semibold">
                         {book.title}
                       </Text>
-                      <Text numberOfLines={1} className="text-sm">
+                      <Text
+                        numberOfLines={1}
+                        className="text-muted-foreground text-xs"
+                      >
                         {formattedProgress}
                       </Text>
                     </View>

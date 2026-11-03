@@ -8,7 +8,7 @@
     "development": {
       "android": {
         "config": "android-build.yml",
-        "resourceClass": "large"
+        "resourceClass": "medium"
       },
       "ios": {
         "config": "ios-build.yml"
@@ -21,7 +21,7 @@
     },
     "preview": {
       "android": {
-        "config": "android-build-preview.yml",
+        "config": "android-build.yml",
         "resourceClass": "large"
       },
       "ios": {
@@ -34,7 +34,7 @@
     },
     "preview-sentry": {
       "android": {
-        "config": "android-build-preview.yml",
+        "config": "android-build.yml",
         "resourceClass": "large"
       },
       "ios": {
@@ -76,13 +76,13 @@
   },
   "submit": {
     "production": {
-      "ios": {
-        "ascAppId": "6474467720"
+      "android": {
+        "track": "internal"
       }
     },
     "production-sentry": {
-      "ios": {
-        "ascAppId": "6474467720"
+      "android": {
+        "track": "internal"
       }
     }
   }

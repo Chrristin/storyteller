@@ -41,7 +41,7 @@ function PopoverContent({
                 align={align}
                 sideOffset={sideOffset}
                 className={cn(
-                  "border-border bg-popover z-50 w-72 rounded-md border p-4 shadow-md shadow-black/5 outline-hidden",
+                  "border-border bg-popover z-50 w-72 rounded-md border p-4 outline-hidden",
                   Platform.select({
                     web: cn(
                       "animate-in fade-in-0 zoom-in-95 origin-(--radix-popover-content-transform-origin) cursor-auto",

@@ -131,13 +131,13 @@ export default function Home() {
           <Image
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             source={require("../../assets/Storyteller_Logo.png")}
-            className="h-12 w-12"
+            className="h-10 w-10 rounded-lg"
           />
         </TouchableOpacity>
         <Link href="/search" asChild>
           <Pressable className="grow" accessibilityLabel="Search books">
             <Input
-              className="min-h-8 text-sm opacity-100"
+              className="text-sm opacity-100"
               editable={false}
               focusable={false}
               pointerEvents="none"
@@ -167,13 +167,13 @@ export default function Home() {
             size="icon"
             accessibilityLabel="Open home menu"
           >
-            <Icon as={EllipsisVertical} size={24} className="text-primary" />
+            <Icon as={EllipsisVertical} size={22} className="text-foreground" />
           </Button>
         </Menu>
       </Group>
       <ScrollView
         className="pl-safe-or-6 pr-safe w-full"
-        contentContainerClassName="gap-4"
+        contentContainerClassName="gap-6"
         ref={scrollViewRef}
         refreshControl={
           <RefreshControl
@@ -232,7 +232,7 @@ export default function Home() {
           />
         ))}
         {books.length === 0 && (
-          <View className="bg-border mr-5 gap-4 rounded p-4">
+          <View className="bg-secondary mr-5 gap-3 rounded-xl p-4">
             <Text>You don’t have any books available, yet!</Text>
             <Text>
               You can{" "}
