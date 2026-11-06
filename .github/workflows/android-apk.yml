@@ -48,6 +48,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Keeps Gradle's downloads and compiled outputs between builds, so later
+      # builds skip work that has not changed.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
       - name: Native build tools
         run: sudo apt-get update && sudo apt-get install --yes cmake ninja-build
 
@@ -109,7 +115,10 @@ jobs:
       # four makes the native compile a lot faster.
       - name: Build APK
         working-directory: applications/mobile/android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" --no-daemon
+        # --build-cache reuses unchanged compiled outputs, --parallel builds
+        # modules at once, and -x lintVitalRelease skips a check that does not
+        # change the APK.
+        run: ./gradlew assembleRelease -x lintVitalRelease -PreactNativeArchitectures=arm64-v8a -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" --build-cache --parallel --no-daemon
 
       - name: Name the APK
         run: |
