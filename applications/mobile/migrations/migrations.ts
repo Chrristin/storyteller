@@ -49,6 +49,10 @@ import {
   down as addBookCoverShasDown,
   up as addBookCoverShasUp,
 } from "./1792504252170_add_book_cover_shas"
+import {
+  down as addComfortThemesDown,
+  up as addComfortThemesUp,
+} from "./1793000000000_add_comfort_themes"
 
 export const migrations = {
   "1757893743063_init": {
@@ -104,5 +108,9 @@ export const migrations = {
   "1792504252170_add_book_cover_shas": {
     up: addBookCoverShasUp,
     down: addBookCoverShasDown,
+  },
+  "1793000000000_add_comfort_themes": {
+    up: addComfortThemesUp,
+    down: addComfortThemesDown,
   },
 }
