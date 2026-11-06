@@ -1,23 +1,24 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useRef } from "react"
+import { useState } from "react"
 
 import { BookCard } from "@v3/_/components/books/Grid/BookCard"
-import { Button } from "@v3/_/components/ui/button"
 import { useBookInSidePanel } from "@v3/_/hooks/use-open-book"
-import { useTranslation } from "@v3/_/hooks/use-translation"
+import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 
 import { useBookForm } from "@/app/(v3)/v3/_/components/books/BookDetails/BookFormProvider"
 import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { type BookWithRelations } from "@/database/books"
-import * as icon from "@/icons"
 import { type DisplayField } from "@/sort"
 import { useListInfiniteBooksInfiniteQuery } from "@/store/api"
 
 import { CollapsibleSection } from "./CollapsibleSection"
 
 const RELATED_LIMIT = 20
+
+// Three books are shown; the rest are behind "Show more". No sideways scroll.
+const RELATED_PREVIEW = 3
 
 function RelatedBooksRow({
   books,
@@ -26,17 +27,14 @@ function RelatedBooksRow({
   books: BookWithRelations[]
   displayFields: DisplayField[]
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const c = useCommon()
+  const [expanded, setExpanded] = useState(false)
 
   const { bookOpenTarget } = useUserPreferences()
   const { setSelectedBookUuid, selectedBookUuid } = useBookInSidePanel()
   const isInSidePanel = !!selectedBookUuid
 
   const router = useRouter()
-
-  const scrollBy = (delta: number) => {
-    scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" })
-  }
 
   const handleClick = (book: BookWithRelations) => {
     if (isInSidePanel && bookOpenTarget === "panel") {
@@ -47,17 +45,13 @@ function RelatedBooksRow({
     router.push(`/books/${book.uuid}`)
   }
 
+  const visible = expanded ? books : books.slice(0, RELATED_PREVIEW)
+
   return (
-    <div className="group/related relative">
-      <div
-        ref={scrollRef}
-        className="scroll-x -mx-1 flex snap-x scroll-pl-1 gap-3 px-1 pb-2"
-      >
-        {books.map((book) => (
-          <div
-            key={book.uuid}
-            className="w-[110px] shrink-0 snap-mandatory snap-start"
-          >
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-3 gap-3">
+        {visible.map((book) => (
+          <div key={book.uuid} className="min-w-0">
             <BookCard
               book={book}
               displayFields={displayFields}
@@ -68,31 +62,16 @@ function RelatedBooksRow({
         ))}
       </div>
 
-      {books.length > 3 && (
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 flex items-center opacity-0 transition-opacity group-hover/related:opacity-100">
-          <Button
-            aria-label="Scroll left"
-            variant="secondary"
-            size="icon-sm"
-            className="pointer-events-auto mr-1 rounded-full shadow-sm"
-            onClick={() => {
-              scrollBy(-300)
-            }}
-          >
-            <icon.ChevronLeft className="size-4" />
-          </Button>
-          <Button
-            aria-label="Scroll right"
-            variant="secondary"
-            size="icon-sm"
-            className="pointer-events-auto rounded-full shadow-sm"
-            onClick={() => {
-              scrollBy(300)
-            }}
-          >
-            <icon.ChevronRight className="size-4" />
-          </Button>
-        </div>
+      {books.length > RELATED_PREVIEW && (
+        <button
+          type="button"
+          onClick={() => {
+            setExpanded((value) => !value)
+          }}
+          className="text-cover-accent self-start text-xs leading-5 font-medium hover:underline"
+        >
+          {expanded ? c("actions.showLess") : c("actions.showMore")}
+        </button>
       )}
     </div>
   )
