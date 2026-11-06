@@ -604,6 +604,15 @@ export interface User {
   userPermissionUuid: import("@/uuid").UUID
 }
 
+export interface BookNote {
+  body: string
+  bookUuid: import("@/uuid").UUID
+  createdAt: Generated<string>
+  updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
+}
+
 export interface UserBookRating {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
@@ -670,6 +679,7 @@ export interface DB {
   book: Book
   bookAccess: BookAccess
   bookAccessView: BookAccessView
+  bookNote: BookNote
   bookToCollection: BookToCollection
   bookToCreator: BookToCreator
   bookToSeries: BookToSeries

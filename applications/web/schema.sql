@@ -1112,3 +1112,22 @@ BEGIN
       WHERE user_id = NEW.id
     ON CONFLICT (user_id, book_uuid) DO NOTHING;
 END;
+CREATE TABLE book_note (
+  uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
+  book_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_book_note_book ON book_note (book_uuid, created_at);
+CREATE INDEX idx_book_note_user ON book_note (user_id);
+CREATE TRIGGER book_note_update_trigger AFTER
+UPDATE ON book_note FOR EACH ROW BEGIN
+UPDATE book_note
+SET
+  updated_at = CURRENT_TIMESTAMP
+WHERE
+  uuid = OLD.uuid;
+
+END;
