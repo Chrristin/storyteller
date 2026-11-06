@@ -12,6 +12,8 @@ export type BookNoteWithAuthor = {
   userId: UUID
   /** Who wrote it: their name, else their username, else their email. */
   author: string
+  /** True when the user asking wrote this note. */
+  mine: boolean
   body: string
   createdAt: string
   updatedAt: string
@@ -20,6 +22,7 @@ export type BookNoteWithAuthor = {
 /** Every note on a book, oldest first. Anyone who can see the book can read them. */
 export async function listBookNotes(
   bookUuid: UUID,
+  currentUserId?: UUID,
 ): Promise<BookNoteWithAuthor[]> {
   const rows = await db
     .selectFrom("bookNote")
@@ -44,6 +47,7 @@ export async function listBookNotes(
   return rows.map(({ name, username, email, ...note }) => ({
     ...note,
     author: name || username || email,
+    mine: note.userId === currentUserId,
   }))
 }
 

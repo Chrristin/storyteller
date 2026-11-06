@@ -42,12 +42,12 @@ describe("book notes", () => {
     await createBookNote(bookUuid, christin, "Slow start, great ending")
     await createBookNote(bookUuid, preethi, "Reading this next")
 
-    const notes = await listBookNotes(bookUuid)
+    const notes = await listBookNotes(bookUuid, preethi)
     assert.deepStrictEqual(
-      notes.map((n) => [n.author, n.body]),
+      notes.map((n) => [n.author, n.body, n.mine]),
       [
-        ["Christin", "Slow start, great ending"],
-        ["preethi", "Reading this next"],
+        ["Christin", "Slow start, great ending", false],
+        ["preethi", "Reading this next", true],
       ],
     )
   })

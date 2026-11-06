@@ -18,7 +18,7 @@ export const GET = withUser<Params>(async (request, context) => {
   const { bookId } = await context.params
   const book = await getBook(bookId, request.auth.user.id)
   if (!book) return new Response(null, { status: 404 })
-  return NextResponse.json(await listBookNotes(bookId))
+  return NextResponse.json(await listBookNotes(bookId, request.auth.user.id))
 })
 
 /**
