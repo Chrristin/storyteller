@@ -22,11 +22,12 @@ import {
   View,
   useWindowDimensions,
 } from "react-native"
+import { AnimatedCircularProgress } from "react-native-circular-progress"
+import { useCSSVariable } from "uniwind"
 
 import { BackButton } from "@/components/BackButton"
 import BookDescription from "@/components/BookDescription"
 import { BookCover } from "@/components/BookCover"
-import { DownloadingIndicator } from "@/components/DownloadingIndicator"
 import { BookNotes } from "@/components/BookNotes"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
@@ -106,6 +107,7 @@ export default function BookDetailsScreen() {
   const { width: windowWidth } = useWindowDimensions()
   const prefs = useBookPrefs(book?.uuid)
   const prefActions = useBookPrefActions()
+  const onPrimary = useCSSVariable("--color-primary-foreground") as string
   const excerpt = useOpenLibraryExcerpt(
     uuid,
     book?.title ?? "",
@@ -189,6 +191,7 @@ export default function BookDetailsScreen() {
             }
             accessibilityRole="button"
             onPress={() => {
+              if (downloadingFormat) return
               if (openableFormat) {
                 openFormat(book, openableFormat)
               } else if (onlyFormat) {
@@ -204,25 +207,29 @@ export default function BookDetailsScreen() {
               height={Math.min(Math.round(windowWidth * 1.25), 520)}
               width={windowWidth}
             />
-            {downloadingFormat && (
-              <DownloadingIndicator
-                className="absolute z-50"
-                progress={downloadingFormat.downloadProgress}
-                size={40}
-                style={{ right: 16, top: 16 }}
-              />
-            )}
             <View className="bg-primary absolute right-4 bottom-4 size-14 items-center justify-center rounded-full">
+              {downloadingFormat && (
+                <View className="absolute">
+                  <AnimatedCircularProgress
+                    backgroundColor={onPrimary + "44"}
+                    fill={downloadingFormat.downloadProgress}
+                    rotation={0}
+                    size={48}
+                    tintColor={onPrimary}
+                    width={3}
+                  />
+                </View>
+              )}
               <Icon
                 as={
-                  !openableFormat
+                  downloadingFormat || !openableFormat
                     ? Download
                     : openableFormat === "audiobook"
                       ? Headphones
                       : BookOpen
                 }
                 className="text-primary-foreground"
-                size={24}
+                size={downloadingFormat ? 20 : 24}
               />
             </View>
           </Pressable>
