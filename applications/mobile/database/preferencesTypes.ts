@@ -25,7 +25,7 @@ export const defaultPreferences: Preferences = {
     {
       name: "Night",
       foreground: colors.gray3,
-      background: colors.gray9,
+      background: colors.black,
       isDark: true,
     },
   ],

@@ -71,7 +71,7 @@
 @layer theme {
   :root {
     @variant dark {
-      --color-background: #0b0b0c;
+      --color-background: #000000;
       --color-foreground: #f4f4f5;
       --color-card: #141416;
       --color-card-foreground: #f4f4f5;
