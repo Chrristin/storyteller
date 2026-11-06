@@ -3,12 +3,14 @@ name: Server image
 # Builds the Storyteller server from this fork as a Docker image and publishes
 # it to your GitHub container registry: ghcr.io/chrristin/storyteller
 #
-# It does NOT run on ordinary pushes. It starts only when you push a tag that
-# begins with "server-", for example server-1. Nothing is deployed anywhere:
-# your server keeps running its current image until you change it yourself.
+# It does NOT run on ordinary pushes. It starts only when a tag beginning with
+# "server-" is pushed, or when a branch named "server-image" is created or
+# pushed. Nothing is deployed anywhere: your server keeps running its current
+# image until you change it yourself.
 on:
   push:
     tags: ["server-*"]
+    branches: ["server-image"]
 
 permissions:
   contents: read
@@ -37,5 +39,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/chrristin/storyteller:${{ github.ref_name }}
+            ghcr.io/chrristin/storyteller:${{ github.ref_type == 'tag' && github.ref_name || format('server-{0}', github.run_number) }}
             ghcr.io/chrristin/storyteller:fork-latest
