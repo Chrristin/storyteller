@@ -49,11 +49,11 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           # The version the server reports. Upstream's newest published beta is
-          # web-v3.0.0-test.29, and this build is that line plus the fork's changes.
-          # Reporting a 3.x version also stops the "new version available" banner,
-          # which compares against the older 2.x stable releases.
+          # web-v3.0.0-beta.56, and this build contains that release (its Node and
+          # Next.js security update) plus newer upstream commits and the fork's
+          # changes. Reporting the same version stops the "new version" banner.
           build-args: |
-            CI_COMMIT_TAG=web-v3.0.0-test.29
+            CI_COMMIT_TAG=web-v3.0.0-beta.56
           push: true
           tags: |
             ghcr.io/chrristin/storyteller:${{ github.ref_type == 'tag' && github.ref_name || format('server-{0}', github.run_number) }}
