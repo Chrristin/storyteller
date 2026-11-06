@@ -108,6 +108,7 @@ export default function BookDetailsScreen() {
   const prefs = useBookPrefs(book?.uuid)
   const prefActions = useBookPrefActions()
   const onPrimary = useCSSVariable("--color-primary-foreground") as string
+  const primary = useCSSVariable("--color-primary") as string
   const excerpt = useOpenLibraryExcerpt(
     uuid,
     book?.title ?? "",
@@ -310,9 +311,7 @@ export default function BookDetailsScreen() {
                     <Icon
                       as={Star}
                       className="text-primary"
-                      fill={
-                        (prefs.rating ?? 0) >= star ? "currentColor" : "none"
-                      }
+                      fill={(prefs.rating ?? 0) >= star ? primary : "none"}
                       size={18}
                     />
                   </Pressable>
@@ -333,7 +332,7 @@ export default function BookDetailsScreen() {
                 <Icon
                   as={Heart}
                   className="text-primary"
-                  fill={prefs.favourite ? "currentColor" : "none"}
+                  fill={prefs.favourite ? primary : "none"}
                   size={20}
                 />
               </Pressable>
