@@ -33,13 +33,13 @@ function StatsSkeleton() {
   )
 }
 
-export function StatsBar() {
+export function StatsBar({ compact = false }: { compact?: boolean }) {
   const t = useTranslation("HomePage")
   const { data: stats, isLoading } = useGetHomeStatsQuery()
   const { data: statuses, isLoading: isStatusesLoading } =
     useListStatusesQuery()
 
-  if (isLoading || isStatusesLoading) return <StatsSkeleton />
+  if (isLoading || isStatusesLoading) return compact ? null : <StatsSkeleton />
 
   if (!stats || !statuses) return null
   const readingStatus = statuses.find((s) => s.name === STATUS_READING)
@@ -70,6 +70,37 @@ export function StatsBar() {
       href: "/tags",
     },
   ] satisfies Tile[]
+
+  if (compact) {
+    return (
+      <section
+        aria-label="Library stats"
+        className="pointer-events-auto hidden items-center gap-4 text-xs md:flex"
+      >
+        {tiles.map((tile) => {
+          const content = (
+            <>
+              <span className="text-primary font-medium">{tile.value}</span>{" "}
+              <span className="text-muted-foreground">{tile.label}</span>
+            </>
+          )
+          return tile.href ? (
+            <V3Link
+              key={tile.key}
+              href={tile.href}
+              className="hover:text-foreground whitespace-nowrap"
+            >
+              {content}
+            </V3Link>
+          ) : (
+            <span key={tile.key} className="whitespace-nowrap">
+              {content}
+            </span>
+          )
+        })}
+      </section>
+    )
+  }
 
   return (
     <section className="grid grid-cols-2 gap-px overflow-hidden rounded-xl @2xl/main:grid-cols-4">

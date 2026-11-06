@@ -71,6 +71,9 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
 
   const displayName = shelf.name ?? t(`kinds.${shelf.kind}.name`)
 
+  // Recently Added wraps onto rows instead of scrolling sideways.
+  const wrap = shelf.kind === "recentlyAdded"
+
   if (shelf.filterIssues.length > 0) {
     return (
       <div className={cn("flex flex-col gap-2 px-2", className)}>
@@ -132,7 +135,12 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
           </V3Link>
         </div>
 
-        <div className="-mr-2 flex gap-1 transition-opacity md:opacity-0 md:group-hover/shelf:opacity-100">
+        <div
+          className={cn(
+            "-mr-2 flex gap-1 transition-opacity md:opacity-0 md:group-hover/shelf:opacity-100",
+            wrap && "hidden",
+          )}
+        >
           <Button
             aria-label={t("actions.scrollLeft")}
             variant="ghost"
@@ -157,12 +165,20 @@ export function ShelfRow({ shelf, className, actions }: ShelfRowProps) {
 
       <div
         ref={scrollContainerRef}
-        className="scroll-x flex snap-x scroll-pl-4 gap-4 px-4 pb-2"
+        className={cn(
+          "px-4 pb-2",
+          wrap
+            ? "flex flex-wrap gap-4"
+            : "scroll-x flex snap-x scroll-pl-4 gap-4",
+        )}
       >
         {books.map((book) => (
           <div
             key={book.uuid}
-            className="w-[150px] shrink-0 snap-mandatory snap-start"
+            className={cn(
+              "w-[150px] shrink-0",
+              !wrap && "snap-mandatory snap-start",
+            )}
           >
             <BookCard
               book={book}

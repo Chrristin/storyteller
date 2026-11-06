@@ -57,11 +57,8 @@ function Section({
         </Widget>
       )
     case "stats":
-      return (
-        <Widget section={section} index={index}>
-          <StatsBar />
-        </Widget>
-      )
+      // Shown small, at the top right, in the page header instead.
+      return null
     case "getStarted":
       return (
         <Widget section={section} index={index}>
@@ -138,6 +135,8 @@ export function HomeSectionsActions() {
 
   return (
     <>
+      <StatsBar compact />
+
       <TooltipButton
         variant="ghost"
         onClick={openSearch}
