@@ -1,0 +1,41 @@
+name: Server image
+
+# Builds the Storyteller server from this fork as a Docker image and publishes
+# it to your GitHub container registry: ghcr.io/chrristin/storyteller
+#
+# It does NOT run on ordinary pushes. It starts only when you push a tag that
+# begins with "server-", for example server-1. Nothing is deployed anywhere:
+# your server keeps running its current image until you change it yourself.
+on:
+  push:
+    tags: ["server-*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # linux/amd64 only. If your NAS is ARM, say so and this gets linux/arm64.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/chrristin/storyteller:${{ github.ref_name }}
+            ghcr.io/chrristin/storyteller:fork-latest
