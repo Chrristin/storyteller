@@ -205,7 +205,12 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
             },
           )}
         >
-          <View className="-mr-3 -ml-1 flex-row items-center gap-0">
+          <View
+            className="-mr-3 flex-row items-center gap-0"
+            style={{
+              marginLeft: bookPrefs.detailView?.mode === "audio" ? 104 : 96,
+            }}
+          >
             {bookPrefs?.detailView?.mode === "audio" ? (
               <WaveProgress
                 accessibilityLabel="Mini player progress"
@@ -312,7 +317,7 @@ export function MiniPlayer({ book, format, hidden, floatingToolbar }: Props) {
           <View className="pr-safe-or-6 flex-row items-start gap-3 pt-1">
             <View
               className={
-                bookPrefs.detailView?.mode === "audio" ? "w-[88px]" : "w-[76px]"
+                bookPrefs.detailView?.mode === "audio" ? "w-[92px]" : "w-[84px]"
               }
             />
             <TouchableOpacity
