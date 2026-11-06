@@ -29,7 +29,13 @@ export function ContinueCard({ book }: { book: BookWithRelations }) {
         else openDetails(book)
       }}
     >
-      <BookCover book={book} badge={false} height={138} width={92} />
+      <BookCover
+        badge={false}
+        book={book}
+        height={138}
+        keepSlot={false}
+        width={92}
+      />
       <View className="min-w-0 flex-1 pr-6">
         <Text className="text-primary text-[10px] font-bold tracking-widest uppercase">
           Continue
