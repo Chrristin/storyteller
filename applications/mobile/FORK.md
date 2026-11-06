@@ -123,3 +123,12 @@ your own key, then published as a Release named `storyteller-<run number>`.
   downloaded books are lost. Keep a copy somewhere other than the NAS.
 - Without the two secrets the workflow still builds, signed with Expo's public
   debug key, and attaches the APK to the run instead of publishing a Release.
+
+## Reading themes
+
+Besides Day, Sepia, Crisp White and Night, the app adds six reading themes for
+long reading, for new installs and, through a migration, existing ones: Dark Grey,
+Soft Grey, Warm Dark, OLED Black, Paper and Soft Sepia. A theme with the same
+name that you already have is left as it is. Pure white on pure black is the
+maximum contrast (21:1); these sit at about 10:1 to 13:1, which most people find
+easier on the eyes for long reading.
