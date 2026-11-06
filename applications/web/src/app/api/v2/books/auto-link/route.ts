@@ -5,8 +5,16 @@ import { runBookLinker } from "@/bookLinker"
  * Shows what the ebook/audiobook linker would merge, and changes nothing. Safe
  * to open in a browser while logged in.
  */
-export const GET = withHasPermission("bookCreate")(async () => {
-  const result = await runBookLinker({ dryRun: true })
+export const GET = withHasPermission("bookCreate")(async (request) => {
+  // ?level=probable shows what a run would do if probable matches were allowed.
+  const level =
+    new URL(request.url).searchParams.get("level") === "probable"
+      ? "probable"
+      : undefined
+  const result = await runBookLinker({
+    dryRun: true,
+    ...(level ? { level } : {}),
+  })
   return Response.json(result)
 })
 

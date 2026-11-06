@@ -2,7 +2,7 @@ import assert from "node:assert"
 
 import { describe, it } from "vitest"
 
-import { findLinkPairs } from "@/bookLinker"
+import { findLinkPairs, findLinkPlan } from "@/bookLinker"
 import { type BookWithRelations } from "@/database/books"
 
 type Fake = {
@@ -78,6 +78,70 @@ describe("findLinkPairs", () => {
     ])
     assert.strictEqual(pairs.length, 1)
     assert.strictEqual(pairs[0]?.reason, "identifier")
+  })
+
+  it("pairs a distinctive title when the audiobook lists the narrator as author, as probable", () => {
+    const pairs = findLinkPairs([
+      book({
+        uuid: "e1",
+        title: "My Sister, the Serial Killer",
+        format: "ebook",
+        authors: ["Oyinkan Braithwaite"],
+      }),
+      book({
+        uuid: "a1",
+        title: "My Sister, the Serial Killer: A Novel",
+        format: "audiobook",
+        authors: ["Adepero Oduye"],
+      }),
+    ])
+    assert.strictEqual(pairs.length, 1)
+    assert.strictEqual(pairs[0]?.confidence, "probable")
+    assert.strictEqual(pairs[0]?.reason, "title-only")
+  })
+
+  it("never pairs a short, generic title on the title alone", () => {
+    const pairs = findLinkPairs([
+      book({
+        uuid: "e1",
+        title: "Home",
+        format: "ebook",
+        authors: ["Toni Morrison"],
+      }),
+      book({
+        uuid: "a1",
+        title: "Home",
+        format: "audiobook",
+        authors: ["Harlan Coben"],
+      }),
+    ])
+    assert.strictEqual(pairs.length, 0)
+  })
+
+  it("reports two equally good audiobooks as unclear instead of guessing", () => {
+    const plan = findLinkPlan([
+      book({
+        uuid: "e1",
+        title: "The Fellowship of the Ring",
+        format: "ebook",
+        authors: ["J.R.R. Tolkien"],
+      }),
+      book({
+        uuid: "a1",
+        title: "The Fellowship of the Ring",
+        format: "audiobook",
+        authors: ["J.R.R. Tolkien"],
+      }),
+      book({
+        uuid: "a2",
+        title: "The Fellowship of the Ring",
+        format: "audiobook",
+        authors: ["J.R.R. Tolkien"],
+      }),
+    ])
+    assert.strictEqual(plan.pairs.length, 0)
+    assert.strictEqual(plan.ambiguous.length, 1)
+    assert.strictEqual(plan.ambiguous[0]?.candidates.length, 2)
   })
 
   it("does not pair different authors", () => {

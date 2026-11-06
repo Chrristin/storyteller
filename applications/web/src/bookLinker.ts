@@ -19,6 +19,7 @@ import {
   type MatchCandidate,
   type MatchScore,
   normalizeText,
+  normalizeTitle,
   scoreMatch,
 } from "@/metadata/match"
 import { subjectFromBook } from "@/metadata/subject"
@@ -35,19 +36,40 @@ import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
  * "Book 1" is never joined to "Book 2".
  */
 
-type Reason = "identifier" | "title-and-author"
-type Judgement = { score: number; reason: Reason }
+/**
+ * How sure the match is.
+ *  - high: a shared identifier, or the same title and the same author.
+ *  - probable: the same, fairly long title but no matching author. Audiobook
+ *    metadata often lists the narrator as the author, so this is common. It is
+ *    only merged automatically when the level is set to "probable".
+ */
+export type Confidence = "high" | "probable"
+export type LinkLevel = Confidence
+
+type Reason = "identifier" | "title-and-author" | "title-only"
+type Judgement = { score: number; reason: Reason; confidence: Confidence }
 
 export type LinkPair = {
   ebookBook: BookWithRelations
   audiobookBook: BookWithRelations
   score: number
   reason: Reason
+  confidence: Confidence
+}
+
+export type AmbiguousMatch = {
+  title: string
+  /** Books of the other format that look equally right. */
+  candidates: string[]
 }
 
 const MIN_MARGIN = 0.06
 const MIN_TITLE = 0.85
 const MIN_AUTHORS = 0.8
+// A title-only match needs a distinctive title: "Home" proves nothing.
+const MIN_TITLE_ONLY = 0.95
+const MIN_TITLE_WORDS = 2
+const MIN_TITLE_CHARS = 12
 
 function signal(score: MatchScore, name: string) {
   return score.signals.find((s) => s.name === name)?.score
@@ -116,7 +138,7 @@ function judge(
   const title = signal(result, "title") ?? 0
   const identifier = signal(result, "identifier")
   if (identifier === 1 && title >= 0.5) {
-    return { score: result.score, reason: "identifier" }
+    return { score: result.score, reason: "identifier", confidence: "high" }
   }
   // Conflicting identifiers (a different ISBN or ASIN) are a hard no.
   if (identifier === 0) return null
@@ -128,7 +150,22 @@ function judge(
     authors >= MIN_AUTHORS &&
     result.score >= HIGH_SCORE
   ) {
-    return { score: result.score, reason: "title-and-author" }
+    return {
+      score: result.score,
+      reason: "title-and-author",
+      confidence: "high",
+    }
+  }
+
+  // Same distinctive title, authors missing or different (often the narrator
+  // listed as the author): probable, not certain.
+  const normalized = normalizeTitle(ebookBook.title)
+  if (
+    title >= MIN_TITLE_ONLY &&
+    normalized.length >= MIN_TITLE_CHARS &&
+    normalized.split(" ").length >= MIN_TITLE_WORDS
+  ) {
+    return { score: title, reason: "title-only", confidence: "probable" }
   }
   return null
 }
@@ -140,7 +177,13 @@ function best(candidates: { uuid: string; score: number }[]) {
   return { ...top, margin: top.score - (sorted[1]?.score ?? 0) }
 }
 
+export type LinkPlan = { pairs: LinkPair[]; ambiguous: AmbiguousMatch[] }
+
 export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
+  return findLinkPlan(books).pairs
+}
+
+export function findLinkPlan(books: BookWithRelations[]): LinkPlan {
   const ebooks = books.filter((b) => b.ebook && !b.audiobook && !b.readaloud)
   const audiobooks = books.filter(
     (b) => b.audiobook && !b.ebook && !b.readaloud,
@@ -157,6 +200,8 @@ export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
   }
 
   const pairs: LinkPair[] = []
+  const ambiguous: AmbiguousMatch[] = []
+  const titleOf = new Map<string, string>(books.map((b) => [b.uuid, b.title]))
   for (const e of ebooks) {
     const row = judgements.get(e.uuid)
     if (!row) continue
@@ -165,8 +210,15 @@ export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
       [...row.entries()].map(([uuid, v]) => ({ uuid, score: v.score })),
     )
     if (!bestAudio) continue
-    // Several audiobooks that look alike: do nothing rather than guess.
-    if (row.size > 1 && bestAudio.margin < MIN_MARGIN) continue
+    // Several audiobooks that look alike: do nothing rather than guess, but
+    // say so, so the preview can show it.
+    if (row.size > 1 && bestAudio.margin < MIN_MARGIN) {
+      ambiguous.push({
+        title: e.title,
+        candidates: [...row.keys()].map((uuid) => titleOf.get(uuid) ?? uuid),
+      })
+      continue
+    }
 
     // The audiobook must also pick this ebook, with a clear lead.
     const reverse = ebooks.flatMap((other) => {
@@ -175,7 +227,13 @@ export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
     })
     const bestEbook = best(reverse)
     if (!bestEbook || bestEbook.uuid !== e.uuid) continue
-    if (reverse.length > 1 && bestEbook.margin < MIN_MARGIN) continue
+    if (reverse.length > 1 && bestEbook.margin < MIN_MARGIN) {
+      ambiguous.push({
+        title: titleOf.get(bestAudio.uuid) ?? bestAudio.uuid,
+        candidates: reverse.map((r) => titleOf.get(r.uuid) ?? r.uuid),
+      })
+      continue
+    }
 
     const audiobookBook = audiobooks.find((a) => a.uuid === bestAudio.uuid)
     const judged = row.get(bestAudio.uuid)
@@ -185,9 +243,10 @@ export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
       audiobookBook,
       score: judged.score,
       reason: judged.reason,
+      confidence: judged.confidence,
     })
   }
-  return pairs
+  return { pairs, ambiguous }
 }
 
 /**
@@ -297,37 +356,58 @@ export async function mergePair(pair: LinkPair): Promise<BookWithRelations> {
 
 export type LinkRunResult = {
   considered: number
+  level: LinkLevel
   pairs: {
     ebook: string
     audiobook: string
     reason: Reason
+    confidence: Confidence
     score: number
+    /** Whether a real run at this level would merge it. */
+    eligible: boolean
     merged: boolean
     error?: string
   }[]
+  /** Matches that look equally right for more than one book, left alone. */
+  ambiguous: AmbiguousMatch[]
+}
+
+export function getLinkLevel(): LinkLevel {
+  return process.env["STORYTELLER_AUTO_LINK_LEVEL"] === "probable"
+    ? "probable"
+    : "high"
 }
 
 export async function runBookLinker(
-  options: { dryRun?: boolean } = {},
+  options: { dryRun?: boolean; level?: LinkLevel } = {},
 ): Promise<LinkRunResult> {
+  const level = options.level ?? getLinkLevel()
   const books = await getBooks()
-  const pairs = findLinkPairs(books)
-  const result: LinkRunResult = { considered: books.length, pairs: [] }
+  const { pairs, ambiguous } = findLinkPlan(books)
+  const result: LinkRunResult = {
+    considered: books.length,
+    level,
+    pairs: [],
+    ambiguous,
+  }
 
   for (const pair of pairs) {
+    const eligible = pair.confidence === "high" || level === "probable"
     const entry: LinkRunResult["pairs"][number] = {
       ebook: pair.ebookBook.title,
       audiobook: pair.audiobookBook.title,
       reason: pair.reason,
+      confidence: pair.confidence,
       score: Math.round(pair.score * 100) / 100,
+      eligible,
       merged: false,
     }
-    if (!options.dryRun) {
+    if (!options.dryRun && eligible) {
       try {
         await mergePair(pair)
         entry.merged = true
         logger.info(
-          `Linked ebook and audiobook of "${entry.ebook}" (${entry.reason}, score ${entry.score})`,
+          `Linked ebook and audiobook of "${entry.ebook}" (${entry.reason}, ${entry.confidence})`,
         )
       } catch (error) {
         entry.error = error instanceof Error ? error.message : String(error)
@@ -341,7 +421,7 @@ export async function runBookLinker(
   }
 
   logger.info(
-    `Book linker ${options.dryRun ? "(dry run) " : ""}checked ${books.length} books and found ${pairs.length} pairs`,
+    `Book linker ${options.dryRun ? "(dry run) " : ""}checked ${books.length} books: ${pairs.length} pairs found, ${ambiguous.length} unclear (level: ${level})`,
   )
   return result
 }
