@@ -108,6 +108,21 @@ No server change was needed.
 - A change is saved on the phone first and sent straight away. If the server cannot be reached it is marked as waiting and sent the next time the home screen opens. Otherwise the server's values win.
 - Books that exist only on the phone (imported files) keep their rating and favourite locally.
 
+## Sync to Google Drive (for a Kobo)
+
+The server copies the plain ebook of selected books into a `Storyteller` folder
+inside the `Rakuten Kobo` folder in Google Drive, which the Kobo's own Drive sync
+reads. The app only asks the server to do it; Google sign-in is set up once in the
+server's web settings (Settings, Server, Google Drive).
+
+- **Book page:** a "Google Drive" card with a Sync to Drive button, shown only
+  when the server reports Drive as connected and the book has an ebook.
+- **Library:** long press a book to start selecting, then "Sync N to Drive".
+  When Drive is connected, long press on those tiles starts selection instead of
+  the Open book / Play audiobook menu.
+- Books already in the folder are skipped unless "Replace files already in Drive"
+  is ticked. Only the ebook is sent, never an audiobook or read-aloud version.
+
 ## Signing the Android app
 
 The APK is built on GitHub (`.github/workflows/android-apk.yml`) and signed with
