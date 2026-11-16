@@ -1752,3 +1752,21 @@ WHERE
   uuid = OLD.uuid;
 
 END;
+CREATE TABLE google_drive_config (
+  id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+  client_id TEXT,
+  client_secret TEXT,
+  refresh_token TEXT,
+  account_email TEXT,
+  folder_id TEXT,
+  oauth_state TEXT,
+  oauth_redirect_uri TEXT,
+  oauth_state_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE book_drive_file (
+  book_uuid TEXT PRIMARY KEY NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  drive_file_id TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

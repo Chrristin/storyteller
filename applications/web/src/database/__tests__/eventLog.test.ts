@@ -165,6 +165,10 @@ const TABLES = {
   bookAccessView: { exclude: "view; book_access is the materialization" },
   position: { exclude: "not part of the v3 API" },
   bookNote: { exclude: "fork-only shared notes, not part of the v3 API" },
+  bookDriveFile: { exclude: "fork-only Google Drive sync state" },
+  googleDriveConfig: {
+    exclude: "fork-only Google Drive sign-in, server-internal",
+  },
   progressionHistory: { exclude: "server-internal history, not synced" },
   progressionReference: {
     exclude:
