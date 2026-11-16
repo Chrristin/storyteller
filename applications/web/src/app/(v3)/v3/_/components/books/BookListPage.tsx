@@ -75,6 +75,7 @@ import {
   type ListBooksQueryArg,
   type ListShelfBooksQueryArg,
   useGetBooksCountQuery,
+  useGetSeriesGapsQuery,
   useListInfiniteBooksInfiniteQuery,
   useListInfiniteShelfBooksInfiniteQuery,
 } from "@/store/api"
@@ -458,6 +459,26 @@ function BookListPageInner({
     [isBooksSource, source],
   )
 
+  // Dashed placeholders for whole-number gaps, only for the plain in-order view
+  // of one series (no search or filters, ordered by position ascending).
+  const gapSeriesUuid = displayContext.seriesUuid ?? null
+  const { data: seriesGaps } = useGetSeriesGapsQuery(undefined, {
+    skip: !gapSeriesUuid,
+  })
+  const seriesGapPositions = useMemo(() => {
+    if (
+      !gapSeriesUuid ||
+      sort.field !== "seriesPosition" ||
+      sort.direction !== "asc" ||
+      deferredSearch ||
+      activeFilterCount > 0
+    ) {
+      return undefined
+    }
+    const missing = seriesGaps?.find((g) => g.uuid === gapSeriesUuid)?.missing
+    return missing?.length ? missing : undefined
+  }, [gapSeriesUuid, seriesGaps, sort, deferredSearch, activeFilterCount])
+
   const displayFields = useMemo(
     () =>
       deriveDisplayFields(
@@ -779,6 +800,7 @@ function BookListPageInner({
                 displayFields={displayFields}
                 listDisplayFieldsOverride={listDisplayFields}
                 displayContext={displayContext}
+                seriesGapPositions={seriesGapPositions}
                 sortField={sort.field}
                 sortDirection={sort.direction}
                 onSortChange={handleColumnSort}
@@ -870,6 +892,7 @@ function BookListPageInner({
                 }
                 listDisplayFieldsOverride={listDisplayFields}
                 displayContext={displayContext}
+                seriesGapPositions={seriesGapPositions}
                 sortField={sort.field}
                 sortDirection={sort.direction}
                 forceLayout={forceDisplayMode?.layout}

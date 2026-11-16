@@ -42,6 +42,7 @@ type BooksViewProps = {
   displayFields?: DisplayField[]
   listDisplayFieldsOverride?: DisplayField[]
   displayContext?: SortContext
+  seriesGapPositions?: readonly number[] | undefined
   sortField?: SortField
   sortDirection?: SortDirection
   onSortChange?: (field: SortField, direction: SortDirection) => void
@@ -57,6 +58,7 @@ export function BooksView({
   sortDirection,
   onSortChange,
   forceLayout,
+  seriesGapPositions,
   ...shared
 }: BooksViewProps) {
   const storedLayout = useAppSelector(selectBookLayout)
@@ -103,6 +105,7 @@ export function BooksView({
   return (
     <BookGrid
       {...shared}
+      seriesGapPositions={seriesGapPositions}
       onBookClick={onBookClick}
       displayFields={gridView === "thumbnail" ? [] : displayFields}
     />

@@ -40,6 +40,7 @@ import {
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
 import * as icon from "@/icons"
+import { type GridSlot, buildGridSlots } from "@/piles"
 import { type DisplayField, type SortContext } from "@/sort"
 import { useAppSelector } from "@/store/appState"
 import {
@@ -48,6 +49,7 @@ import {
   selectGridSpacing,
 } from "@/store/slices/uiSettingsSlice"
 
+import { GapPlaceholder } from "./GapPlaceholder"
 import { COVER_ASPECT, metaHeightFor } from "./bookCardSizing"
 
 type BookGridProps = {
@@ -69,6 +71,8 @@ type BookGridProps = {
   ) => void
   displayFields?: DisplayField[]
   displayContext?: SortContext
+  /** Whole numbers missing from the series being shown, in order. */
+  seriesGapPositions?: readonly number[] | undefined
   navModel?: BookNavModel
 }
 
@@ -99,6 +103,7 @@ export function BookGrid({
   onBookClick,
   displayFields,
   displayContext,
+  seriesGapPositions,
   navModel = "commit",
   ...props
 }: BookGridProps) {
@@ -135,16 +140,36 @@ export function BookGrid({
     [cardWidth, gridGap, metaHeight, isMobile],
   )
 
+  // Books in order, with a dashed placeholder where a series number is missing.
+  const slots = useMemo<GridSlot<BookWithRelations>[]>(
+    () =>
+      seriesGapPositions?.length && displayContext?.seriesUuid
+        ? buildGridSlots(
+            books,
+            displayContext.seriesUuid,
+            seriesGapPositions,
+            hasNextPage,
+          )
+        : books.map((book, bookIndex) => ({
+            type: "book" as const,
+            book,
+            bookIndex,
+          })),
+    [books, seriesGapPositions, displayContext?.seriesUuid, hasNextPage],
+  )
+
   const anchorIndex = useMemo(() => {
     if (!selectedBookUuid) return null
-    const i = books.findIndex((b) => b.uuid === selectedBookUuid)
+    const i = slots.findIndex(
+      (s) => s.type === "book" && s.book.uuid === selectedBookUuid,
+    )
     return i >= 0 ? i : null
-  }, [books, selectedBookUuid])
+  }, [slots, selectedBookUuid])
 
   const panelResize = usePanelResize()
 
   const grid = useVirtualGrid({
-    itemCount: books.length,
+    itemCount: slots.length,
     geometry,
     anchorIndex,
     animate,
@@ -248,7 +273,7 @@ export function BookGrid({
     )
   }
 
-  const visible = books.slice(grid.startIndex, grid.endIndex)
+  const visible = slots.slice(grid.startIndex, grid.endIndex)
 
   return (
     <>
@@ -265,8 +290,17 @@ export function BookGrid({
       >
         <CoverLoadProvider value={grid.imagesActive}>
           <div ref={grid.gridRef} style={grid.gridStyle}>
-            {visible.map((book, i) => {
-              const index = grid.startIndex + i
+            {visible.map((slot) => {
+              if (slot.type === "gap") {
+                return (
+                  <GapPlaceholder
+                    key={`gap-${slot.position}`}
+                    position={slot.position}
+                  />
+                )
+              }
+              const book = slot.book
+              const index = slot.bookIndex
               return (
                 <BookCard
                   key={book.uuid}

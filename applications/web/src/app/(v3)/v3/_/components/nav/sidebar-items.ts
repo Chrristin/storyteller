@@ -9,7 +9,7 @@ import {
 
 export type SidebarGroup = SidebarBuiltinGroup
 
-type AppSidebarLabelKey = "home" | "books" | "alignmentQuality"
+type AppSidebarLabelKey = "home" | "books" | "alignmentQuality" | "piles"
 type LibraryLabelKey =
   | "Series.plain"
   | "Authors.plain"
@@ -58,6 +58,13 @@ const BUILTIN_META = {
     permission: "bookProcess",
     labelNs: "AppSidebar",
     labelKey: "alignmentQuality",
+  },
+  piles: {
+    icon: icon.Books,
+    href: "/piles",
+    permission: "bookList",
+    labelNs: "AppSidebar",
+    labelKey: "piles",
   },
   series: {
     icon: icon.List,

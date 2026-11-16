@@ -123,6 +123,7 @@ import { type CoverImportRequest } from "@/metadataImport"
 import { type MetadataImportBody } from "@/metadataImportTypes"
 import { type JobsQueryV2 } from "@/schemas/v2/job"
 import { type TranscodedAudioFile } from "@/schemas/v2/transcodedAudio"
+import { type SeriesGap } from "@/seriesGaps"
 import { type ShelfFilter } from "@/shelves"
 import { type SortField } from "@/sort"
 import { type UUID } from "@/uuid"
@@ -249,6 +250,7 @@ export const api = createApi({
     "DriveClient",
     "DriveBooks",
     "Delivery",
+    "SeriesGaps",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -2760,6 +2762,13 @@ export const api = createApi({
       // shows the previous user's Drive or Kindle state.
       keepUnusedDataFor: 0,
     }),
+    getSeriesGaps: build.query<SeriesGap[], void>({
+      query: () => "/series/gaps",
+      providesTags: ["SeriesGaps", "Books", "Series"],
+      // Per user data, so it is dropped as soon as the last screen using it
+      // closes, like the Drive status.
+      keepUnusedDataFor: 0,
+    }),
     getDriveClient: build.query<{ clientId: string | null }, void>({
       query: () => "/drive/client",
       providesTags: ["DriveClient"],
@@ -3059,6 +3068,7 @@ export const {
   useSetHardcoverTokenMutation,
   useClearHardcoverTokenMutation,
   useGetDriveStatusQuery,
+  useGetSeriesGapsQuery,
   useGetDriveClientQuery,
   useSaveDriveClientMutation,
   useRemoveDriveClientMutation,
