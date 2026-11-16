@@ -180,9 +180,16 @@ export function BookThumbnail({
       accessibilityLabel={`Open ${book.title}`}
       accessibilityRole="button"
       accessibilityState={selectionActive ? { selected } : {}}
+      // This handler must stay set while selecting. When a long press ends,
+      // React Native only skips the follow-up tap if a long press handler is
+      // still attached. Removing it once selection starts made the finger lift
+      // count as a tap, which un-selected the book and closed selection.
       onLongPress={
-        driveSelectable && !selectionActive
-          ? () => driveSelection.start(book)
+        driveSelectable
+          ? () =>
+              selectionActive
+                ? driveSelection.toggle(book)
+                : driveSelection.start(book)
           : undefined
       }
       onPress={() => {
