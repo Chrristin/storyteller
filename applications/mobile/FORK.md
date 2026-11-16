@@ -186,3 +186,21 @@ Soft Grey, Warm Dark, OLED Black, Paper and Soft Sepia. A theme with the same
 name that you already have is left as it is. Pure white on pure black is the
 maximum contrast (21:1); these sit at about 10:1 to 13:1, which most people find
 easier on the eyes for long reading.
+
+## Piles and missing books
+
+The Library menu (the three dots) has a "Piles" item. It opens a screen that
+shows your series, or your authors, as piles of three covers with the name and
+the number of books. Tap a pile to open that series or author. Series piles
+show the first three books by series position; author piles show the newest
+three. If the same series name comes from two servers it is one pile.
+
+Missing books are found on the phone from the series positions the app already
+stores, so it works offline and the server is not involved. Only whole numbers
+from 1 up count, and a series needs two different owned positions. The gaps are
+the numbers between the lowest and highest owned book, so a series is never
+guessed past its last owned book. When there are gaps, the Piles header shows
+"Missing books (N)", and the series page shows a dashed amber "#3 Missing"
+tile in the right place. The logic is in `lib/seriesGaps.ts`, `lib/piles.ts` and
+`lib/seriesLayout.ts` (all pure, with tests). The amber colour is the
+`missing` token in `global.css`.

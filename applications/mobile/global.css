@@ -22,6 +22,7 @@
   --color-accent-foreground: #3730a3;
   --color-link: #4f46e5;
   --color-destructive: #dc2626;
+  --color-missing: #b45309;
   --color-border: #e4e4e7;
   --color-input: #e4e4e7;
   --color-ring: #a1a1aa;
@@ -87,6 +88,7 @@
       --color-accent-foreground: #c7c9ff;
       --color-link: #8b8ff8;
       --color-destructive: #f87171;
+      --color-missing: #f5b84b;
       --color-border: #27272a;
       --color-input: #27272a;
       --color-ring: #71717a;
@@ -109,6 +111,7 @@
       --color-accent-foreground: #3730a3;
       --color-link: #4f46e5;
       --color-destructive: #dc2626;
+      --color-missing: #b45309;
       --color-border: #e4e4e7;
       --color-input: #e4e4e7;
       --color-ring: #a1a1aa;

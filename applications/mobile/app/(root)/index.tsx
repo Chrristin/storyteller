@@ -130,6 +130,11 @@ export default function Home() {
                 },
               },
               {
+                id: "piles",
+                title: "Piles",
+                onPress: () => router.push("/piles"),
+              },
+              {
                 id: "settings",
                 title: "Settings",
                 onPress: () => router.push("/settings"),
