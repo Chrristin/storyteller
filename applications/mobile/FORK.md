@@ -210,3 +210,10 @@ guessed past its last owned book. When there are gaps, the Piles header shows
 tile in the right place. The logic is in `lib/seriesGaps.ts`, `lib/piles.ts` and
 `lib/seriesLayout.ts` (all pure, with tests). The amber colour is the
 `missing` token in `global.css`.
+
+## After updating the app
+
+The wave fill and the new Library layout use each cover's main colour. Books that
+were already on the phone get their colour the next time the library syncs, so
+open the Library and pull down to refresh once. Until then those covers use a
+steady muted colour.
