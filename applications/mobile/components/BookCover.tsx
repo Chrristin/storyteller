@@ -1,9 +1,13 @@
 import { memo } from "react"
-import { View } from "react-native"
+import { Text, View } from "react-native"
 import Svg, { Path } from "react-native-svg"
 
 import { type BookWithRelations } from "@/database/books"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
+import {
+  overlayFontSizes,
+  shouldShowTitleOverlay,
+} from "@/lib/coverTitleOverlay"
 import { useLibraryLook } from "@/lib/libraryLook"
 import { cn } from "@/lib/utils"
 import {
@@ -29,6 +33,10 @@ import { FormatBadge } from "./FormatBadge"
  * the wave fill setting off). With `keepSlot` off, an audiobook
  * cover is just the square.
  *
+ * On a wave cover the title and author are written in white inside the waves,
+ * unless the "Titles under covers" setting is on or `showTitleOverlay` is off
+ * (the currently reading strip and the book page hero).
+ *
  * A thin accent line along the bottom edge shows progress, and a small pill in
  * the top-left corner marks anything with audio.
  */
@@ -39,6 +47,7 @@ export function BookCover({
   badge = true,
   keepSlot = true,
   progressLine = true,
+  showTitleOverlay = true,
   className,
 }: {
   book: BookWithRelations
@@ -47,9 +56,10 @@ export function BookCover({
   badge?: boolean
   keepSlot?: boolean
   progressLine?: boolean
+  showTitleOverlay?: boolean
   className?: string
 }) {
-  const [{ waveFill }] = useLibraryLook()
+  const [{ waveFill, showTitles }] = useLibraryLook()
   const hasTextCover = !!book.ebook || !!book.readaloud
   const onDevice = useDownloadedFormats(book).length > 0
   const progression = book.position?.locator.locations?.totalProgression
@@ -124,6 +134,14 @@ export function BookCover({
           height={height - width}
         />
       )}
+      {shouldShowTitleOverlay({ showTitleOverlay, waveFill, showTitles }) && (
+        <TitleOverlay
+          title={book.title}
+          author={book.authors[0]?.name}
+          width={width}
+          height={height - width}
+        />
+      )}
       {overlays}
     </View>
   )
@@ -160,3 +178,84 @@ const WaveFill = memo(function WaveFill({
     </Svg>
   )
 })
+
+/** Fade steps from clear to about 55% black, drawn as stacked layers. */
+const FADE_STEPS = [0.14, 0.14, 0.14, 0.13]
+
+function TitleOverlay({
+  title,
+  author,
+  width,
+  height,
+}: {
+  title: string
+  author?: string | undefined
+  width: number
+  height: number
+}) {
+  if (height <= 0) return null
+  const sizes = overlayFontSizes(width)
+  return (
+    <View
+      pointerEvents="none"
+      style={{ bottom: 0, left: 0, position: "absolute", width }}
+    >
+      {/* Stacked layers add up to a soft fade, as expo-linear-gradient is not used here. */}
+      <View
+        style={{
+          bottom: 0,
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: -Math.min(16, height * 0.3),
+        }}
+      >
+        {FADE_STEPS.map((alpha, i) => (
+          <View
+            key={i}
+            style={{
+              backgroundColor: `rgba(0,0,0,${alpha})`,
+              bottom: 0,
+              left: 0,
+              position: "absolute",
+              right: 0,
+              top: `${(i * 100) / FADE_STEPS.length}%`,
+            }}
+          />
+        ))}
+      </View>
+      <View
+        style={{
+          maxHeight: height,
+          paddingBottom: 8,
+          paddingLeft: 8,
+          paddingRight: 10,
+        }}
+      >
+        {!!author && (
+          <Text
+            numberOfLines={1}
+            style={{
+              color: "rgba(255,255,255,0.8)",
+              fontSize: sizes.author,
+              lineHeight: sizes.author + 3,
+            }}
+          >
+            {author}
+          </Text>
+        )}
+        <Text
+          numberOfLines={2}
+          style={{
+            color: "#ffffff",
+            fontSize: sizes.title,
+            fontWeight: "600",
+            lineHeight: sizes.title + 3,
+          }}
+        >
+          {title}
+        </Text>
+      </View>
+    </View>
+  )
+}

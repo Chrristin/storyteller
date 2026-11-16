@@ -197,6 +197,7 @@ export function CurrentlyReading({ books }: { books: BookWithRelations[] }) {
                 book={current}
                 height={132}
                 progressLine={false}
+                showTitleOverlay={false}
                 width={88}
               />
               <View className="min-w-0 flex-1">
@@ -285,6 +286,7 @@ export function CurrentlyReading({ books }: { books: BookWithRelations[] }) {
                 book={first}
                 height={84}
                 progressLine={false}
+                showTitleOverlay={false}
                 width={56}
               />
               <View className="min-w-0 flex-1">

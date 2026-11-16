@@ -66,7 +66,11 @@ There is no in-app username/password form. Login opens the server's
   muted colour derived from its uuid. A small dark
   pill in the top-left corner shows headphones for an audiobook, or headphones
   and a book for a read-aloud. A 3px accent line along the bottom edge shows
-  progress. Code: `components/BookCover.tsx`, `components/FormatBadge.tsx`.
+  progress. With waves on and Titles under covers off, an audiobook cover also
+  writes its author and title in white inside the waves on a soft dark fade
+  (not in the currently reading strip or the book page hero); with Titles under
+  covers on the text goes back under the cover and the waves stay plain
+  (`lib/coverTitleOverlay.ts`). Code: `components/BookCover.tsx`, `components/FormatBadge.tsx`.
 - **Tilt.** Each cover leans a little, worked out from the book id so a book
   always leans the same way (`lib/tilt.ts`, a pure function with a test). Only
   the cover tilts, never text, buttons, progress rings or the selection check.

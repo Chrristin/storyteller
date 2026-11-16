@@ -213,6 +213,7 @@ export default function BookDetailsScreen() {
                   badge={false}
                   book={book}
                   progressLine={false}
+                  showTitleOverlay={false}
                   height={heroHeight}
                   width={heroWidth}
                 />
