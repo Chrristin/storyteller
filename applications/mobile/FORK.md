@@ -52,6 +52,37 @@ There is no in-app username/password form. Login opens the server's
   gone). Headings are `h1` 30 bold, `h2` 20, `h3` 18, `h4` 16, body 16, meta 14 / 12.
 - Not changed: the reader's own fonts and themes.
 
+## Library layout and tilt
+
+- **Covers only.** Grids and shelves show covers without text. A cover is
+  always in the same tall 2:3 slot, so rows line up. Ebooks have no mark. An
+  audiobook keeps its square cover whole in the middle of the slot, with a
+  blurred copy of the cover filling the space above and below. A small dark
+  pill in the top-left corner shows headphones for an audiobook, or headphones
+  and a book for a read-aloud. A 3px accent line along the bottom edge shows
+  progress. Code: `components/BookCover.tsx`, `components/FormatBadge.tsx`.
+- **Tilt.** Each cover leans a little, worked out from the book id so a book
+  always leans the same way (`lib/tilt.ts`, a pure function with a test). Only
+  the cover tilts, never text, buttons, progress rings or the selection check.
+  A book that is selected for Drive or Kindle straightens. The big cover on the
+  book page leans a fixed amount to the left.
+- **Currently reading strip.** `components/CurrentlyReading.tsx` replaces the
+  big continue card and the "Also in progress" shelf on the home screen. The
+  book read last is a compact card; other books in progress are round covers
+  with a progress ring. Tap one to expand the card, tap the up arrow to go
+  back. It uses only data the app already has (title, author, percent, format,
+  chapter title and last read time when the position has them).
+- **Settings, "Library look".** Four controls, saved on the phone (AsyncStorage,
+  `lib/libraryLook.ts`, defaults in `lib/libraryLookDefaults.ts`) and applied
+  at once through `useLibraryLook()`:
+  - Cover tilt: Off, Subtle (1.6 degrees, 1.5px), Medium (3, 2.5px) or
+    Strong (5, 4px). Default Subtle.
+  - Titles under covers: off by default.
+  - Blurred fill behind audiobook covers: on by default. Off gives a plain
+    dark fill.
+  - Currently reading strip: on by default.
+- No database, sync or reader logic was changed for any of this.
+
 ## Cloud Android build
 
 The fork reads its Expo account from environment variables, so nothing in the

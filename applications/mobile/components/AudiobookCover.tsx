@@ -14,9 +14,16 @@ interface Props {
   book: BookWithRelations
   style?: StyleProp<ImageStyle>
   contentFit?: "cover" | "contain"
+  /** Blur the image, used for the fill behind a square cover. */
+  blurRadius?: number
 }
 
-export function AudiobookCover({ book, style, contentFit = "cover" }: Props) {
+export function AudiobookCover({
+  book,
+  style,
+  contentFit = "cover",
+  blurRadius,
+}: Props) {
   const { data: server } = useGetServerQuery(
     book?.serverUuid ? { uuid: book.serverUuid } : skipToken,
   )
@@ -47,6 +54,7 @@ export function AudiobookCover({ book, style, contentFit = "cover" }: Props) {
         style,
       ]}
       alt=""
+      {...(blurRadius === undefined ? {} : { blurRadius })}
       contentFit={contentFit}
       aria-hidden
       source={{

@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native"
 
-import { ContinueCard } from "@/components/ContinueCard"
+import { CurrentlyReading } from "@/components/CurrentlyReading"
 import { DriveSelectionBars } from "@/components/DriveSelectionBars"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { Shelf } from "@/components/Shelf"
@@ -24,6 +24,7 @@ import { type Collection } from "@/database/collections"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 import { useBookPrefsSync } from "@/lib/bookPrefsSync"
+import { useLibraryLook } from "@/lib/libraryLook"
 import { bookImported } from "@/store/actions"
 import { useAppDispatch } from "@/store/appState"
 import {
@@ -50,6 +51,7 @@ async function pickBookFile() {
 export default function Home() {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const [{ showCurrentlyReading }] = useLibraryLook()
 
   const { isLoading, refetch } = useListAllServerBooks()
   useBookPrefsSync()
@@ -146,7 +148,7 @@ export default function Home() {
       </View>
       <ScrollView
         className="pl-safe-or-5 pr-safe-or-5 w-full"
-        contentContainerClassName="gap-8"
+        contentContainerClassName="gap-4"
         ref={scrollViewRef}
         refreshControl={
           <RefreshControl
@@ -157,16 +159,7 @@ export default function Home() {
           />
         }
       >
-        {currentlyReading[0] && <ContinueCard book={currentlyReading[0]} />}
-        <Shelf
-          label="Also in progress"
-          books={currentlyReading.slice(1)}
-          showProgress
-          href={{
-            pathname: "/shelf/[type]",
-            params: { type: "currently-reading" },
-          }}
-        />
+        {showCurrentlyReading && <CurrentlyReading books={currentlyReading} />}
         <Shelf
           label="Up next"
           books={startReading}

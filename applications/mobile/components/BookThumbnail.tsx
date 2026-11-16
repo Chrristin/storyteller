@@ -11,6 +11,8 @@ import {
   useDelivery,
 } from "@/hooks/useDrive"
 import { useOpenBook } from "@/hooks/useOpenBook"
+import { useLibraryLook } from "@/lib/libraryLook"
+import { tiltStyle } from "@/lib/tilt"
 import {
   useDeleteBookMutation,
   useDownloadBookMutation,
@@ -30,7 +32,7 @@ const THUMBNAIL_HEIGHT_RATIO = 3 / 2
 interface Props {
   book: BookWithRelations
   width?: number
-  /** Show a thin progress line and percent under the cover. */
+  /** Show a thin progress bar under the cover (only while titles are shown). */
   showProgress?: boolean
   /** Long press starts selecting books for Google Drive (when it is set up). */
   selectable?: boolean
@@ -43,6 +45,7 @@ export function BookThumbnail({
   selectable = false,
 }: Props) {
   const { openBook, openDetails, openFormat } = useOpenBook()
+  const [{ showTitles, tilt }] = useLibraryLook()
   const height = Math.round(width * THUMBNAIL_HEIGHT_RATIO)
   const titleFontSize = Math.max(11, Math.min(16, Math.round(width * 0.11)))
   const authorFontSize = Math.max(10, Math.min(14, Math.round(width * 0.1)))
@@ -180,6 +183,7 @@ export function BookThumbnail({
 
   const tile = (
     <Pressable
+      // With titles off this label is how a screen reader hears the book.
       accessibilityLabel={`Open ${book.title}`}
       accessibilityRole="button"
       accessibilityState={selectionActive ? { selected } : {}}
@@ -204,7 +208,16 @@ export function BookThumbnail({
       }}
       style={{ width }}
     >
-      <BookCover book={book} height={height} width={width} />
+      {/* Only the cover leans. A picked book straightens so it stands out. */}
+      <View
+        style={tiltStyle(
+          book.uuid,
+          tilt,
+          selectionActive && driveSelectable && selected,
+        )}
+      >
+        <BookCover book={book} height={height} width={width} />
+      </View>
       {downloadingFormat && (
         <DownloadingIndicator
           className="absolute z-50"
@@ -227,7 +240,7 @@ export function BookThumbnail({
           )}
         </View>
       )}
-      {percent !== null && (
+      {showTitles && percent !== null && (
         <View className="bg-secondary mt-3 h-1 overflow-hidden rounded-full">
           <View
             className="bg-primary h-full"
@@ -235,24 +248,28 @@ export function BookThumbnail({
           />
         </View>
       )}
-      <Text
-        className="mt-3 font-semibold"
-        numberOfLines={2}
-        style={{
-          fontSize: titleFontSize,
-          lineHeight: titleFontSize + 4,
-          maxWidth: width,
-        }}
-      >
-        {book.title}
-      </Text>
-      <Text
-        className="text-muted-foreground mt-0.5"
-        numberOfLines={1}
-        style={{ fontSize: authorFontSize, maxWidth: width }}
-      >
-        {book.authors[0]?.name}
-      </Text>
+      {showTitles && (
+        <>
+          <Text
+            className="mt-3 font-semibold"
+            numberOfLines={2}
+            style={{
+              fontSize: titleFontSize,
+              lineHeight: titleFontSize + 4,
+              maxWidth: width,
+            }}
+          >
+            {book.title}
+          </Text>
+          <Text
+            className="text-muted-foreground mt-0.5"
+            numberOfLines={1}
+            style={{ fontSize: authorFontSize, maxWidth: width }}
+          >
+            {book.authors[0]?.name}
+          </Text>
+        </>
+      )}
     </Pressable>
   )
 

@@ -11,6 +11,7 @@ import { withUniwind } from "uniwind"
 
 import { type BookWithRelations } from "@/database/books"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
+import { useLibraryLook } from "@/lib/libraryLook"
 import { usesSystemHeader } from "@/lib/nativeChrome"
 import { cn } from "@/lib/utils"
 
@@ -35,6 +36,7 @@ interface Props {
 export function BookGrid({ title, books, header, refreshable = true }: Props) {
   const dimensions = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  const [{ showTitles }] = useLibraryLook()
 
   const { isLoading, refetch } = useListAllServerBooks()
 
@@ -115,7 +117,10 @@ export function BookGrid({ title, books, header, refreshable = true }: Props) {
               ) : undefined
             }
             renderItem={({ item: book }) => (
-              <View className="mx-1.5 my-2" style={{ width: thumbnailWidth }}>
+              <View
+                className={showTitles ? "mx-1.5 my-2" : "mx-1.5 my-1.5"}
+                style={{ width: thumbnailWidth }}
+              >
                 <BookThumbnail book={book} selectable width={thumbnailWidth} />
               </View>
             )}

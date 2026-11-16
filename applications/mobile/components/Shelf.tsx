@@ -16,8 +16,8 @@ interface Props {
   showProgress?: boolean
 }
 
-/** Every cover in a row is the same size, with 24px between books. */
-const COVER_WIDTH = 92
+/** Every cover in a row is the same size, with 12px between books. */
+const COVER_WIDTH = 104
 
 export function Shelf({ label, href, books, showProgress = false }: Props) {
   const router = useRouter()
@@ -25,11 +25,9 @@ export function Shelf({ label, href, books, showProgress = false }: Props) {
   if (!books.length) return null
 
   return (
-    <Stack className="gap-3">
+    <Stack className="gap-2">
       <View className="flex-row items-baseline justify-between">
-        <Text variant="h3" className="text-base">
-          {label}
-        </Text>
+        <Text className="text-[15px] font-semibold">{label}</Text>
 
         {href && (
           <TouchableOpacity
@@ -37,8 +35,8 @@ export function Shelf({ label, href, books, showProgress = false }: Props) {
             accessibilityRole="button"
             onPress={() => router.push(href)}
           >
-            <Text className="text-primary text-xs font-semibold">
-              All ({books.length})
+            <Text className="text-primary text-[13px] font-semibold">
+              All {books.length}
             </Text>
           </TouchableOpacity>
         )}
@@ -47,7 +45,7 @@ export function Shelf({ label, href, books, showProgress = false }: Props) {
       <FlatList
         horizontal
         data={books.slice(0, 25)}
-        contentContainerClassName="gap-6 pr-5"
+        contentContainerClassName="gap-3 py-1.5 pr-5"
         showsHorizontalScrollIndicator={false}
         renderItem={({ item: book }) => (
           <BookThumbnail

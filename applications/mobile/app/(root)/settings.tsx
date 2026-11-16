@@ -15,13 +15,16 @@ import { LoginButton } from "@/components/LoginButton"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { ReadingSettings } from "@/components/ReadingSettings"
 import { ScreenBackButton } from "@/components/ScreenBackButton"
+import { ButtonGroup, ButtonGroupButton } from "@/components/ui/ButtonGroup"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Text } from "@/components/ui/text"
 import { DiscordIcon } from "@/icons/DiscordIcon"
+import { useLibraryLook } from "@/lib/libraryLook"
 import { usesSystemHeader } from "@/lib/nativeChrome"
+import { type TiltLevel } from "@/lib/tilt"
 import {
   useDeleteServerMutation,
   useGetGlobalPreferencesQuery,
@@ -34,6 +37,7 @@ export default function Settings() {
   const [deleteServer] = useDeleteServerMutation()
   const [updatePreference] = useUpdateGlobalPreferenceMutation()
   const { data: preferences } = useGetGlobalPreferencesQuery()
+  const [look, updateLook] = useLibraryLook()
 
   if (!preferences) return <LoadingView />
 
@@ -187,6 +191,75 @@ export default function Settings() {
           </View>
         </View>
         <ReadingSettings />
+        <View className="bg-card border-border mb-4 gap-3 rounded-xl border p-4">
+          <Text variant="h2">Library look</Text>
+          <View className="gap-2">
+            <Text maxFontSizeMultiplier={1} className="text-base">
+              Cover tilt
+            </Text>
+            <ButtonGroup<TiltLevel>
+              value={look.tilt}
+              onChange={(tilt) => updateLook({ tilt })}
+            >
+              <ButtonGroupButton
+                accessibilityLabel="Cover tilt off"
+                value="off"
+              >
+                <Text>Off</Text>
+              </ButtonGroupButton>
+              <ButtonGroupButton
+                accessibilityLabel="Cover tilt subtle"
+                value="subtle"
+              >
+                <Text>Subtle</Text>
+              </ButtonGroupButton>
+              <ButtonGroupButton
+                accessibilityLabel="Cover tilt medium"
+                value="medium"
+              >
+                <Text>Medium</Text>
+              </ButtonGroupButton>
+              <ButtonGroupButton
+                accessibilityLabel="Cover tilt strong"
+                value="strong"
+              >
+                <Text>Strong</Text>
+              </ButtonGroupButton>
+            </ButtonGroup>
+          </View>
+          <View className="w-full flex-row items-center justify-between gap-4">
+            <Text maxFontSizeMultiplier={1} className="flex-1 text-base">
+              Titles under covers
+            </Text>
+            <Switch
+              accessibilityLabel="Show titles under covers"
+              checked={look.showTitles}
+              onCheckedChange={(showTitles) => updateLook({ showTitles })}
+            />
+          </View>
+          <View className="w-full flex-row items-center justify-between gap-4">
+            <Text maxFontSizeMultiplier={1} className="flex-1 text-base">
+              Blurred fill behind audiobook covers
+            </Text>
+            <Switch
+              accessibilityLabel="Blurred fill behind audiobook covers"
+              checked={look.blurFill}
+              onCheckedChange={(blurFill) => updateLook({ blurFill })}
+            />
+          </View>
+          <View className="w-full flex-row items-center justify-between gap-4">
+            <Text maxFontSizeMultiplier={1} className="flex-1 text-base">
+              Currently reading strip
+            </Text>
+            <Switch
+              accessibilityLabel="Show the currently reading strip"
+              checked={look.showCurrentlyReading}
+              onCheckedChange={(showCurrentlyReading) =>
+                updateLook({ showCurrentlyReading })
+              }
+            />
+          </View>
+        </View>
         <View className="bg-card border-border mb-4 gap-3 rounded-xl border p-4">
           <Text variant="h2">Logging</Text>
           <Button

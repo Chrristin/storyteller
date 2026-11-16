@@ -63,8 +63,10 @@ import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 import { pickFormat, useOpenBook } from "@/hooks/useOpenBook"
 import { useBookPrefs } from "@/lib/bookPrefs"
 import { useBookPrefActions } from "@/lib/bookPrefsSync"
+import { useLibraryLook } from "@/lib/libraryLook"
 import { usesSystemHeader } from "@/lib/nativeChrome"
 import { useOpenLibraryExcerpt } from "@/lib/openLibrary"
+import { heroTiltStyle } from "@/lib/tilt"
 import {
   useCancelDownloadMutation,
   useDeleteBookMutation,
@@ -107,6 +109,9 @@ export default function BookDetailsScreen() {
   const { refetch } = useListAllServerBooks()
   const { openFormat } = useOpenBook()
   const { width: windowWidth } = useWindowDimensions()
+  const [{ tilt }] = useLibraryLook()
+  const heroWidth = Math.min(Math.round(windowWidth * 0.5), 240)
+  const heroHeight = Math.round(heroWidth * 1.5)
   const prefs = useBookPrefs(book?.uuid)
   const prefActions = useBookPrefActions()
   const onPrimary = useCSSVariable("--color-primary-foreground") as string
@@ -202,14 +207,17 @@ export default function BookDetailsScreen() {
               }
             }}
           >
-            <BookCover
-              badge={false}
-              book={book}
-              keepSlot={false}
-              className="rounded-none border-0"
-              height={Math.min(Math.round(windowWidth * 1.25), 520)}
-              width={windowWidth}
-            />
+            <View className="items-center py-4">
+              <View style={heroTiltStyle(tilt)}>
+                <BookCover
+                  badge={false}
+                  book={book}
+                  progressLine={false}
+                  height={heroHeight}
+                  width={heroWidth}
+                />
+              </View>
+            </View>
             <View className="bg-primary absolute right-4 bottom-4 size-14 items-center justify-center rounded-full">
               {downloadingFormat && (
                 <View className="absolute">
