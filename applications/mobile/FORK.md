@@ -111,17 +111,25 @@ No server change was needed.
 ## Sync to Google Drive (for a Kobo)
 
 The server copies the plain ebook of selected books into a `Storyteller` folder
-inside the `Rakuten Kobo` folder in Google Drive, which the Kobo's own Drive sync
-reads. The app only asks the server to do it; Google sign-in is set up once in the
-server's web settings (Settings, Server, Google Drive).
+inside the `Rakuten Kobo` folder in the user's own Google Drive, which the Kobo's
+own Drive sync reads. It is per user: the server owner saves one Google client in
+the web settings (Settings, Server, Google Drive), and each user connects their
+own Google account in their web Preferences (Devices tab). The app only asks the
+server to do it.
 
-- **Book page:** a "Google Drive" card with a Sync to Drive button, shown only
-  when the server reports Drive as connected and the book has an ebook.
-- **Library:** long press a book to start selecting, then "Sync N to Drive".
-  When Drive is connected, long press on those tiles starts selection instead of
-  the Open book / Play audiobook menu.
-- Books already in the folder are skipped unless "Replace files already in Drive"
-  is ticked. Only the ebook is sent, never an audiobook or read-aloud version.
+- **What shows is per user.** The app asks the server (`GET /delivery`) what the
+  signed-in user can do. Drive buttons appear only for users who connected Google;
+  "Send to Kindle" appears only for users who saved a Kindle address when the
+  server can send email. A user with neither sees neither.
+- **Book page:** a "Google Drive" card and a "Send to Kindle" card, each shown
+  only when it applies and the book has an ebook.
+- **Library:** long press a book to start selecting, then "Sync N to Drive" and/or
+  "Send N to Kindle". When either applies, long press on those tiles starts
+  selection instead of the Open book / Play audiobook menu.
+- Drive: books already in the folder are skipped unless "Replace files already in
+  Drive" is ticked. Only the ebook is sent, never an audiobook or read-aloud
+  version. Kindle: groups of up to 25 books, one email per group, and the server
+  refuses a group over about 25 MB.
 
 ## Signing the Android app
 
