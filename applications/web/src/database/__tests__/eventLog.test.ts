@@ -164,6 +164,7 @@ const TABLES = {
   eventLog: { exclude: "the event log itself" },
   bookAccessView: { exclude: "view; book_access is the materialization" },
   position: { exclude: "not part of the v3 API" },
+  bookNote: { exclude: "fork-only shared notes, not part of the v3 API" },
   progressionHistory: { exclude: "server-internal history, not synced" },
   progressionReference: {
     exclude:
