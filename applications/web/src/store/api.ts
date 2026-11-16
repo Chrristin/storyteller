@@ -2755,6 +2755,10 @@ export const api = createApi({
     getDriveStatus: build.query<DriveStatus, void>({
       query: () => "/drive",
       providesTags: ["GoogleDrive"],
+      // These answers belong to the signed-in user. Do not keep them after the
+      // last screen using them closes, so switching users in the same tab never
+      // shows the previous user's Drive or Kindle state.
+      keepUnusedDataFor: 0,
     }),
     getDriveClient: build.query<{ clientId: string | null }, void>({
       query: () => "/drive/client",
@@ -2784,6 +2788,7 @@ export const api = createApi({
     getDelivery: build.query<DeliveryStatus, void>({
       query: () => "/delivery",
       providesTags: ["Delivery"],
+      keepUnusedDataFor: 0,
     }),
     getDriveBooks: build.query<DriveBookFiles, UUID[]>({
       query: (books) => ({
@@ -2792,6 +2797,7 @@ export const api = createApi({
         body: { books },
       }),
       providesTags: ["DriveBooks"],
+      keepUnusedDataFor: 0,
     }),
     syncBooksToDrive: build.mutation<
       DriveSyncResponse,
