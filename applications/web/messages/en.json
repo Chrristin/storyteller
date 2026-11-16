@@ -1786,7 +1786,9 @@
               "cover": "Zoom to fill",
               "contain": "Fit with backdrop"
             },
-            "fitTip": "True size keeps the art's own shape, so it is only available when covers sit inside the card."
+            "fitTip": "True size keeps the art's own shape, so it is only available when covers sit inside the card.",
+            "titlesLabel": "Titles under covers",
+            "titlesHint": "Show the title and author under each cover. Off by default; audiobook covers show them over the waves instead."
           },
           "opening": {
             "title": "Opening books",

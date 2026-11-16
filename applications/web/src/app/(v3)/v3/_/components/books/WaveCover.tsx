@@ -27,11 +27,14 @@ export function WaveCover({
   book,
   image,
   width,
+  showMeta = false,
   className,
 }: {
   book: BookWithRelations
   image: BookCoverImage
   width: number
+  /** Draw the author and title over the waves at the bottom of the card. */
+  showMeta?: boolean
   className?: string
 }) {
   const colorsEnabled = useCoverColorsEnabled()
@@ -43,6 +46,7 @@ export function WaveCover({
   }, [colorsEnabled, colors])
 
   const fill = useMemo(() => generateWaves(book.uuid, main), [book.uuid, main])
+  const authors = book.authors.map((a) => a.name).join(", ")
   const aspect = Math.min(imageAspect(image) ?? 1, 5 / 4)
 
   return (
@@ -73,6 +77,19 @@ export function WaveCover({
           className="h-full w-full rounded-none"
         />
       </div>
+      {showMeta && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex min-w-0 flex-col gap-0.5 bg-linear-to-b from-transparent to-black/55 pt-6 pr-7 pb-2.5 pl-2.5 text-white">
+          {authors && (
+            <p className="line-clamp-1 text-xs text-white/80">{authors}</p>
+          )}
+          <p
+            lang={book.language ?? undefined}
+            className="line-clamp-2 text-sm leading-tight font-medium"
+          >
+            {book.title}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

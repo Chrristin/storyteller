@@ -28,6 +28,7 @@ import {
   bookItemDomId,
 } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import { usePanelResize } from "@/app/(v3)/v3/_/components/books/panel-resize-context"
+import { useUserPreferences } from "@/app/(v3)/v3/_/components/user-preferences-provider"
 import { useBookInSidePanel } from "@/app/(v3)/v3/_/hooks/use-open-book"
 import {
   useCommon,
@@ -122,9 +123,11 @@ export function BookGrid({
 
   const animate = useLayoutAnimations() && !isMobile
 
+  const { titlesUnderCovers } = useUserPreferences()
   const metaHeight = metaHeightFor(
     displayFields ?? ["authors", "title"],
     gridCardSize,
+    titlesUnderCovers,
   )
 
   const geometry = useMemo<VirtualGridGeometry>(

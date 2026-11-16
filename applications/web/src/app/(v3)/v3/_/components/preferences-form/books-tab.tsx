@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@v3/_/components/ui/select"
+import { Switch } from "@v3/_/components/ui/switch"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { MultidimensionalRating } from "@/app/(v3)/v3/_/components/books/BookDetails/sections/MultidimensionalRatingLazy"
@@ -86,6 +87,7 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
   const gridCoverDisplayDefault = useResolvedDefault("gridCoverDisplay")
   const doubleCoverAlignmentDefault = useResolvedDefault("doubleCoverAlignment")
   const coverFitDefault = useResolvedDefault("coverFit")
+  const titlesUnderCoversDefault = useResolvedDefault("titlesUnderCovers")
   const bookDetailDisplayDefault = useResolvedDefault("bookDetailDisplay")
   const ratingIconDefault = useResolvedDefault("ratingIcon")
   const bookOpenTargetDefault = useResolvedDefault("bookOpenTarget")
@@ -213,6 +215,27 @@ export function BooksTab({ form }: { form: PreferencesFormType }) {
 
               <CoverFitPreview fit={coverFit} fill={fillsCard} />
             </div>
+
+            <Controller
+              name="titlesUnderCovers"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="vertical">
+                  <div className="flex flex-col gap-1">
+                    <SettingLabel field="titlesUnderCovers">
+                      {t("gridDisplay.titlesLabel")}
+                    </SettingLabel>
+                    <FieldDescription>
+                      {t("gridDisplay.titlesHint")}
+                    </FieldDescription>
+                  </div>
+                  <Switch
+                    checked={field.value ?? titlesUnderCoversDefault}
+                    onCheckedChange={field.onChange}
+                  />
+                </Field>
+              )}
+            />
           </CardContent>
         </Card>
       </PreferencesSection>

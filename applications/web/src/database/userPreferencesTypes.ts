@@ -50,6 +50,7 @@ export const UserPreferencesSchema = z.object({
   gridCardSize: z.enum(GridCardSizes),
   doubleCoverAlignment: z.enum(DoubleCoverAlignments),
   coverFit: z.enum(CoverFits),
+  titlesUnderCovers: z.boolean(),
   bookDetailDisplay: z.enum(BookDetailDisplays),
   bookDetail3dView: z.number().int().min(0).nullable(),
   bookDetail3dViewAudio: z.number().int().min(0).nullable(),
@@ -84,6 +85,7 @@ export const UserPreferencesFormSchema = UserPreferencesSchema.extend({
   doubleCoverAlignment:
     UserPreferencesSchema.shape.doubleCoverAlignment.nullable(),
   coverFit: UserPreferencesSchema.shape.coverFit.nullable(),
+  titlesUnderCovers: UserPreferencesSchema.shape.titlesUnderCovers.nullable(),
   bookDetailDisplay: UserPreferencesSchema.shape.bookDetailDisplay.nullable(),
   bookDetail3dView: UserPreferencesSchema.shape.bookDetail3dView.nullable(),
   bookDetail3dViewAudio:
@@ -137,6 +139,7 @@ export const defaultUserPreferences: UserPreferences = {
   gridCardSize: "medium",
   doubleCoverAlignment: "auto",
   coverFit: "true-size",
+  titlesUnderCovers: false,
   bookDetailDisplay: "3d",
   bookDetail3dView: null,
   bookDetail3dViewAudio: null,

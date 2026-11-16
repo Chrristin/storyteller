@@ -54,7 +54,11 @@ import {
 } from "@/store/slices/uiSettingsSlice"
 import { type UUID } from "@/uuid"
 
-import { TITLE_HEIGHT_FOR_CARD_SIZE } from "./bookCardSizing"
+import {
+  TITLE_HEIGHT_FOR_CARD_SIZE,
+  coverLabel,
+  showMetaUnderCard,
+} from "./bookCardSizing"
 
 type BookCardProps = {
   book: BookWithRelations
@@ -386,7 +390,12 @@ export const BookCard = memo(function BookCard({
   const isQueued = book.readaloud?.status === "QUEUED" && showProcessingBadge
 
   const isMissing = showMissingBadge && hasMissingMedia(book)
-  const { gridCoverDisplay } = useUserPreferences()
+  const { gridCoverDisplay, titlesUnderCovers } = useUserPreferences()
+  const showMeta = showMetaUnderCard(titlesUnderCovers, displayFields)
+  const accessibleName = coverLabel(
+    book.title,
+    book.authors.map((a) => a.name),
+  )
   const fillCover = gridCoverDisplay !== "auto"
   const hasDualFormat = isDual(book)
   const audioImage = book.audiobook?.cover
@@ -447,6 +456,7 @@ export const BookCard = memo(function BookCard({
             book={book}
             image={waveImage}
             width={coverWidth}
+            showMeta={!titlesUnderCovers}
             className="rounded-card"
           />
         ) : (
@@ -469,6 +479,16 @@ export const BookCard = memo(function BookCard({
               className={fillCover ? "rounded-card" : undefined}
             />
           </div>
+        )}
+
+        {!showMeta && !onClick && (
+          <V3Link
+            href={`/books/${book.uuid}`}
+            prefetch={false}
+            aria-label={accessibleName}
+            title={accessibleName}
+            className="rounded-card absolute inset-0 z-10"
+          />
         )}
 
         {onToggleSelection && (
@@ -502,7 +522,8 @@ export const BookCard = memo(function BookCard({
             handle={handle}
             aria-label="Open menu"
             className={cn(
-              "absolute bottom-2 left-1.5 z-20",
+              "absolute bottom-2 z-20",
+              waveImage && !titlesUnderCovers ? "right-1.5" : "left-1.5",
               "flex size-4 items-center justify-center rounded-full text-white transition-colors",
               !isMobile &&
                 !handle.isOpen &&
@@ -518,7 +539,7 @@ export const BookCard = memo(function BookCard({
         )}
       </div>
 
-      {displayRows.length > 0 && (
+      {showMeta && displayRows.length > 0 && (
         <div className="mt-2 flex min-h-0 flex-1 flex-col gap-0.5 px-1">
           {displayRows.map((row) => {
             const [field] = row
@@ -659,6 +680,8 @@ export const BookCard = memo(function BookCard({
               }
             : undefined
         }
+        {...(!showMeta &&
+          onClick && { "aria-label": accessibleName, title: accessibleName })}
         tabIndex={keyboardNav ? -1 : 0}
         onClick={onClick ? handleCardClick : undefined}
         className={cn(
