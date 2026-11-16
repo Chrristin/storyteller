@@ -81,6 +81,13 @@ const nextConfig: import("next").NextConfig = {
     },
     { source: "/account", destination: "/preferences", permanent: false },
     { source: "/users", destination: "/settings?tab=users", permanent: false },
+    // Google sends the browser here after the Drive sign-in; the query
+    // (`?drive=<result>`) is carried over to the destination.
+    {
+      source: "/settings/server",
+      destination: "/settings?tab=server&section=googleDrive",
+      permanent: false,
+    },
   ],
   rewrites: () => ({
     beforeFiles: [

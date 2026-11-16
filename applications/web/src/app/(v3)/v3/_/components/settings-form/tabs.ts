@@ -45,6 +45,7 @@ export const SETTINGS_SECTIONS = [
   { id: "upload", page: "server", key: "upload", platform: "web" },
   { id: "email", page: "server", key: "email" },
   { id: "opds", page: "server", key: "opds" },
+  { id: "googleDrive", page: "server", key: "googleDrive" },
   { id: "updates", page: "server", key: "updates", platform: "desktop" },
   { id: "invites", page: "users", key: "users-invites" },
   { id: "usersList", page: "users", key: "users-list" },

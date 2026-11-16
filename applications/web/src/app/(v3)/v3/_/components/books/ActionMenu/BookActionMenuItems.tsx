@@ -40,6 +40,7 @@ import { CreateCollectionDialog } from "@/app/(v3)/v3/_/components/books/CreateC
 import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSeriesDialog"
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { DeleteBooksDialog } from "@/app/(v3)/v3/_/components/books/DeleteBooksDialog"
+import { useBulkDriveSync } from "@/app/(v3)/v3/_/components/books/DriveSync"
 import { useSendToKindle } from "@/app/(v3)/v3/_/components/books/SendToKindle"
 import {
   bookLink,
@@ -178,6 +179,8 @@ export function useBookActionItems({
   const canDownload = !!permissions?.bookDownload
   const tShare = useTranslation("Sharing")
   const kindle = useSendToKindle()
+  const drive = useBulkDriveSync(books, mode === "bulk")
+  const tDrive = useTranslation("Sharing.drive")
   const postDownload = usePostDownload()
   const basePath = useVersionBasePath()
 
@@ -699,6 +702,15 @@ export function useBookActionItems({
       })
     }
 
+    if (mode === "bulk" && drive.available) {
+      entries.push({
+        key: "syncToDrive",
+        label: tDrive.plain("bulkSync", { count: drive.count }),
+        icon: <icon.Upload className="size-4" />,
+        onSelect: drive.openDialog,
+      })
+    }
+
     if (singleBook) {
       const hasEbook = !kindleBlocked
       entries.push({
@@ -1032,6 +1044,7 @@ export function useBookActionItems({
 
       {processingRun.dialog}
       {kindle.dialog}
+      {mode === "bulk" && drive.dialog}
       {postDownload.form}
     </>
   )

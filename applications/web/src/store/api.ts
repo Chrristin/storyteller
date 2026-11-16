@@ -101,6 +101,11 @@ import {
 } from "@/database/userPreferencesTypes"
 import { type UserBookRating } from "@/database/userRatings"
 import { type ProfileUpdate, type UserPermissionSet } from "@/database/users"
+import {
+  type DriveBookFiles,
+  type DriveStatus,
+  type DriveSyncResponse,
+} from "@/driveSync"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import {
   type JobListFilter,
@@ -239,6 +244,8 @@ export const api = createApi({
     "MaintenanceStorage",
     "Orphans",
     "MetadataProviders",
+    "GoogleDrive",
+    "DriveBooks",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -2741,6 +2748,46 @@ export const api = createApi({
       query: () => ({ url: "/metadata/providers", method: "DELETE" }),
       invalidatesTags: ["MetadataProviders"],
     }),
+    getDriveStatus: build.query<DriveStatus, void>({
+      query: () => "/drive",
+      providesTags: ["GoogleDrive"],
+    }),
+    saveDriveClient: build.mutation<
+      { saved: true },
+      { clientId: string; clientSecret: string }
+    >({
+      query: (body) => ({ url: "/drive", method: "PUT", body }),
+      invalidatesTags: ["GoogleDrive"],
+    }),
+    disconnectDrive: build.mutation<{ disconnected: true }, { all?: boolean }>({
+      query: ({ all }) => ({
+        url: "/drive",
+        method: "DELETE",
+        ...(all && { params: { all: "true" } }),
+      }),
+      invalidatesTags: ["GoogleDrive", "DriveBooks"],
+    }),
+    connectDrive: build.mutation<
+      { url: string; redirectUri: string },
+      { origin: string }
+    >({
+      query: (body) => ({ url: "/drive/connect", method: "POST", body }),
+    }),
+    getDriveBooks: build.query<DriveBookFiles, UUID[]>({
+      query: (books) => ({
+        url: "/drive/books",
+        method: "POST",
+        body: { books },
+      }),
+      providesTags: ["DriveBooks"],
+    }),
+    syncBooksToDrive: build.mutation<
+      DriveSyncResponse,
+      { books: UUID[]; overwrite?: boolean }
+    >({
+      query: (body) => ({ url: "/drive/sync", method: "POST", body }),
+      invalidatesTags: ["DriveBooks"],
+    }),
     importBookMetadata: build.mutation<
       BookWithRelations,
       { bookUuid: UUID } & MetadataImportBody
@@ -2993,6 +3040,12 @@ export const {
   useGetMetadataProvidersQuery,
   useSetHardcoverTokenMutation,
   useClearHardcoverTokenMutation,
+  useGetDriveStatusQuery,
+  useSaveDriveClientMutation,
+  useDisconnectDriveMutation,
+  useConnectDriveMutation,
+  useGetDriveBooksQuery,
+  useSyncBooksToDriveMutation,
   useImportBookMetadataMutation,
   useAutoImportBookMetadataMutation,
   useRefreshBookRatingsMutation,

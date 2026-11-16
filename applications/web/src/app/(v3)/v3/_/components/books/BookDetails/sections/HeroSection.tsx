@@ -10,6 +10,7 @@ import {
 import { useBookForm } from "@v3/_/components/books/BookDetails/BookFormProvider"
 import { CoverEditor } from "@v3/_/components/books/BookDetails/CoverEditor"
 import { useProcessingRun } from "@v3/_/components/books/BookDetails/useProcessingRun"
+import { SyncToDriveButton } from "@v3/_/components/books/DriveSync"
 import {
   ProgressDisplayBar,
   getReadingProgress,
@@ -515,6 +516,8 @@ export function HeroSection({
                     }
                   />
                 )}
+
+                <SyncToDriveButton book={book} />
               </div>
             </div>
           </motion.div>
