@@ -292,6 +292,15 @@ export async function scan(opts: {
   report.logger.info({ msg: report.formatSummary() })
   pushRecentReport(report)
 
+  if (report.summary().addedBooks.length > 0) {
+    try {
+      const { getLibraryTidyScheduler } = await import("@/libraryTidyScheduler")
+      getLibraryTidyScheduler().requestAfterScan()
+    } catch (err) {
+      report.logger.warn({ msg: "Could not schedule library tidy", err })
+    }
+  }
+
   return {
     scannedBookUuids: locked?.scannedBookUuids ?? new Set<UUID>(),
     processedCandidates: locked?.processedCandidates ?? 0,
