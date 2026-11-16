@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -7,17 +7,29 @@ import {
   driveErrorMessage,
   summarizeDriveResults,
 } from "@/lib/driveSync"
+import {
+  describeKindleStop,
+  kindleBatches,
+  summarizeKindleSend,
+} from "@/lib/kindleSend"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useListServersQuery } from "@/store/localApi"
 import { serverApi } from "@/store/serverApi"
 import { type UUID } from "@/uuid"
 
+export interface ServerDelivery {
+  drive: boolean
+  kindle: boolean
+  kindleAddress: string | null
+}
+
 /**
- * Which servers have Google Drive set up and signed in. Anything that is not
- * a clear "connected: true" counts as not connected, so the Drive UI stays
- * hidden for people who do not use it, and when the server cannot be reached.
+ * What THIS user can do on each server: Drive only if they connected their own
+ * Google account, Kindle only if the server can send email and they saved an
+ * address. Anything that is not a clear true (an unreachable server, or an
+ * older server without /delivery) counts as not available, so nothing shows.
  */
-export function useDriveServers() {
+export function useDelivery() {
   const dispatch = useAppDispatch()
   const { data: servers } = useListServersQuery()
 
@@ -25,9 +37,7 @@ export function useDriveServers() {
     if (!servers) return
     const subscriptions = servers.map((server) =>
       dispatch(
-        serverApi.endpoints.getDriveStatus.initiate({
-          serverUuid: server.uuid,
-        }),
+        serverApi.endpoints.getDelivery.initiate({ serverUuid: server.uuid }),
       ),
     )
     return () => {
@@ -35,37 +45,72 @@ export function useDriveServers() {
     }
   }, [dispatch, servers])
 
-  const connectedKey = useAppSelector((state) =>
-    (servers ?? [])
-      .filter(
-        (server) =>
-          serverApi.endpoints.getDriveStatus.select({
-            serverUuid: server.uuid,
-          })(state).data?.connected === true,
-      )
-      .map((server) => server.uuid)
-      .join(","),
+  // A string keeps the selector result stable between renders.
+  const key = useAppSelector((state) =>
+    JSON.stringify(
+      (servers ?? []).map((server) => {
+        const data = serverApi.endpoints.getDelivery.select({
+          serverUuid: server.uuid,
+        })(state).data
+        return [
+          server.uuid,
+          data?.drive?.connected === true,
+          data?.kindle?.available === true,
+          data?.kindle?.defaultAddress ?? null,
+        ]
+      }),
+    ),
   )
 
-  return connectedKey ? (connectedKey.split(",") as UUID[]) : []
+  return useMemo(() => {
+    const map = new Map<UUID, ServerDelivery>()
+    for (const [uuid, drive, kindle, address] of JSON.parse(key) as [
+      UUID,
+      boolean,
+      boolean,
+      string | null,
+    ][]) {
+      map.set(uuid, { drive, kindle, kindleAddress: address })
+    }
+    return map
+  }, [key])
 }
 
-/** True when this book is on a server that has Drive connected. */
+/** What this user can do with this book on its server. */
+export function useBookDelivery(book: BookWithRelations | null | undefined) {
+  const delivery = useDelivery()
+  const info =
+    canSend(book) && book.serverUuid ? delivery.get(book.serverUuid) : undefined
+  return {
+    drive: info?.drive === true,
+    kindle: info?.kindle === true,
+    kindleAddress: info?.kindleAddress ?? null,
+  }
+}
+
+/** True when this book is on a server where this user has Drive connected. */
 export function useDriveAvailable(book: BookWithRelations | null | undefined) {
-  const connected = useDriveServers()
-  return canSyncToDrive(book) && connected.includes(book.serverUuid)
+  return useBookDelivery(book).drive
 }
 
-export function canSyncToDrive(
+/** True when this book can be sent to this user's Kindle. */
+export function useKindleAvailable(book: BookWithRelations | null | undefined) {
+  return useBookDelivery(book).kindle
+}
+
+/** True when the book has an ebook and lives on a server. */
+export function canSend(
   book: BookWithRelations | null | undefined,
 ): book is BookWithRelations & { serverUuid: UUID } {
   return !!book && book.serverUuid !== null && !!book.ebook
 }
 
+export const canSyncToDrive = canSend
+
 // Selection mode for the library grids. One selection for the whole app; the
 // screens that show the bars clear it when they go away.
 
-interface SelectedBook {
+export interface SelectedBook {
   uuid: UUID
   title: string
   serverUuid: UUID
@@ -171,6 +216,50 @@ export function useSyncToDrive() {
       return {
         ok: true,
         message: summarizeDriveResults(results).message,
+      } satisfies DriveBatchOutcome
+    },
+    [dispatch],
+  )
+}
+
+/** Sends books to the user's Kindle, one email per group of 25, in order. */
+export function useSendToKindle() {
+  const dispatch = useAppDispatch()
+
+  return useCallback(
+    async (books: readonly SelectedBook[]) => {
+      const byServer = new Map<UUID, UUID[]>()
+      for (const book of books) {
+        byServer.set(book.serverUuid, [
+          ...(byServer.get(book.serverUuid) ?? []),
+          book.uuid,
+        ])
+      }
+
+      let sent = 0
+      let skipped = 0
+      try {
+        for (const [serverUuid, uuids] of byServer) {
+          for (const batch of kindleBatches(uuids)) {
+            const response = await dispatch(
+              serverApi.endpoints.sendBooksToKindle.initiate({
+                serverUuid,
+                books: batch,
+              }),
+            ).unwrap()
+            sent += response.sent
+            skipped += response.skipped
+          }
+        }
+      } catch (error) {
+        return {
+          ok: false,
+          message: describeKindleStop(sent, skipped, error),
+        } satisfies DriveBatchOutcome
+      }
+      return {
+        ok: true,
+        message: summarizeKindleSend(sent, skipped),
       } satisfies DriveBatchOutcome
     },
     [dispatch],

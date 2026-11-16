@@ -45,6 +45,21 @@ export interface DriveSyncResponse {
   results: DriveSyncResult[]
 }
 
+export interface Delivery {
+  drive: DriveStatus
+  kindle: {
+    smtpConfigured: boolean
+    hasAddress: boolean
+    defaultAddress: string | null
+    available: boolean
+  }
+}
+
+export interface KindleSendResponse {
+  sent: number
+  skipped: number
+}
+
 export const serverApi = createApi({
   reducerPath: "serverApi",
   tagTypes: ["DriveBooks"],
@@ -238,6 +253,20 @@ export const serverApi = createApi({
     getDriveStatus: build.query<DriveStatus, { serverUuid: UUID }>({
       query: ({ serverUuid }) => ({ url: "/drive", serverUuid }),
     }),
+    getDelivery: build.query<Delivery, { serverUuid: UUID }>({
+      query: ({ serverUuid }) => ({ url: "/delivery", serverUuid }),
+    }),
+    sendBooksToKindle: build.mutation<
+      KindleSendResponse,
+      { serverUuid: UUID; books: UUID[] }
+    >({
+      query: ({ serverUuid, books }) => ({
+        url: "/books/kindle",
+        serverUuid,
+        method: "POST",
+        body: { books },
+      }),
+    }),
     listDriveBooks: build.query<
       Record<string, DriveBookFile>,
       { serverUuid: UUID; books: UUID[] }
@@ -269,6 +298,8 @@ export const {
   useListBooksQuery,
   useLazyGetBookQuery,
   useGetDriveStatusQuery,
+  useGetDeliveryQuery,
+  useSendBooksToKindleMutation,
   useListDriveBooksQuery,
   useSyncBooksToDriveMutation,
 } = serverApi

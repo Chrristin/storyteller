@@ -30,6 +30,7 @@ import { BookCover } from "@/components/BookCover"
 import BookDescription from "@/components/BookDescription"
 import { BookNotes } from "@/components/BookNotes"
 import { DriveCard } from "@/components/DriveCard"
+import { KindleCard } from "@/components/KindleCard"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { ScreenBackButton } from "@/components/ScreenBackButton"
@@ -529,6 +530,7 @@ export default function BookDetailsScreen() {
               </Stack>
             </Group>
             <DriveCard book={book} />
+            <KindleCard book={book} />
             {!!book.series.length && (
               <>
                 <Group className="mb-2 flex-row items-center gap-1">

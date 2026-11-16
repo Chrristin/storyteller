@@ -8,7 +8,7 @@ import {
   canSyncToDrive,
   driveSelection,
   useDriveSelection,
-  useDriveServers,
+  useDelivery,
 } from "@/hooks/useDrive"
 import { useOpenBook } from "@/hooks/useOpenBook"
 import {
@@ -53,11 +53,14 @@ export function BookThumbnail({
   const [downloadBook] = useDownloadBookMutation()
   const [deleteBook] = useDeleteBookMutation()
 
-  const driveServers = useDriveServers()
+  const delivery = useDelivery()
   const selection = useDriveSelection()
   const selectionActive = selection.size > 0
   const driveSelectable =
-    selectable && canSyncToDrive(book) && driveServers.includes(book.serverUuid)
+    selectable &&
+    canSyncToDrive(book) &&
+    (delivery.get(book.serverUuid)?.drive === true ||
+      delivery.get(book.serverUuid)?.kindle === true)
   const selected = selection.has(book.uuid)
 
   const { data: statuses } = useListStatusesQuery()
