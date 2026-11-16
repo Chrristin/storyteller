@@ -1,4 +1,4 @@
-import { type GapSeriesInput } from "@/seriesGaps"
+import { type GapSeriesInput, mergeSeriesByName } from "@/seriesGaps"
 import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
@@ -60,5 +60,5 @@ export async function getSeriesForGaps(
     }
     entry.books.push({ bookUuid: row.bookUuid, position: row.position })
   }
-  return [...bySeries.values()]
+  return mergeSeriesByName([...bySeries.values()])
 }

@@ -2,6 +2,11 @@ import { db } from "@/database/connection"
 import { mergeCreators } from "@/database/creators"
 import { mergeSeries } from "@/database/series"
 import { logger } from "@/logging"
+import {
+  chooseCanonical,
+  normaliseAuthorName,
+  normaliseSeriesName,
+} from "@/nameKey"
 import { type UUID } from "@/uuid"
 
 /**
@@ -29,63 +34,7 @@ export type TidyRunResult = {
   merges: (TidyMerge & { merged: boolean; error?: string })[]
 }
 
-function baseNormalise(name: string): string {
-  return name
-    .normalize("NFKD")
-    .replace(/\p{M}+/gu, "")
-    .toLowerCase()
-    .replace(/['‘’ʼ`]/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .replace(/\s+/g, " ")
-}
-
-export function normaliseAuthorName(name: string): string {
-  const tokens = baseNormalise(name).split(" ").filter(Boolean)
-  const out: string[] = []
-  let initials = ""
-  const flush = () => {
-    if (initials) out.push(initials)
-    initials = ""
-  }
-  for (const token of tokens) {
-    if ([...token].length === 1) {
-      initials += token
-    } else {
-      flush()
-      out.push(token)
-    }
-  }
-  flush()
-  return out.join(" ")
-}
-
-export function normaliseSeriesName(name: string): string {
-  let key = baseNormalise(name)
-  const stripped = key
-    .replace(/^the /, "")
-    .replace(/ (series|saga|trilogy|cycle)$/, "")
-  // Never reduce a name to nothing, for example a series called "The Series".
-  if (stripped) key = stripped
-  return key
-}
-
-function hasProperCase(name: string): boolean {
-  return name !== name.toLowerCase() && name !== name.toUpperCase()
-}
-
-/** The name used by most books, then proper capitalisation, then the longest. */
-export function chooseCanonical(entities: TidyEntity[]): TidyEntity {
-  const sorted = [...entities].sort(
-    (a, b) =>
-      b.books - a.books ||
-      Number(hasProperCase(b.name)) - Number(hasProperCase(a.name)) ||
-      b.name.length - a.name.length ||
-      a.name.localeCompare(b.name) ||
-      a.uuid.localeCompare(b.uuid),
-  )
-  return sorted[0] as TidyEntity
-}
+export { chooseCanonical, normaliseAuthorName, normaliseSeriesName }
 
 export function groupDuplicates(
   kind: TidyKind,

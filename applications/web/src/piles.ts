@@ -1,3 +1,9 @@
+import {
+  chooseCanonical,
+  normaliseAuthorName,
+  normaliseSeriesName,
+} from "@/nameKey"
+
 /**
  * Pure helpers for the Piles page and the series page placeholders.
  */
@@ -42,10 +48,12 @@ function time(date: string | Date) {
 /** The first three books by series position (unpositioned last), then title. */
 export function seriesCovers<B extends PileBook>(
   books: B[],
-  seriesUuid: string,
+  seriesUuid: string | ReadonlySet<string>,
 ): B[] {
+  const uuids =
+    typeof seriesUuid === "string" ? new Set([seriesUuid]) : seriesUuid
   const positionOf = (book: B) =>
-    book.series.find((s) => s.uuid === seriesUuid)?.position
+    book.series.find((s) => uuids.has(s.uuid))?.position
   return [...books]
     .sort(
       (a, b) =>
@@ -63,7 +71,10 @@ export function authorCovers<B extends PileBook>(books: B[]): B[] {
 }
 
 /**
- * Groups books into piles by series, or by first author. Sorted by name.
+ * Groups books into piles by series, or by first author. Entries are grouped by
+ * their normalised name, so spellings of one name share a pile. The pile uuid
+ * is the entry with the most books (tie: smallest uuid), which is also the
+ * series the missing counts are keyed by. Sorted by name.
  * `missingBySeries` maps a series uuid to its number of missing books.
  */
 export function buildPiles<B extends PileBook>(
@@ -71,32 +82,67 @@ export function buildPiles<B extends PileBook>(
   kind: PileKind,
   missingBySeries: ReadonlyMap<string, number> = new Map(),
 ): Pile<B>[] {
-  const groups = new Map<string, { name: string; books: B[] }>()
+  const normalise =
+    kind === "series" ? normaliseSeriesName : normaliseAuthorName
+  type Entry = { uuid: string; name: string; books: Map<string, B> }
+  const groups = new Map<
+    string,
+    { entries: Map<string, Entry>; books: Map<string, B> }
+  >()
   for (const book of books) {
     const refs =
       kind === "series"
         ? book.series.map((s) => ({ uuid: s.uuid, name: s.name }))
         : book.authors.slice(0, 1)
     for (const ref of refs) {
-      if (!ref.name.trim()) continue
-      const group = groups.get(ref.uuid)
-      if (group) group.books.push(book)
-      else groups.set(ref.uuid, { name: ref.name, books: [book] })
+      const key = normalise(ref.name)
+      if (!key) continue
+      let group = groups.get(key)
+      if (!group) {
+        group = { entries: new Map(), books: new Map() }
+        groups.set(key, group)
+      }
+      let entry = group.entries.get(ref.uuid)
+      if (!entry) {
+        entry = { uuid: ref.uuid, name: ref.name, books: new Map() }
+        group.entries.set(ref.uuid, entry)
+      }
+      entry.books.set(book.uuid, book)
+      group.books.set(book.uuid, book)
     }
   }
 
-  return [...groups]
-    .map(([uuid, group]) => ({
-      kind,
-      uuid,
-      name: group.name,
-      count: group.books.length,
-      covers:
-        kind === "series"
-          ? seriesCovers(group.books, uuid)
-          : authorCovers(group.books),
-      missing: kind === "series" ? (missingBySeries.get(uuid) ?? 0) : 0,
-    }))
+  return [...groups.values()]
+    .map((group) => {
+      const entries = [...group.entries.values()]
+      const representative = [...entries].sort(
+        (a, b) =>
+          b.books.size - a.books.size ||
+          (a.uuid < b.uuid ? -1 : a.uuid > b.uuid ? 1 : 0),
+      )[0] as Entry
+      const display = chooseCanonical(
+        entries.map((e) => ({
+          uuid: e.uuid,
+          name: e.name,
+          books: e.books.size,
+        })),
+      )
+      const all = [...group.books.values()]
+      return {
+        kind,
+        uuid: representative.uuid,
+        name: display.name,
+        count: all.length,
+        covers:
+          kind === "series"
+            ? seriesCovers(all, new Set(entries.map((e) => e.uuid)))
+            : authorCovers(all),
+        missing:
+          kind === "series"
+            ? (missingBySeries.get(representative.uuid) ?? 0)
+            : 0,
+      }
+    })
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 

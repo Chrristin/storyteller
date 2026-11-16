@@ -1,3 +1,5 @@
+import { normaliseSeriesName } from "@/nameKey"
+
 /**
  * Finds series that look like they are missing books: the owned positions are
  * whole numbers with holes between the lowest and the highest one.
@@ -56,4 +58,53 @@ export function findSeriesGaps(series: GapSeriesInput[]): SeriesGap[] {
     (a, b) =>
       b.missing.length - a.missing.length || a.name.localeCompare(b.name),
   )
+}
+
+/**
+ * Merges series whose normalised names are equal, so two spellings of one
+ * series are judged together. Positions are unioned (a book counts once), the
+ * name and uuid are the representative's (most books, then smallest uuid) and
+ * the authors are unioned.
+ */
+export function mergeSeriesByName(series: GapSeriesInput[]): GapSeriesInput[] {
+  const groups = new Map<string, GapSeriesInput[]>()
+  const order: GapSeriesInput[][] = []
+  for (const s of series) {
+    const key = normaliseSeriesName(s.name)
+    if (!key) {
+      order.push([s])
+      continue
+    }
+    const list = groups.get(key)
+    if (list) list.push(s)
+    else {
+      const created = [s]
+      groups.set(key, created)
+      order.push(created)
+    }
+  }
+
+  return order.map((group) => {
+    if (group.length === 1) return group[0] as GapSeriesInput
+    const count = (s: GapSeriesInput) =>
+      new Set(s.books.map((b) => b.bookUuid)).size
+    const rep = [...group].sort(
+      (a, b) =>
+        count(b) - count(a) || (a.uuid < b.uuid ? -1 : a.uuid > b.uuid ? 1 : 0),
+    )[0] as GapSeriesInput
+    const seen = new Set<string>()
+    const books: GapSeriesInput["books"] = []
+    for (const s of group) {
+      for (const book of s.books) {
+        const id = `${book.bookUuid}:${String(book.position)}`
+        if (seen.has(id)) continue
+        seen.add(id)
+        books.push(book)
+      }
+    }
+    const authors = [...new Set(group.flatMap((s) => s.authors))].sort((a, b) =>
+      a.localeCompare(b),
+    )
+    return { uuid: rep.uuid, name: rep.name, authors, books }
+  })
 }

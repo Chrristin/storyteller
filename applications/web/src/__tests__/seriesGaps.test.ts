@@ -2,7 +2,11 @@ import assert from "node:assert"
 
 import { describe, it } from "vitest"
 
-import { type GapSeriesInput, findSeriesGaps } from "@/seriesGaps"
+import {
+  type GapSeriesInput,
+  findSeriesGaps,
+  mergeSeriesByName,
+} from "@/seriesGaps"
 
 function series(
   name: string,
@@ -67,5 +71,37 @@ describe("findSeriesGaps", () => {
     const [gap] = findSeriesGaps([series("S", [1, 3], ["X", "Y"])])
     assert.strictEqual(gap?.uuid, "s-S")
     assert.deepStrictEqual(gap?.authors, ["X", "Y"])
+  })
+})
+
+describe("mergeSeriesByName", () => {
+  it("merges two spellings so there is no false gap", () => {
+    const a = { ...series("The Expanse", [1, 2], ["J"]), uuid: "b" }
+    const b = { ...series("Expanse Series", [3, 5], ["K"]), uuid: "a" }
+    const merged = mergeSeriesByName([a, b])
+    assert.strictEqual(merged.length, 1)
+    const gaps = findSeriesGaps(merged)
+    assert.strictEqual(gaps.length, 1)
+    assert.deepStrictEqual(gaps[0]?.missing, [4])
+    assert.deepStrictEqual(gaps[0]?.authors, ["J", "K"])
+    // Same number of books: the smallest uuid wins.
+    assert.strictEqual(gaps[0]?.uuid, "a")
+  })
+
+  it("uses the series with the most books as the representative", () => {
+    const a = { ...series("Foo", [1]), uuid: "a" }
+    const b = { ...series("foo saga", [2, 4]), uuid: "z" }
+    const [merged] = mergeSeriesByName([a, b])
+    assert.strictEqual(merged?.uuid, "z")
+    assert.strictEqual(merged?.name, "foo saga")
+  })
+
+  it("counts a book in both series once and keeps different names apart", () => {
+    const a = series("Foo", [1, 2])
+    const b = { ...series("Foo.", [1, 2]), uuid: "other" }
+    b.books = a.books
+    const merged = mergeSeriesByName([a, b, series("Bar", [1, 3])])
+    assert.strictEqual(merged.length, 2)
+    assert.strictEqual(merged[0]?.books.length, 2)
   })
 })

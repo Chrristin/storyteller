@@ -111,3 +111,33 @@ test("piles show how many are missing, and missing books list the gaps", () => {
   assert.deepEqual(missing[0]?.missing, [2, 3])
   assert.deepEqual(missing[0]?.authors, ["Ann"])
 })
+
+test("spellings of one author or series merge, with positions unioned", () => {
+  const mk = (
+    uuid: string,
+    author: [string, string],
+    series: [string, string, number],
+  ): PileBook => ({
+    ...book(uuid),
+    authors: [{ uuid: author[0], name: author[1] }],
+    series: [{ uuid: series[0], name: series[1], position: series[2] }],
+  })
+  const books = [
+    mk("b1", ["u1", "James S.A. Corey"], ["s1", "The Expanse", 1]),
+    mk("b2", ["u1", "James S.A. Corey"], ["s1", "The Expanse", 2]),
+    mk("b3", ["u2", "James S. A. Corey"], ["s2", "Expanse Series", 3]),
+    mk("b5", ["u1", "James S.A. Corey"], ["s2", "Expanse Series", 5]),
+  ]
+  const authors = buildPiles(books, "author")
+  assert.equal(authors.length, 1)
+  assert.equal(authors[0]?.uuid, "u1")
+  assert.equal(authors[0]?.count, 4)
+  const piles = buildPiles(books, "series")
+  assert.equal(piles.length, 1)
+  assert.equal(piles[0]?.uuid, "s1")
+  assert.equal(piles[0]?.count, 4)
+  assert.equal(piles[0]?.missing, 1)
+  const missing = buildMissing(books)
+  assert.equal(missing.length, 1)
+  assert.deepEqual(missing[0]?.missing, [4])
+})

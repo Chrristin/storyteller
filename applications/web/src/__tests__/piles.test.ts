@@ -90,6 +90,60 @@ describe("buildPiles", () => {
   })
 })
 
+describe("buildPiles with spellings", () => {
+  it("merges author spellings into one pile linked to the biggest", () => {
+    const mk = (title: string, uuid: string, name: string) => ({
+      ...book(title),
+      authors: [{ uuid, name }],
+    })
+    const piles = buildPiles(
+      [
+        mk("a", "u2", "James S. A. Corey"),
+        mk("b", "u1", "James S.A. Corey"),
+        mk("c", "u1", "James S.A. Corey"),
+        mk("d", "u3", "Someone Else"),
+      ],
+      "author",
+    )
+    assert.deepStrictEqual(
+      piles.map((p) => [p.name, p.uuid, p.count]),
+      [
+        ["James S.A. Corey", "u1", 3],
+        ["Someone Else", "u3", 1],
+      ],
+    )
+  })
+
+  it("merges series spellings, counts a book once, uses the representative", () => {
+    const inSeries = (
+      title: string,
+      refs: [string, string, number][],
+    ): PileBook => ({
+      ...book(title),
+      series: refs.map(([uuid, name, position]) => ({ uuid, name, position })),
+    })
+    const books = [
+      inSeries("a", [["s9", "Expanse", 1]]),
+      inSeries("b", [["s9", "Expanse", 2]]),
+      inSeries("c", [["s1", "The Expanse Series", 3]]),
+      inSeries("d", [
+        ["s1", "The Expanse Series", 5],
+        ["s9", "Expanse", 5],
+      ]),
+    ]
+    const piles = buildPiles(books, "series", new Map([["s9", 1]]))
+    assert.strictEqual(piles.length, 1)
+    assert.strictEqual(piles[0]?.uuid, "s9")
+    assert.strictEqual(piles[0]?.name, "Expanse")
+    assert.strictEqual(piles[0]?.count, 4)
+    assert.strictEqual(piles[0]?.missing, 1)
+    assert.deepStrictEqual(
+      piles[0]?.covers.map((b) => b.title),
+      ["a", "b", "c"],
+    )
+  })
+})
+
 describe("buildGridSlots", () => {
   const owned = (n: number) => book(`b${n}`, { series: [["s", n]] })
   const describeSlots = (slots: ReturnType<typeof buildGridSlots>) =>
