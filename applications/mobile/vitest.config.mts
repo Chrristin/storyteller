@@ -9,6 +9,7 @@ export default defineConfig({
       "store/**/*.test.ts",
       "modules/**/*.test.ts",
       "components/**/*.test.ts",
+      "lib/**/*.test.ts",
     ],
     testTimeout: 0,
     hookTimeout: 0,

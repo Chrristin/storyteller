@@ -53,6 +53,7 @@ export function Shelf({ label, href, books, showProgress = false }: Props) {
           <BookThumbnail
             book={book}
             showProgress={showProgress}
+            selectable
             width={COVER_WIDTH}
           />
         )}

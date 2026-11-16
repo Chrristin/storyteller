@@ -26,9 +26,10 @@ import { AnimatedCircularProgress } from "react-native-circular-progress"
 import { useCSSVariable } from "uniwind"
 
 import { BackButton } from "@/components/BackButton"
-import BookDescription from "@/components/BookDescription"
 import { BookCover } from "@/components/BookCover"
+import BookDescription from "@/components/BookDescription"
 import { BookNotes } from "@/components/BookNotes"
+import { DriveCard } from "@/components/DriveCard"
 import { LoadingView } from "@/components/LoadingView"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { ScreenBackButton } from "@/components/ScreenBackButton"
@@ -61,8 +62,8 @@ import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 import { pickFormat, useOpenBook } from "@/hooks/useOpenBook"
 import { useBookPrefs } from "@/lib/bookPrefs"
 import { useBookPrefActions } from "@/lib/bookPrefsSync"
-import { useOpenLibraryExcerpt } from "@/lib/openLibrary"
 import { usesSystemHeader } from "@/lib/nativeChrome"
+import { useOpenLibraryExcerpt } from "@/lib/openLibrary"
 import {
   useCancelDownloadMutation,
   useDeleteBookMutation,
@@ -527,6 +528,7 @@ export default function BookDetailsScreen() {
                 </Group>
               </Stack>
             </Group>
+            <DriveCard book={book} />
             {!!book.series.length && (
               <>
                 <Group className="mb-2 flex-row items-center gap-1">

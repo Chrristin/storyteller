@@ -12,6 +12,7 @@ import {
 } from "react-native"
 
 import { ContinueCard } from "@/components/ContinueCard"
+import { DriveSelectionBars } from "@/components/DriveSelectionBars"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
 import { Shelf } from "@/components/Shelf"
 import { Button } from "@/components/ui/button"
@@ -205,6 +206,7 @@ export default function Home() {
         <View className="h-40 w-full" />
       </ScrollView>
       <MiniPlayerWidget />
+      <DriveSelectionBars books={books} />
     </View>
   )
 }

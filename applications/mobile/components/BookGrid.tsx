@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 
 import { BackButton } from "./BackButton"
 import { BookThumbnail } from "./BookThumbnail"
+import { DriveSelectionBars } from "./DriveSelectionBars"
 import { MiniPlayerWidget } from "./MiniPlayerWidget"
 import { ScreenBackButton } from "./ScreenBackButton"
 import { calculateBookGridLayout } from "./bookGridLayout"
@@ -115,13 +116,14 @@ export function BookGrid({ title, books, header, refreshable = true }: Props) {
             }
             renderItem={({ item: book }) => (
               <View className="mx-1.5 my-2" style={{ width: thumbnailWidth }}>
-                <BookThumbnail book={book} width={thumbnailWidth} />
+                <BookThumbnail book={book} selectable width={thumbnailWidth} />
               </View>
             )}
             ListFooterComponent={<View className="h-40 w-full" />}
           />
         </KeyboardGestureArea>
         <MiniPlayerWidget />
+        <DriveSelectionBars books={books} />
       </Stack>
     </>
   )

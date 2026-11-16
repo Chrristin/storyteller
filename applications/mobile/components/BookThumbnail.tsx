@@ -1,8 +1,15 @@
+import { Check } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
 import { useAvailableFormats } from "@/hooks/useAvailableFormats"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
+import {
+  canSyncToDrive,
+  driveSelection,
+  useDriveSelection,
+  useDriveServers,
+} from "@/hooks/useDrive"
 import { useOpenBook } from "@/hooks/useOpenBook"
 import {
   useDeleteBookMutation,
@@ -13,6 +20,7 @@ import {
 
 import { BookCover } from "./BookCover"
 import { DownloadingIndicator } from "./DownloadingIndicator"
+import { Icon } from "./ui/icon"
 import { Menu, type MenuAction } from "./ui/menu"
 import { Text } from "./ui/text"
 
@@ -24,12 +32,15 @@ interface Props {
   width?: number
   /** Show a thin progress line and percent under the cover. */
   showProgress?: boolean
+  /** Long press starts selecting books for Google Drive (when it is set up). */
+  selectable?: boolean
 }
 
 export function BookThumbnail({
   book,
   width = DEFAULT_THUMBNAIL_WIDTH,
   showProgress = false,
+  selectable = false,
 }: Props) {
   const { openBook, openDetails, openFormat } = useOpenBook()
   const height = Math.round(width * THUMBNAIL_HEIGHT_RATIO)
@@ -41,6 +52,13 @@ export function BookThumbnail({
 
   const [downloadBook] = useDownloadBookMutation()
   const [deleteBook] = useDeleteBookMutation()
+
+  const driveServers = useDriveServers()
+  const selection = useDriveSelection()
+  const selectionActive = selection.size > 0
+  const driveSelectable =
+    selectable && canSyncToDrive(book) && driveServers.includes(book.serverUuid)
+  const selected = selection.has(book.uuid)
 
   const { data: statuses } = useListStatusesQuery()
 
@@ -157,52 +175,86 @@ export function BookThumbnail({
       ? Math.round(progression * 100)
       : null
 
+  const tile = (
+    <Pressable
+      accessibilityLabel={`Open ${book.title}`}
+      accessibilityRole="button"
+      accessibilityState={selectionActive ? { selected } : {}}
+      onLongPress={
+        driveSelectable && !selectionActive
+          ? () => driveSelection.start(book)
+          : undefined
+      }
+      onPress={() => {
+        if (selectionActive) {
+          driveSelection.toggle(book)
+          return
+        }
+        openBook(book)
+      }}
+      style={{ width }}
+    >
+      <BookCover book={book} height={height} width={width} />
+      {downloadingFormat && (
+        <DownloadingIndicator
+          className="absolute z-50"
+          progress={downloadingFormat.downloadProgress}
+          size={Math.ceil(height / 10)}
+          style={{ right: 6, top: 6 }}
+        />
+      )}
+      {selectionActive && driveSelectable && (
+        <View
+          className={
+            selected
+              ? "bg-primary border-primary absolute z-50 size-6 items-center justify-center rounded-full border-2"
+              : "border-primary absolute z-50 size-6 items-center justify-center rounded-full border-2 bg-black/40"
+          }
+          style={{ right: 6, top: 6 }}
+        >
+          {selected && (
+            <Icon as={Check} size={14} className="text-primary-foreground" />
+          )}
+        </View>
+      )}
+      {percent !== null && (
+        <View className="bg-secondary mt-3 h-1 overflow-hidden rounded-full">
+          <View
+            className="bg-primary h-full"
+            style={{ width: `${percent}%` }}
+          />
+        </View>
+      )}
+      <Text
+        className="mt-3 font-semibold"
+        numberOfLines={2}
+        style={{
+          fontSize: titleFontSize,
+          lineHeight: titleFontSize + 4,
+          maxWidth: width,
+        }}
+      >
+        {book.title}
+      </Text>
+      <Text
+        className="text-muted-foreground mt-0.5"
+        numberOfLines={1}
+        style={{ fontSize: authorFontSize, maxWidth: width }}
+      >
+        {book.authors[0]?.name}
+      </Text>
+    </Pressable>
+  )
+
   return (
     <View style={{ width }}>
-      <Menu actions={menuActions} shouldOpenOnLongPress>
-        <Pressable
-          accessibilityLabel={`Open ${book.title}`}
-          accessibilityRole="button"
-          onPress={() => openBook(book)}
-          style={{ width }}
-        >
-          <BookCover book={book} height={height} width={width} />
-          {downloadingFormat && (
-            <DownloadingIndicator
-              className="absolute z-50"
-              progress={downloadingFormat.downloadProgress}
-              size={Math.ceil(height / 10)}
-              style={{ right: 6, top: 6 }}
-            />
-          )}
-          {percent !== null && (
-            <View className="bg-secondary mt-3 h-1 overflow-hidden rounded-full">
-              <View
-                className="bg-primary h-full"
-                style={{ width: `${percent}%` }}
-              />
-            </View>
-          )}
-          <Text
-            className="mt-3 font-semibold"
-            numberOfLines={2}
-            style={{
-              fontSize: titleFontSize,
-              lineHeight: titleFontSize + 4,
-              maxWidth: width,
-            }}
-          >
-            {book.title}
-          </Text>
-          <Text
-            className="text-muted-foreground mt-0.5"
-            numberOfLines={1}
-            style={{ fontSize: authorFontSize, maxWidth: width }}
-          >
-            {book.authors[0]?.name}
-          </Text>
-        </Pressable>
-      </Menu>
+      {driveSelectable ? (
+        tile
+      ) : (
+        <Menu actions={menuActions} shouldOpenOnLongPress>
+          {tile}
+        </Menu>
+      )}
     </View>
   )
 }

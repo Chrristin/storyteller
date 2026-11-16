@@ -19,8 +19,35 @@ interface FetchArgs extends BaseFetchArgs {
   serverUuid: UUID
 }
 
+export interface DriveStatus {
+  configured: boolean
+  connected: boolean
+  accountEmail: string | null
+}
+
+export interface DriveBookFile {
+  syncedAt: string
+  fileName: string
+}
+
+export interface DriveSyncResult {
+  uuid: UUID
+  title: string
+  status: "sent" | "replaced" | "skipped" | "failed"
+  message?: string
+}
+
+export interface DriveSyncResponse {
+  sent: number
+  replaced: number
+  skipped: number
+  failed: number
+  results: DriveSyncResult[]
+}
+
 export const serverApi = createApi({
   reducerPath: "serverApi",
+  tagTypes: ["DriveBooks"],
   async baseQuery(
     args: FetchArgs,
     baseQueryApi,
@@ -208,10 +235,43 @@ export const serverApi = createApi({
         body: { books },
       }),
     }),
+    getDriveStatus: build.query<DriveStatus, { serverUuid: UUID }>({
+      query: ({ serverUuid }) => ({ url: "/drive", serverUuid }),
+    }),
+    listDriveBooks: build.query<
+      Record<string, DriveBookFile>,
+      { serverUuid: UUID; books: UUID[] }
+    >({
+      query: ({ serverUuid, books }) => ({
+        url: "/drive/books",
+        serverUuid,
+        method: "POST",
+        body: { books },
+      }),
+      providesTags: ["DriveBooks"],
+    }),
+    syncBooksToDrive: build.mutation<
+      DriveSyncResponse,
+      { serverUuid: UUID; books: UUID[]; overwrite?: boolean }
+    >({
+      query: ({ serverUuid, books, overwrite }) => ({
+        url: "/drive/sync",
+        serverUuid,
+        method: "POST",
+        body: { books, overwrite: overwrite === true },
+      }),
+      invalidatesTags: ["DriveBooks"],
+    }),
   }),
 })
 
-export const { useListBooksQuery, useLazyGetBookQuery } = serverApi
+export const {
+  useListBooksQuery,
+  useLazyGetBookQuery,
+  useGetDriveStatusQuery,
+  useListDriveBooksQuery,
+  useSyncBooksToDriveMutation,
+} = serverApi
 
 export function getDownloadUrl(
   baseUrl: string,
