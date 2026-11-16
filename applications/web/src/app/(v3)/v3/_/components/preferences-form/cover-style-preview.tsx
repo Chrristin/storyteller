@@ -45,7 +45,7 @@ const OFF_RATIO_ART = `data:image/svg+xml,${encodeURIComponent(
   </svg>`,
 )}`
 
-const PREVIEW_SLOT_ASPECT = 11 / 16
+const PREVIEW_SLOT_ASPECT = 2 / 3
 
 export function CoverFitPreview({
   fit,
@@ -57,7 +57,7 @@ export function CoverFitPreview({
   return (
     <div
       className={cn(
-        "bg-muted flex aspect-11/16 w-28 shrink-0 items-center justify-center rounded-lg",
+        "bg-muted flex aspect-2/3 w-28 shrink-0 items-center justify-center rounded-lg",
         !fill && "p-2",
       )}
     >
@@ -124,7 +124,7 @@ export function GridCoverPreview({
   const tilted = alignment === "auto"
 
   return (
-    <div className="bg-muted flex aspect-11/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
+    <div className="bg-muted flex aspect-2/3 w-28 shrink-0 items-center justify-center rounded-lg p-2">
       {display === "auto" && (
         <div className="relative flex h-full w-full items-center justify-center">
           <MiniCover
@@ -156,7 +156,7 @@ export function GridCoverPreview({
 
 export function FlatDetailPreview() {
   return (
-    <div className="bg-muted flex aspect-11/16 w-28 shrink-0 items-center justify-center rounded-lg p-2">
+    <div className="bg-muted flex aspect-2/3 w-28 shrink-0 items-center justify-center rounded-lg p-2">
       <div className="relative flex h-full w-full items-center justify-center">
         <MiniCover
           variant="audiobook"

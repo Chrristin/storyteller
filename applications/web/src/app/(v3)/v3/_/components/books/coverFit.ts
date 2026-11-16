@@ -21,7 +21,7 @@ const NOMINAL_ASPECT: Record<CoverType, number> = {
   audiobook: 1,
 }
 
-export const DEFAULT_SLOT_ASPECT = 13 / 16
+export const DEFAULT_SLOT_ASPECT = 2 / 3
 
 export const WIDTH_BOUND_SLOT = 0
 

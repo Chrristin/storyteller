@@ -20,7 +20,7 @@ export function ColorfulnessPreview({ level }: { level: ColorMode }) {
     <div className="flex items-end gap-4" {...sampleScope(level)}>
       {/* a grid card */}
       <div className="w-28 shrink-0">
-        <div className="bg-cover-well flex aspect-13/16 items-center justify-center rounded-lg p-2">
+        <div className="bg-cover-well flex aspect-2/3 items-center justify-center rounded-lg p-2">
           <div
             className="h-full w-3/4 rounded shadow-md"
             style={{

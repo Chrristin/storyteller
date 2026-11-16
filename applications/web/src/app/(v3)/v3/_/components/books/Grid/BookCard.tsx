@@ -20,6 +20,10 @@ import {
   getReadingProgress,
 } from "@/app/(v3)/v3/_/components/books/ProgressDisplayBar"
 import { SelectionCheckbox } from "@/app/(v3)/v3/_/components/books/SelectionCheckbox"
+import {
+  WaveCover,
+  usesWaveCover,
+} from "@/app/(v3)/v3/_/components/books/WaveCover"
 import { GradePill } from "@/app/(v3)/v3/_/components/books/grade-pill"
 import { bookItemDomId } from "@/app/(v3)/v3/_/components/books/keyboard-nav"
 import {
@@ -385,6 +389,14 @@ export const BookCard = memo(function BookCard({
   const { gridCoverDisplay } = useUserPreferences()
   const fillCover = gridCoverDisplay !== "auto"
   const hasDualFormat = isDual(book)
+  const audioImage = book.audiobook?.cover
+  const showsAudiobookOnly =
+    gridCoverDisplay === "audiobook" ||
+    (gridCoverDisplay === "auto" && !hasDualFormat && !book.ebook)
+  const waveImage =
+    showsAudiobookOnly && audioImage && usesWaveCover(audioImage)
+      ? audioImage
+      : null
 
   const displayRows = useMemo(
     () => groupDisplayRows(displayFields),
@@ -406,7 +418,7 @@ export const BookCard = memo(function BookCard({
 
   const cardContent = (
     <>
-      <div className="relative flex aspect-13/16 shrink-0 flex-col items-center justify-center transition-shadow">
+      <div className="relative flex aspect-2/3 shrink-0 flex-col items-center justify-center transition-shadow">
         <div
           className={cn(
             "from-cover-well to-cover-wash dark:to-cover-header",
@@ -430,23 +442,34 @@ export const BookCard = memo(function BookCard({
           )}
         </div>
 
-        <div
-          className={cn(
-            "absolute inset-0 flex items-center justify-center",
-            fillCover
-              ? "rounded-card overflow-hidden"
-              : cn("p-2", hasDualFormat ? "overflow-visible" : "rounded-card"),
-          )}
-        >
-          <Cover
+        {waveImage ? (
+          <WaveCover
             book={book}
+            image={waveImage}
             width={coverWidth}
-            interactive={!isSelecting}
-            displayMode={gridCoverDisplay}
-            fill={fillCover}
-            className={fillCover ? "rounded-card" : undefined}
+            className="rounded-card"
           />
-        </div>
+        ) : (
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-center",
+              fillCover
+                ? "rounded-card overflow-hidden"
+                : hasDualFormat
+                  ? "overflow-visible p-2"
+                  : "rounded-card overflow-hidden",
+            )}
+          >
+            <Cover
+              book={book}
+              width={coverWidth}
+              interactive={!isSelecting}
+              displayMode={gridCoverDisplay}
+              fill={fillCover}
+              className={fillCover ? "rounded-card" : undefined}
+            />
+          </div>
+        )}
 
         {onToggleSelection && (
           <SelectionCheckbox

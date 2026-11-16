@@ -25,4 +25,4 @@ export function metaHeightFor(
   )
 }
 
-export const COVER_ASPECT = 16 / 13 // cover box is aspect-13/16 -> height = width * 16/13
+export const COVER_ASPECT = 3 / 2 // cover box is aspect-2/3 -> height = width * 3/2
