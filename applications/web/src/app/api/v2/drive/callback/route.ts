@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
 
 function back(redirectOrigin: string, result: string) {
   return NextResponse.redirect(
-    `${redirectOrigin}/settings/server?drive=${encodeURIComponent(result)}`,
+    `${redirectOrigin}/settings?tab=server&section=googleDrive&drive=${encodeURIComponent(result)}`,
   )
 }
 
