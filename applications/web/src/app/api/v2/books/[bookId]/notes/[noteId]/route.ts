@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { withUser } from "@/auth/auth"
+import { withHasPermission } from "@/auth/auth"
 import {
   MAX_NOTE_LENGTH,
   deleteBookNote,
@@ -12,8 +12,13 @@ type Params = Promise<{ bookId: UUID; noteId: UUID }>
 
 /**
  * @summary Change one of your own notes
+ *
+ * Needs a full sign-in ("manageSelf"); reading-only API tokens are refused.
  */
-export const PUT = withUser<Params>(async (request, context) => {
+export const PUT = withHasPermission<Params>("manageSelf")(async (
+  request,
+  context,
+) => {
   const { noteId } = await context.params
   const { body } = (await request.json()) as { body?: unknown }
   const text = typeof body === "string" ? body.trim() : ""
@@ -33,7 +38,10 @@ export const PUT = withUser<Params>(async (request, context) => {
 /**
  * @summary Delete one of your own notes
  */
-export const DELETE = withUser<Params>(async (request, context) => {
+export const DELETE = withHasPermission<Params>("manageSelf")(async (
+  request,
+  context,
+) => {
   const { noteId } = await context.params
   const deleted = await deleteBookNote(noteId, request.auth.user.id)
   if (!deleted) return new Response(null, { status: 404 })
