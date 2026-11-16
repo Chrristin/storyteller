@@ -20,7 +20,10 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
   }
 
   const visible = await getBooks(uuids.slice(0, 500), request.auth.user.id)
-  const files = await getBookDriveFiles(visible.map((book) => book.uuid))
+  const files = await getBookDriveFiles(
+    request.auth.user.id,
+    visible.map((book) => book.uuid),
+  )
 
   return NextResponse.json(
     Object.fromEntries(

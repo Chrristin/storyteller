@@ -19,7 +19,7 @@ export const DRIVE_MAX_BOOKS_PER_REQUEST = 25
  * Sends only the plain ebook of each book, never audiobooks or read-aloud
  * versions. A book already in the folder is skipped unless `overwrite` is true.
  * Send at most 25 books per request; split larger selections into batches.
- * Any user who may download books can do this, using the server owner's Drive.
+ * Each user copies to their own Google Drive, once they have connected it.
  */
 export const POST = withHasPermission("bookDownload")(async (request) => {
   const { books: uuids, overwrite } = (await request.json()) as {
@@ -44,11 +44,15 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
   const books = await getBooks(uuids, request.auth.user.id)
 
   try {
-    const { accessToken, folderId } = await openDriveSession()
+    const userId = request.auth.user.id
+    const { accessToken, folderId } = await openDriveSession(userId)
     const results = await syncBooksToDrive(
       books,
       { accessToken, folderId, overwrite: overwrite === true },
-      { record: recordBookDriveFile },
+      {
+        record: (bookUuid, driveFileId, fileName) =>
+          recordBookDriveFile(userId, bookUuid, driveFileId, fileName),
+      },
     )
     const count = (status: string) =>
       results.filter((result) => result.status === status).length

@@ -643,16 +643,21 @@ export interface BookNote {
 }
 
 export interface GoogleDriveConfig {
-  accountEmail: string | null
   clientId: string | null
   clientSecret: string | null
-  folderId: string | null
   id: number
+  updatedAt: Generated<string>
+}
+
+export interface GoogleDriveConnection {
+  accountEmail: string | null
+  folderId: string | null
   oauthRedirectUri: string | null
   oauthState: string | null
   oauthStateAt: string | null
   refreshToken: string | null
   updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
 }
 
 export interface BookDriveFile {
@@ -660,6 +665,7 @@ export interface BookDriveFile {
   driveFileId: string
   fileName: string
   syncedAt: Generated<string>
+  userId: import("@/uuid").UUID
 }
 
 export interface UserBookRating {
@@ -747,6 +753,7 @@ export interface DB {
   externalData: ExternalData
   externalSource: ExternalSource
   googleDriveConfig: GoogleDriveConfig
+  googleDriveConnection: GoogleDriveConnection
   homeSection: HomeSection
   identifier: Identifier
   identifierType: IdentifierType

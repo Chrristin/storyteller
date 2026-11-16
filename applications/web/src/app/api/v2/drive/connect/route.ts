@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { withHasPermission } from "@/auth/auth"
 import {
   beginGoogleDriveSignIn,
-  getGoogleDriveCredentials,
+  getGoogleDriveClient,
 } from "@/database/googleDrive"
 import { buildAuthUrl } from "@/googleDrive"
 
@@ -12,18 +12,21 @@ export const dynamic = "force-dynamic"
 export const DRIVE_CALLBACK_PATH = "/api/v2/drive/callback"
 
 /**
- * @summary Start the Google sign-in (server owner only)
+ * @summary Start the Google sign-in for the current user
  *
  * Returns the Google address to send the browser to. `origin` is the address
- * the owner uses to reach this server, for example https://books.example.com.
- * Google sends the browser back to `<origin>/api/v2/drive/callback`, which must
- * be listed as an authorised redirect URI on the owner's Google client.
+ * used to reach this server, for example https://books.example.com. Google
+ * sends the browser back to `<origin>/api/v2/drive/callback`, which must be
+ * listed as an authorised redirect URI on the owner's Google client.
  */
-export const POST = withHasPermission("settingsUpdate")(async (request) => {
-  const credentials = await getGoogleDriveCredentials()
-  if (!credentials) {
+export const POST = withHasPermission("manageSelf")(async (request) => {
+  const client = await getGoogleDriveClient()
+  if (!client) {
     return NextResponse.json(
-      { message: "Save the Google client id and secret first" },
+      {
+        code: "not-configured",
+        message: "The server owner has not set up Google Drive yet",
+      },
       { status: 409 },
     )
   }
@@ -39,9 +42,9 @@ export const POST = withHasPermission("settingsUpdate")(async (request) => {
   }
 
   const redirectUri = `${origin}${DRIVE_CALLBACK_PATH}`
-  const state = await beginGoogleDriveSignIn(redirectUri)
+  const state = await beginGoogleDriveSignIn(request.auth.user.id, redirectUri)
   return NextResponse.json({
-    url: buildAuthUrl(credentials, redirectUri, state),
+    url: buildAuthUrl(client, redirectUri, state),
     redirectUri,
   })
 })

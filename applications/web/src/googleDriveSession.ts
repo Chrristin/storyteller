@@ -8,24 +8,25 @@ import {
   refreshAccessToken,
   resolveSyncFolder,
 } from "@/googleDrive"
+import { type UUID } from "@/uuid"
 
 /**
- * A ready-to-use Drive connection: a fresh access token and the folder books
- * go into. Throws a DriveError saying what the owner has to do when Drive is
- * not set up or the sign-in has to be redone.
+ * A ready-to-use Drive connection for one user: a fresh access token and the
+ * folder that user's books go into. Throws a DriveError saying what has to be
+ * done when Drive is not set up or the user's sign-in has to be redone.
  */
-export async function openDriveSession(fetchFn: FetchFn = fetch) {
-  const credentials = await getGoogleDriveCredentials()
+export async function openDriveSession(userId: UUID, fetchFn: FetchFn = fetch) {
+  const credentials = await getGoogleDriveCredentials(userId)
   if (!credentials) {
     throw new DriveError(
       "reauth-needed",
-      "Google Drive is not set up. Add the Google client in Settings first.",
+      "Google Drive is not set up on this server. The owner has to add the Google client in Settings first.",
     )
   }
   if (!credentials.refreshToken) {
     throw new DriveError(
       "reauth-needed",
-      "Google Drive is not connected. Connect it in Settings.",
+      "Google Drive is not connected for your account. Connect it in Preferences.",
     )
   }
 
@@ -40,7 +41,7 @@ export async function openDriveSession(fetchFn: FetchFn = fetch) {
     fetchFn,
   )
   if (folderId !== credentials.folderId) {
-    await saveGoogleDriveFolderId(folderId)
+    await saveGoogleDriveFolderId(userId, folderId)
   }
 
   return { accessToken, folderId }

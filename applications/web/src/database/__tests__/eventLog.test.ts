@@ -169,6 +169,9 @@ const TABLES = {
   googleDriveConfig: {
     exclude: "fork-only Google Drive sign-in, server-internal",
   },
+  googleDriveConnection: {
+    exclude: "fork-only Google Drive sign-in, server-internal",
+  },
   progressionHistory: { exclude: "server-internal history, not synced" },
   progressionReference: {
     exclude:

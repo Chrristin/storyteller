@@ -1756,6 +1756,10 @@ CREATE TABLE google_drive_config (
   id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
   client_id TEXT,
   client_secret TEXT,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE google_drive_connection (
+  user_id TEXT PRIMARY KEY NOT NULL REFERENCES user (id) ON DELETE CASCADE,
   refresh_token TEXT,
   account_email TEXT,
   folder_id TEXT,
@@ -1765,8 +1769,10 @@ CREATE TABLE google_drive_config (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE book_drive_file (
-  book_uuid TEXT PRIMARY KEY NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+  book_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
   drive_file_id TEXT NOT NULL,
   file_name TEXT NOT NULL,
-  synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, book_uuid)
 );
