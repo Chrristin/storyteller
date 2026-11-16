@@ -107,12 +107,12 @@ export function BookCover({
               transform: [{ scale: 1.4 }],
             }}
           >
-            <AudiobookCover book={book} blurRadius={20} contentFit="cover" />
+            <AudiobookCover book={book} blurRadius={8} contentFit="cover" />
           </View>
           <View
             pointerEvents="none"
             style={{
-              backgroundColor: "rgba(0,0,0,0.25)",
+              backgroundColor: "rgba(0,0,0,0.15)",
               bottom: 0,
               left: 0,
               position: "absolute",
