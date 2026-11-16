@@ -161,7 +161,7 @@ export default function Home() {
       >
         {showCurrentlyReading && <CurrentlyReading books={currentlyReading} />}
         <Shelf
-          label="Up next"
+          label="Recently added"
           books={startReading}
           href={{
             pathname: "/shelf/[type]",

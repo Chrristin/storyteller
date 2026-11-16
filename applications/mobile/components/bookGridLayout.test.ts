@@ -17,8 +17,10 @@ const rowFitsWithin = (availableWidth: number) => {
   )
 }
 
-test("keeps two columns on a phone without horizontal insets", () => {
-  assert.equal(calculateBookGridLayout(390).numColumns, 2)
+test("uses three columns on every phone width", () => {
+  for (const width of [320, 360, 390, 412, 430, 599]) {
+    assert.equal(calculateBookGridLayout(width).numColumns, 3, `width ${width}`)
+  }
 })
 
 test("drops a column for the 84pt rail and keeps the row inside the rest", () => {

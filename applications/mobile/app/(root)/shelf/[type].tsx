@@ -11,7 +11,7 @@ type ShelfType = "currently-reading" | "start-reading"
 
 const SHELF_TITLES: Record<ShelfType, string> = {
   "currently-reading": "Continue",
-  "start-reading": "Up next",
+  "start-reading": "Recently added",
 }
 
 export function filterCurrentlyReading(books: BookWithRelations[]) {
@@ -20,13 +20,11 @@ export function filterCurrentlyReading(books: BookWithRelations[]) {
     .sort((a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0))
 }
 
+/** Every book, newest first. Backs the "Recently added" shelf. */
 export function filterStartReading(books: BookWithRelations[]) {
-  return books
-    .filter((book) => book.status?.name === "To read")
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
-    )
+  return [...books].sort(
+    (a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
+  )
 }
 
 const SHELF_FILTERS: Record<
