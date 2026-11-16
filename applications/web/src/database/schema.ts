@@ -61,6 +61,24 @@ export interface AlignmentReport {
   uuid: Generated<import("@/uuid").UUID>
 }
 
+export interface ApiToken {
+  createdAt: Generated<string>
+  expiresAt: Date | null
+  idleTimeoutDays: number | null
+  lastUsedAt: Date | null
+  name: string
+  scope: ColumnType<
+    import("@/database/users").Permission[] | null,
+    string | null,
+    string | null
+  >
+  tokenHash: string
+  tokenStart: string
+  updatedAt: Generated<string>
+  userId: import("@/uuid").UUID
+  uuid: Generated<import("@/uuid").UUID>
+}
+
 export interface Audiobook {
   bookUuid: import("@/uuid").UUID
   coverBlurhash: string | null
@@ -243,6 +261,17 @@ export interface Ebook {
   uuid: Generated<import("@/uuid").UUID>
 }
 
+export interface EventLog {
+  bookUuid: string | null
+  createdAt: Generated<string>
+  op: string
+  seq: Generated<number | null>
+  tableName: string
+  token: Generated<string>
+  userId: string | null
+  uuid: string
+}
+
 export interface ExternalData {
   createdAt: Generated<string>
   externalSourceUuid: import("@/uuid").UUID
@@ -367,7 +396,7 @@ export interface Job {
   stage: "SPLIT_TRACKS" | "TRANSCRIBE_CHAPTERS" | "SYNC_CHAPTERS" | null
   startedAt: string | null
   stats: ColumnType<import("@/work/jobStats").JobStats, string, string> | null
-  status: Generated<import("@/jobEvents").JobStatus>
+  status: Generated<import("@/jobStatuses").JobStatus>
   type: import("@/database/jobs").JobType
   updatedAt: Generated<string>
   uuid: Generated<import("@/uuid").UUID>
@@ -640,6 +669,7 @@ export interface UserPermission {
   bookUpdate: Generated<boolean>
   collectionCreate: Generated<boolean>
   createdAt: Generated<string>
+  epoch: Generated<number>
   id: number | null
   inviteDelete: Generated<boolean>
   inviteList: Generated<boolean>
@@ -675,6 +705,7 @@ export interface DB {
   account: Account
   alignmentDecision: AlignmentDecision
   alignmentReport: AlignmentReport
+  apiToken: ApiToken
   audiobook: Audiobook
   book: Book
   bookAccess: BookAccess
@@ -691,6 +722,7 @@ export interface DB {
   creator: Creator
   deviceAuthorization: DeviceAuthorization
   ebook: Ebook
+  eventLog: EventLog
   externalData: ExternalData
   externalSource: ExternalSource
   homeSection: HomeSection

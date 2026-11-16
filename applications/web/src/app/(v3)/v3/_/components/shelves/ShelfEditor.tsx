@@ -42,13 +42,13 @@ import {
 } from "@/shelves"
 import { SORTABLE_FIELDS } from "@/sort"
 import {
-  getCoverUrl,
   useCreateUserShelfMutation,
   useGetBookQuery,
   useListInfiniteBooksInfiniteQuery,
   usePreviewShelfFilterMutation,
   useUpdateUserShelfMutation,
 } from "@/store/api"
+import { getCoverUrl } from "@/store/urls"
 import { type UUID } from "@/uuid"
 
 import {
@@ -621,14 +621,17 @@ export function ShelfEditor({
 
 type BookSelectorProps = {
   selectedBookUuids: string[]
-  onAdd: (uuid: string) => void
+  onAdd: (uuid: string, book: BookWithRelations) => void
   onRemove: (uuid: string) => void
+  // Hide the built-in selected list when the caller renders its own
+  showSelected?: boolean
 }
 
 export function BookSelector({
   selectedBookUuids,
   onAdd,
   onRemove,
+  showSelected = true,
 }: BookSelectorProps) {
   const t = useTranslation("ShelfEditor")
   const c = useCommon()
@@ -686,7 +689,7 @@ export function BookSelector({
                   variant="ghost"
                   size="icon-xs"
                   onClick={() => {
-                    onAdd(book.uuid)
+                    onAdd(book.uuid, book)
                   }}
                 >
                   <icon.Add className="size-3" />
@@ -697,7 +700,7 @@ export function BookSelector({
         </div>
       )}
 
-      {selectedBookUuids.length > 0 && (
+      {showSelected && selectedBookUuids.length > 0 && (
         <div className="flex flex-col gap-1">
           <Label className="text-muted-foreground text-xs">
             {c.plain("selectedCount", { count: selectedBookUuids.length })}

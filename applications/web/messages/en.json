@@ -759,6 +759,40 @@
       "asc": "Ascending"
     }
   },
+  "SeriesDialog": {
+    "editTitle": "Edit Series",
+    "createTitle": "Create Series",
+    "editDescription": "Update the series name, description, and reading order.",
+    "createDescription": "Create a new series to group related books together.",
+    "name": "Name",
+    "namePlaceholder": "My Series",
+    "nameRequired": "Name is required",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description...",
+    "books": "Books",
+    "booksInSeries": "Books in this series",
+    "createBooksHint": "A series needs at least one book. Added books go to the end; drag them into numbered boxes to set the order.",
+    "editBooksHint": "Drag a book into a numbered box, or type its number. Books can share a number, and boxes can be left empty.",
+    "existingName": "A series named “{name}” already exists. These books will be added to it instead of creating a new series.",
+    "similarName": "A series named “{name}” already exists. This will create a separate series with a nearly identical name.",
+    "booksLoadError": "Couldn't load every book in this series.",
+    "tryAgain": "Try again"
+  },
+  "SeriesOrderEditor": {
+    "noNumber": "No number",
+    "empty": "Empty",
+    "hideRun": "· hide #{start}–{end}",
+    "expandableRun": "#{start}–{end} empty · show",
+    "expandableRunNext": "#{start}–{end} empty · show next {count}",
+    "insertBox": "Insert empty box here (moves this and later books down one)",
+    "insertBoxLabel": "Insert empty box at {box}, moving later books down one",
+    "removeBox": "Remove this empty box (moves later books up one)",
+    "removeBoxLabel": "Remove empty box {box}, moving later books up one",
+    "moveBook": "Move {title}",
+    "bookNumber": "Series number for {title}",
+    "removeBook": "Remove from series",
+    "removeBookLabel": "Remove {title} from series"
+  },
   "SettingsPage": {
     "title": "Settings",
     "breadcrumb": "Settings",
@@ -1501,30 +1535,99 @@
       "preferences": "Personalization",
       "noMatches": "No matches"
     },
-    "profile": {
-      "title": "Profile",
-      "description": "Manage your account details.",
-      "username": "Username",
-      "email": "Email",
-      "name": "Name",
-      "changePassword": "Change password",
-      "addPassword": "Add password",
-      "saveProfile": "Save profile",
-      "savedSuccessfully": "Profile saved",
-      "failedToSave": "Failed to save profile",
-      "linkedAccounts": "Linked accounts",
-      "linkedAccountsDescription": "Manage your linked OAuth accounts.",
-      "unlink": "Unlink",
-      "linkWith": "Link with {provider}",
-      "accountUnlinked": "Account unlinked",
-      "failedToUnlink": "Failed to unlink account",
-      "otherDevices": "Other devices",
-      "otherDevicesDescription": "Sign in to the Storyteller app on another device with a QR code.",
-      "pairADevice": "Pair a device"
-    },
     "tabs": {
       "profile": {
-        "title": "Profile"
+        "title": "Profile",
+        "sections": {
+          "details": {
+            "title": "Account details",
+            "description": "Manage your account details.",
+            "username": "Username",
+            "email": "Email",
+            "name": "Name",
+            "changePassword": "Change password",
+            "addPassword": "Add password",
+            "save": "Save profile",
+            "savedSuccessfully": "Profile saved",
+            "failedToSave": "Failed to save profile"
+          },
+          "linkedAccounts": {
+            "title": "Linked accounts",
+            "description": "Manage your linked OAuth accounts.",
+            "unlink": "Unlink",
+            "linkWith": "Link with {provider}",
+            "accountUnlinked": "Account unlinked",
+            "failedToUnlink": "Failed to unlink account"
+          }
+        }
+      },
+      "devices": {
+        "title": "Devices & tokens",
+        "sections": {
+          "pairDevice": {
+            "title": "Other devices",
+            "description": "Sign in to the Storyteller app on another device with a QR code.",
+            "action": "Pair a device"
+          },
+          "kindle": {
+            "title": "Send to Kindle",
+            "description": "Storyteller can directly email your ebooks to your Kindle device. Requires an approved sender in your Amazon account.",
+            "label": "Kindle email addresses",
+            "namePlaceholder": "Name (e.g. Paperwhite)",
+            "emailPlaceholder": "name@kindle.com",
+            "add": "Add address",
+            "remove": "Remove address",
+            "default": "Default address",
+            "setDefault": "Set as default",
+            "senderLabel": "Approved sender",
+            "senderHint": "Add this address to the approved senders in your Amazon account, under Personal document settings.",
+            "notConfigured": "An Admin needs to set up email sending on this server to enable Send to Kindle."
+          },
+          "apiTokens": {
+            "title": "API tokens",
+            "description": "Use a token instead of your password in OPDS readers, scripts and other apps.",
+            "create": "Create token",
+            "createTitle": "New API token",
+            "name": "Name",
+            "namePlaceholder": "Kobo, Readest, backup script",
+            "nameRequired": "Give the token a name",
+            "access": {
+              "reading": {
+                "title": "Reading",
+                "description": "Browse, download and sync progress. Works in OPDS readers."
+              },
+              "full": {
+                "title": "Full access",
+                "description": "Can do everything your account can, apart from changing how you sign in or managing tokens."
+              }
+            },
+            "createdTitle": "Token created",
+            "createdDescription": "Copy it now. You won't be able to see it again.",
+            "copy": "Copy",
+            "copied": "Token copied",
+            "done": "Done",
+            "failedToCreate": "Failed to create token",
+            "expiration": {
+              "label": "Expiration",
+              "7d": "7 days",
+              "30d": "30 days",
+              "90d": "90 days",
+              "1y": "1 year",
+              "never": "No expiration"
+            },
+            "lastUsed": "Last used {when}",
+            "neverUsed": "Never used",
+            "expires": "Expires {when}",
+            "expiresUnlessUsed": "Expires {when} unless used",
+            "expired": "Expired {when}",
+            "neverExpires": "Never expires",
+            "revoke": "Revoke",
+            "revokeTitle": "Revoke {name}?",
+            "revokeDescription": "Anything using this token will be signed out.",
+            "revoked": "Token revoked",
+            "failedToRevoke": "Failed to revoke token"
+          }
+        }
       },
       "general": {
         "title": "General",
@@ -1544,20 +1647,6 @@
               "list": "List",
               "table": "Table"
             }
-          },
-          "kindle": {
-            "title": "Send to Kindle",
-            "description": "Storyteller can directly email your ebooks to your Kindle device. Requires an approved sender in your Amazon account.",
-            "label": "Kindle email addresses",
-            "namePlaceholder": "Name (e.g. Paperwhite)",
-            "emailPlaceholder": "name@kindle.com",
-            "add": "Add address",
-            "remove": "Remove address",
-            "default": "Default address",
-            "setDefault": "Set as default",
-            "senderLabel": "Approved sender",
-            "senderHint": "Add this address to the approved senders in your Amazon account, under Personal document settings.",
-            "notConfigured": "An Admin needs to set up email sending on this server to enable Send to Kindle."
           }
         }
       },

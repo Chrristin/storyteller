@@ -35,6 +35,8 @@ import {
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
 import { type BackupInfo } from "@/backups"
 import { type ChapterAudio } from "@/chapterAudio"
+import { type ApiTokenCreate } from "@/database/apiTokenTypes"
+import { type ApiTokenSummary } from "@/database/apiTokens"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
@@ -98,7 +100,7 @@ import {
   type UserPreferencesForm,
 } from "@/database/userPreferencesTypes"
 import { type UserBookRating } from "@/database/userRatings"
-import { type UserPermissionSet } from "@/database/users"
+import { type ProfileUpdate, type UserPermissionSet } from "@/database/users"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import {
   type JobListFilter,
@@ -200,6 +202,7 @@ export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/v2" }),
   tagTypes: [
+    "ApiTokens",
     "Invites",
     "Users",
     "Statuses",
@@ -305,6 +308,39 @@ export const api = createApi({
     getCurrentUser: build.query<User, void>({
       query: () => "/user",
       providesTags: () => ["CurrentUser"],
+    }),
+    updateProfile: build.mutation<User, ProfileUpdate>({
+      query: (body) => ({
+        url: "/user",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: () => ["CurrentUser"],
+    }),
+    unlinkAccount: build.mutation<void, { provider: string }>({
+      query: ({ provider }) => ({
+        url: `/user/accounts/${encodeURIComponent(provider)}`,
+        method: "DELETE",
+      }),
+    }),
+    listApiTokens: build.query<ApiTokenSummary[], void>({
+      query: () => "/user/tokens",
+      providesTags: () => ["ApiTokens"],
+    }),
+    createApiToken: build.mutation<{ token: string }, ApiTokenCreate>({
+      query: (body) => ({
+        url: "/user/tokens",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: () => ["ApiTokens"],
+    }),
+    deleteApiToken: build.mutation<void, { uuid: UUID }>({
+      query: ({ uuid }) => ({
+        url: `/user/tokens/${uuid}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: () => ["ApiTokens"],
     }),
     getServerCapabilities: build.query<ServerCapabilities, void>({
       query: () => "/server/capabilities",
@@ -1375,6 +1411,7 @@ export const api = createApi({
       invalidatesTags: (_result, _error, { uuid }) => [
         "Series",
         { type: "Series", id: uuid },
+        "Books",
       ],
     }),
     deleteSeries: build.mutation<void, { uuid: UUID }>({
@@ -2773,6 +2810,13 @@ export const api = createApi({
         { type: "Books", id: bookUuid },
       ],
     }),
+    logout: build.mutation<void, void>({
+      query: () => ({
+        url: "/logout",
+        method: "POST",
+      }),
+      invalidatesTags: ["CurrentUser"],
+    }),
   }),
 })
 
@@ -2813,6 +2857,11 @@ export const {
   useDeleteSeriesMutation,
   useDeleteUserMutation,
   useGetCurrentUserQuery,
+  useUpdateProfileMutation,
+  useUnlinkAccountMutation,
+  useListApiTokensQuery,
+  useCreateApiTokenMutation,
+  useDeleteApiTokenMutation,
   useGetGpuBuildWarningQuery,
   useGetMaxUploadChunkSizeQuery,
   useGetServerCapabilitiesQuery,
@@ -2952,49 +3001,8 @@ export const {
   useGetBookOpfQuery,
   useGetBookMediaOverlayQuery,
   useSendToKindleMutation,
+  useLogoutMutation,
 } = api
-
-export function getDownloadUrl(
-  bookUuid: string,
-  format: "readaloud" | "audiobook" | "ebook",
-) {
-  const searchParams = new URLSearchParams({ format })
-  return `/api/v2/books/${bookUuid}/files?${searchParams.toString()}`
-}
-
-export function getImageUrl(sha256: string, size?: number | null) {
-  if (!size || !Number.isFinite(size) || size <= 0) {
-    return `/api/v2/images/${sha256}`
-  }
-  return `/api/v2/images/${sha256}?s=${Math.round(size)}`
-}
-
-export function getCoverUrl(
-  bookUuid: string,
-  {
-    height,
-    width,
-    updatedAt,
-    audio = false,
-  }: {
-    height?: number
-    width?: number
-    audio?: boolean
-    updatedAt: string | Date
-  },
-) {
-  const searchParams = new URLSearchParams()
-  if (audio) {
-    searchParams.append("audio", "true")
-  }
-  if (height) {
-    searchParams.append("h", height.toString())
-  }
-  if (width) {
-    searchParams.append("w", width.toString())
-  }
-  return `/api/v2/books/${bookUuid}/cover?${searchParams.toString()}&v=${new Date(updatedAt).getTime()}`
-}
 
 export type ListBooksQueryArg = {
   limit?: number | undefined
