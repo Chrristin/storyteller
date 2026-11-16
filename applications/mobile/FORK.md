@@ -221,3 +221,7 @@ The wave fill and the new Library layout use each cover's main colour. Books tha
 were already on the phone get their colour the next time the library syncs, so
 open the Library and pull down to refresh once. Until then those covers use a
 steady muted colour.
+
+The web library has the same "Titles under covers" switch in Preferences, Books.
+Audiobook cards show the title and author on the waves; every other card has no
+text under it unless that switch is on.
