@@ -11,7 +11,7 @@ test("the defaults", () => {
   assert.deepEqual(DEFAULT_LIBRARY_LOOK, {
     tilt: "subtle",
     showTitles: false,
-    blurFill: true,
+    waveFill: true,
     showCurrentlyReading: true,
   })
 })
@@ -24,7 +24,7 @@ test("nothing stored gives the defaults", () => {
 
 test("stored choices are kept and bad ones fall back", () => {
   assert.deepEqual(
-    normalizeLibraryLook({ tilt: "strong", showTitles: true, blurFill: 3 }),
+    normalizeLibraryLook({ tilt: "strong", showTitles: true, waveFill: 3 }),
     {
       ...DEFAULT_LIBRARY_LOOK,
       tilt: "strong",
@@ -32,4 +32,13 @@ test("stored choices are kept and bad ones fall back", () => {
     },
   )
   assert.equal(normalizeLibraryLook({ tilt: "wild" }).tilt, "subtle")
+})
+
+test("the old blurFill value maps to waveFill", () => {
+  assert.equal(normalizeLibraryLook({ blurFill: false }).waveFill, false)
+  assert.equal(normalizeLibraryLook({ blurFill: true }).waveFill, true)
+  assert.equal(
+    normalizeLibraryLook({ blurFill: false, waveFill: true }).waveFill,
+    true,
+  )
 })

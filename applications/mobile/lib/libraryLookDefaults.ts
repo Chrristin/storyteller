@@ -6,8 +6,8 @@ export type LibraryLook = {
   tilt: TiltLevel
   /** Show the title and author under covers in grids and shelves. */
   showTitles: boolean
-  /** Fill the space around a square audiobook cover with a blurred copy. */
-  blurFill: boolean
+  /** Fill the space below a square audiobook cover with coloured waves. */
+  waveFill: boolean
   /** Show the currently reading card and round covers on the home screen. */
   showCurrentlyReading: boolean
 }
@@ -15,7 +15,7 @@ export type LibraryLook = {
 export const DEFAULT_LIBRARY_LOOK: LibraryLook = {
   tilt: "subtle",
   showTitles: false,
-  blurFill: true,
+  waveFill: true,
   showCurrentlyReading: true,
 }
 
@@ -24,6 +24,8 @@ export function normalizeLibraryLook(raw: unknown): LibraryLook {
   const value = (raw && typeof raw === "object" ? raw : {}) as Partial<
     Record<keyof LibraryLook, unknown>
   >
+  // Older versions stored this choice as `blurFill`.
+  const old = value as { blurFill?: unknown }
   const d = DEFAULT_LIBRARY_LOOK
   return {
     tilt: TILT_LEVELS.includes(value.tilt as TiltLevel)
@@ -31,7 +33,12 @@ export function normalizeLibraryLook(raw: unknown): LibraryLook {
       : d.tilt,
     showTitles:
       typeof value.showTitles === "boolean" ? value.showTitles : d.showTitles,
-    blurFill: typeof value.blurFill === "boolean" ? value.blurFill : d.blurFill,
+    waveFill:
+      typeof value.waveFill === "boolean"
+        ? value.waveFill
+        : typeof old.blurFill === "boolean"
+          ? old.blurFill
+          : d.waveFill,
     showCurrentlyReading:
       typeof value.showCurrentlyReading === "boolean"
         ? value.showCurrentlyReading

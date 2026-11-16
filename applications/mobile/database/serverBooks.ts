@@ -2,6 +2,7 @@ import { type Insertable, sql } from "kysely"
 
 import { type BookWithRelations as ServerBook } from "@storyteller-platform/web/src/database/books"
 
+import { coverMainColor } from "@/lib/coverColor"
 import { type ReadiumLocator } from "@/modules/readium/src/Readium.types"
 import { type UUID, randomUUID } from "@/uuid"
 
@@ -127,6 +128,10 @@ export async function upsertServerBooks(
           serverBook.readaloud?.cover?.sha256 ??
           null,
         audioCoverSha256: serverBook.audiobook?.cover?.sha256 ?? null,
+        textCoverColor: coverMainColor(
+          serverBook.ebook?.cover ?? serverBook.readaloud?.cover,
+        ),
+        audioCoverColor: coverMainColor(serverBook.audiobook?.cover),
         serverUpdatedAt: serverBook.updatedAt,
         createdAt: serverBook.createdAt,
       })
@@ -422,6 +427,8 @@ export async function upsertServerBooks(
             audiobookCoverUrl: null,
             textCoverSha256: eb.ref("excluded.textCoverSha256"),
             audioCoverSha256: eb.ref("excluded.audioCoverSha256"),
+            textCoverColor: eb.ref("excluded.textCoverColor"),
+            audioCoverColor: eb.ref("excluded.audioCoverColor"),
             serverUpdatedAt: eb.ref("excluded.serverUpdatedAt"),
           })),
         )
@@ -630,6 +637,10 @@ export async function createBookFromServer(
           serverBook.readaloud?.cover?.sha256 ??
           null,
         audioCoverSha256: serverBook.audiobook?.cover?.sha256 ?? null,
+        textCoverColor: coverMainColor(
+          serverBook.ebook?.cover ?? serverBook.readaloud?.cover,
+        ),
+        audioCoverColor: coverMainColor(serverBook.audiobook?.cover),
         serverUpdatedAt: serverBook.updatedAt,
         createdAt: serverBook.createdAt,
       })

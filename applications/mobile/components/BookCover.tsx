@@ -1,9 +1,20 @@
+import { memo } from "react"
 import { View } from "react-native"
+import Svg, { Path } from "react-native-svg"
 
 import { type BookWithRelations } from "@/database/books"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
 import { useLibraryLook } from "@/lib/libraryLook"
 import { cn } from "@/lib/utils"
+import {
+  type Rgb,
+  WAVE_HEIGHT,
+  WAVE_WIDTH,
+  fallbackColor,
+  hexToRgb,
+  wavePalette,
+  wavePathsForBook,
+} from "@/lib/waves"
 
 import { AudiobookCover } from "./AudiobookCover"
 import { EbookCover } from "./EbookCover"
@@ -13,8 +24,9 @@ import { FormatBadge } from "./FormatBadge"
  * A book cover in the same tall slot as every other cover in a list.
  *
  * Books with an ebook cover fill the slot. An audiobook cover is square and
- * stays square and whole, centred in the slot, with a blurred copy of the same
- * cover filling the space above and below. With `keepSlot` off, an audiobook
+ * stays square and whole at the top of the slot, with four layered waves in the
+ * cover's main colour filling the space below (or a plain card background with
+ * the wave fill setting off). With `keepSlot` off, an audiobook
  * cover is just the square.
  *
  * A thin accent line along the bottom edge shows progress, and a small pill in
@@ -37,7 +49,7 @@ export function BookCover({
   progressLine?: boolean
   className?: string
 }) {
-  const [{ blurFill }] = useLibraryLook()
+  const [{ waveFill }] = useLibraryLook()
   const hasTextCover = !!book.ebook || !!book.readaloud
   const onDevice = useDownloadedFormats(book).length > 0
   const progression = book.position?.locator.locations?.totalProgression
@@ -90,62 +102,61 @@ export function BookCover({
     )
   }
 
+  const main =
+    (book.audioCoverColor && hexToRgb(book.audioCoverColor)) ||
+    fallbackColor(book.uuid)
   return (
-    <View className={frame} style={{ height, width }}>
-      {/* A larger, blurred copy fills the slot so there are no hard bands.
-          With the blur setting off, the space is a plain dark fill. */}
-      {blurFill ? (
-        <>
-          <View
-            pointerEvents="none"
-            style={{
-              bottom: 0,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-              transform: [{ scale: 1.4 }],
-            }}
-          >
-            <AudiobookCover book={book} blurRadius={8} contentFit="cover" />
-          </View>
-          <View
-            pointerEvents="none"
-            style={{
-              backgroundColor: "rgba(0,0,0,0.15)",
-              bottom: 0,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-            }}
-          />
-        </>
-      ) : (
-        <View
-          pointerEvents="none"
-          style={{
-            backgroundColor: "#0b0b0c",
-            bottom: 0,
-            left: 0,
-            position: "absolute",
-            right: 0,
-            top: 0,
-          }}
-        />
-      )}
+    <View
+      className={frame}
+      style={{ height, width, backgroundColor: wavePalette(main).background }}
+    >
       <View
-        style={{
-          height: width,
-          left: 0,
-          position: "absolute",
-          top: Math.round((height - width) / 2),
-          width,
-        }}
+        style={{ height: width, left: 0, position: "absolute", top: 0, width }}
       >
         <AudiobookCover book={book} contentFit="cover" />
       </View>
+      {waveFill && (
+        <WaveFill
+          uuid={book.uuid}
+          main={main}
+          top={width}
+          width={width}
+          height={height - width}
+        />
+      )}
       {overlays}
     </View>
   )
 }
+
+const WaveFill = memo(function WaveFill({
+  uuid,
+  main,
+  top,
+  width,
+  height,
+}: {
+  uuid: string
+  main: Rgb
+  top: number
+  width: number
+  height: number
+}) {
+  if (height <= 0) return null
+  const paths = wavePathsForBook(uuid)
+  const { layers } = wavePalette(main)
+  return (
+    <Svg
+      pointerEvents="none"
+      style={{ left: 0, position: "absolute", top }}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${WAVE_WIDTH} ${WAVE_HEIGHT}`}
+      preserveAspectRatio="none"
+    >
+      {paths.map((d, i) => (
+        <Path key={i} d={d} fill={layers[i]!} />
+      ))}
+    </Svg>
+  )
+})

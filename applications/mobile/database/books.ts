@@ -218,6 +218,8 @@ export function bookQuery(options?: { withManifests?: boolean }) {
       "book.audiobookCoverUrl",
       "book.textCoverSha256",
       "book.audioCoverSha256",
+      "book.textCoverColor",
+      "book.audioCoverColor",
       "book.serverUpdatedAt",
       "book.uuid",
     ])

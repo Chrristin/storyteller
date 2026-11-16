@@ -56,8 +56,14 @@ There is no in-app username/password form. Login opens the server's
 
 - **Covers only.** Grids and shelves show covers without text. A cover is
   always in the same tall 2:3 slot, so rows line up. Ebooks have no mark. An
-  audiobook keeps its square cover whole in the middle of the slot, with a
-  blurred copy of the cover filling the space above and below. A small dark
+  audiobook keeps its square cover whole at the top of the slot, and the
+  bottom third is filled with four smooth layered waves in the cover's main
+  colour (light to dark, on a darker card background). The waves are random
+  per book but stable, seeded from the book uuid (`lib/waves.ts`). The main
+  colour is the first of the server's cover `colors`, or the average colour of
+  its blurhash, saved in the `audioCoverColor` and `textCoverColor` columns
+  (migration `1793100000000_add_book_cover_colors`); a book without one gets a
+  muted colour derived from its uuid. A small dark
   pill in the top-left corner shows headphones for an audiobook, or headphones
   and a book for a read-aloud. A 3px accent line along the bottom edge shows
   progress. Code: `components/BookCover.tsx`, `components/FormatBadge.tsx`.
@@ -78,10 +84,10 @@ There is no in-app username/password form. Login opens the server's
   - Cover tilt: Off, Subtle (1.6 degrees, 1.5px), Medium (3, 2.5px) or
     Strong (5, 4px). Default Subtle.
   - Titles under covers: off by default.
-  - Blurred fill behind audiobook covers: on by default. Off gives a plain
-    dark fill.
+  - Wave fill behind audiobook covers: on by default. Off gives a plain card
+    background below the square. An old saved `blurFill` value still counts.
   - Currently reading strip: on by default.
-- No database, sync or reader logic was changed for any of this.
+- The only database change is the two nullable cover colour columns above, filled during sync.
 
 ## Cloud Android build
 

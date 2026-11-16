@@ -53,6 +53,10 @@ import {
   down as addComfortThemesDown,
   up as addComfortThemesUp,
 } from "./1793000000000_add_comfort_themes"
+import {
+  down as addBookCoverColorsDown,
+  up as addBookCoverColorsUp,
+} from "./1793100000000_add_book_cover_colors"
 
 export const migrations = {
   "1757893743063_init": {
@@ -112,5 +116,9 @@ export const migrations = {
   "1793000000000_add_comfort_themes": {
     up: addComfortThemesUp,
     down: addComfortThemesDown,
+  },
+  "1793100000000_add_book_cover_colors": {
+    up: addBookCoverColorsUp,
+    down: addBookCoverColorsDown,
   },
 }

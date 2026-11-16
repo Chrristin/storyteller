@@ -239,12 +239,12 @@ export default function Settings() {
           </View>
           <View className="w-full flex-row items-center justify-between gap-4">
             <Text maxFontSizeMultiplier={1} className="flex-1 text-base">
-              Blurred fill behind audiobook covers
+              Wave fill behind audiobook covers
             </Text>
             <Switch
-              accessibilityLabel="Blurred fill behind audiobook covers"
-              checked={look.blurFill}
-              onCheckedChange={(blurFill) => updateLook({ blurFill })}
+              accessibilityLabel="Wave fill behind audiobook covers"
+              checked={look.waveFill}
+              onCheckedChange={(waveFill) => updateLook({ waveFill })}
             />
           </View>
           <View className="w-full flex-row items-center justify-between gap-4">
