@@ -5,7 +5,9 @@ import Svg, { Path } from "react-native-svg"
 import { type BookWithRelations } from "@/database/books"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
 import {
-  overlayFontSizes,
+  OVERLAY_AUTHOR_LINES,
+  OVERLAY_FONT_SIZES,
+  OVERLAY_TITLE_LINES,
   shouldShowTitleOverlay,
 } from "@/lib/coverTitleOverlay"
 import { useLibraryLook } from "@/lib/libraryLook"
@@ -194,7 +196,7 @@ function TitleOverlay({
   height: number
 }) {
   if (height <= 0) return null
-  const sizes = overlayFontSizes(width)
+  const sizes = OVERLAY_FONT_SIZES
   return (
     <View
       pointerEvents="none"
@@ -234,7 +236,8 @@ function TitleOverlay({
       >
         {!!author && (
           <Text
-            numberOfLines={1}
+            ellipsizeMode="tail"
+            numberOfLines={OVERLAY_AUTHOR_LINES}
             style={{
               color: "rgba(255,255,255,0.8)",
               fontSize: sizes.author,
@@ -245,7 +248,8 @@ function TitleOverlay({
           </Text>
         )}
         <Text
-          numberOfLines={2}
+          ellipsizeMode="tail"
+          numberOfLines={OVERLAY_TITLE_LINES}
           style={{
             color: "#ffffff",
             fontSize: sizes.title,

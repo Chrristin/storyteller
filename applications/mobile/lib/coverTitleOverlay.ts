@@ -17,14 +17,12 @@ export function shouldShowTitleOverlay({
   return showTitleOverlay && waveFill && !showTitles
 }
 
-/** Font sizes for the overlay text, scaled down a little on narrow covers. */
-export function overlayFontSizes(width: number): {
-  title: number
-  author: number
-} {
-  const scale = Math.max(0.8, Math.min(1, width / 130))
-  return {
-    title: Math.round(13 * scale * 10) / 10,
-    author: Math.round(11 * scale * 10) / 10,
-  }
-}
+/**
+ * Font sizes for the overlay text. They are the same on every cover width.
+ * Text that does not fit is cut off with an ellipsis (the author after one
+ * line, the title after two) so it always stays inside the image.
+ */
+export const OVERLAY_FONT_SIZES = { title: 13, author: 11 } as const
+
+export const OVERLAY_TITLE_LINES = 2
+export const OVERLAY_AUTHOR_LINES = 1
