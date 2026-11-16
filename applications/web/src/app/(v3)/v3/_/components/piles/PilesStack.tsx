@@ -33,7 +33,7 @@ export function PilesStack({ pile }: { pile: Pile<BookWithRelations> }) {
       href={href}
       className="group/pile focus-visible:ring-ring/50 block min-w-0 rounded-md outline-none focus-visible:ring-[3px]"
     >
-      <div className="relative w-full" style={{ aspectRatio: "1 / 0.88" }}>
+      <div className="relative w-full" style={{ aspectRatio: "1 / 1.05" }}>
         {layers.map((layer, i) => (
           <div
             key={layer.book.uuid}
@@ -44,7 +44,7 @@ export function PilesStack({ pile }: { pile: Pile<BookWithRelations> }) {
             style={{
               left: layer.left,
               top: layer.top,
-              aspectRatio: "13 / 16",
+              aspectRatio: "2 / 3",
               transform: `rotate(${layer.rotate}deg)`,
             }}
           >
