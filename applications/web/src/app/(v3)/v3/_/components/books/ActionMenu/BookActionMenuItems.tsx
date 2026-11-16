@@ -690,7 +690,7 @@ export function useBookActionItems({
 
     const kindleBlocked = kindleRefusal(books)
 
-    if (mode === "bulk") {
+    if (mode === "bulk" && kindle.available) {
       entries.push({
         key: "sendToKindle",
         label: tShare.plain("sendToKindle"),
@@ -713,6 +713,7 @@ export function useBookActionItems({
 
     if (singleBook) {
       const hasEbook = !kindleBlocked
+      const canKindle = hasEbook && kindle.available
       entries.push({
         key: "share",
         label: tShare.plain("share"),
@@ -720,7 +721,7 @@ export function useBookActionItems({
         submenuSearchable: false,
         submenu: ({ close }) => (
           <>
-            {hasEbook && (
+            {canKindle && (
               <FilterableMenuItem
                 onSelect={(modifiers) => {
                   kindle.send([singleBook], modifiers)

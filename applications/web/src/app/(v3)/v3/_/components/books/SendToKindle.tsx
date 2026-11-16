@@ -35,6 +35,7 @@ import {
   kindleRefusal,
 } from "@/kindle"
 import {
+  useGetDeliveryQuery,
   useSendToKindleMutation,
   useUpdateUserSettingsMutation,
 } from "@/store/api"
@@ -273,6 +274,18 @@ function KindlePickerDialog({
   )
 }
 
+/**
+ * True when the signed-in user can send to a Kindle: the server can send email
+ * and this user saved a Kindle address. Hides buttons that could only fail.
+ */
+export function useKindleAvailable(enabled = true) {
+  const canDownload = usePermission("bookDownload")
+  const { data } = useGetDeliveryQuery(undefined, {
+    skip: !enabled || !canDownload,
+  })
+  return !!canDownload && !!data?.kindle.available
+}
+
 export function useSendToKindle() {
   const t = useTranslation("Sharing.kindle")
   const router = useRouter()
@@ -425,5 +438,5 @@ export function useSendToKindle() {
     </>
   )
 
-  return { send, dialog, refusalMessage }
+  return { send, dialog, refusalMessage, available: useKindleAvailable() }
 }

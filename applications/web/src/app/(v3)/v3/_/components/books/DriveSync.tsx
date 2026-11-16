@@ -22,6 +22,7 @@ import { downloadableAsset } from "@/bookDownloads"
 import { type BookWithRelations } from "@/database/books"
 import {
   DRIVE_BATCH_SIZE,
+  DRIVE_PREFERENCES_PATH,
   type DriveSyncTally,
   addBatchToTally,
   addFailedBatchToTally,
@@ -44,7 +45,7 @@ export function hasDriveEbook(book: Pick<BookWithRelations, "ebook">) {
   return !!downloadableAsset(book, "ebook")
 }
 
-/** True when the signed-in user may sync and the owner has connected Drive. */
+/** True when the signed-in user may sync and has connected their own Google account. */
 export function useDriveConnected(enabled = true) {
   const canDownload = usePermission("bookDownload")
   const { data } = useGetDriveStatusQuery(undefined, {
@@ -78,7 +79,6 @@ export function SyncToDriveButton({ book }: { book: DriveBook }) {
   const t = useTranslation("Sharing.drive")
   const router = useRouter()
   const basePath = useVersionBasePath()
-  const canConfigure = usePermission("settingsUpdate")
   const hasEbook = hasDriveEbook(book)
   const connected = useDriveConnected(hasEbook)
   const errorMessage = useDriveErrorMessage()
@@ -109,20 +109,18 @@ export function SyncToDriveButton({ book }: { book: DriveBook }) {
         toast.error(t.plain("failedToast"), {
           description: errorMessage(error),
           action:
-            code === "reauth-needed" && canConfigure
+            code === "reauth-needed"
               ? {
                   label: t.plain("openSettings"),
                   onClick: () => {
-                    router.push(
-                      `${basePath}/settings?tab=server&section=googleDrive`,
-                    )
+                    router.push(`${basePath}${DRIVE_PREFERENCES_PATH}`)
                   },
                 }
               : undefined,
         })
       }
     },
-    [sync, book.uuid, t, errorMessage, canConfigure, router, basePath],
+    [sync, book.uuid, t, errorMessage, router, basePath],
   )
 
   if (!hasEbook || !connected) return null

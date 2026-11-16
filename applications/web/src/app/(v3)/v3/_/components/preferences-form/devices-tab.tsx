@@ -26,6 +26,7 @@ import { type ApiTokenSummary } from "@/database/apiTokens"
 import * as icon from "@/icons"
 
 import { ApiTokensCard } from "./api-tokens-card"
+import { GoogleDriveSection } from "./google-drive-card"
 import { type PreferencesFormType, PreferencesSection } from "./shared"
 
 export function DevicesTab({
@@ -65,6 +66,8 @@ export function DevicesTab({
       </PreferencesSection>
 
       <KindleSection form={form} kindleSender={kindleSender} />
+
+      <GoogleDriveSection />
 
       <PreferencesSection id="apiTokens">
         <ApiTokensCard initialTokens={apiTokens} />

@@ -23,7 +23,10 @@ import { EditIdentifiersDialog } from "@/app/(v3)/v3/_/components/books/BookDeta
 import { ReplaceFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ReplaceFileDialog"
 import { ShowOpfDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/ShowOpfDialog"
 import { UploadFileDialog } from "@/app/(v3)/v3/_/components/books/BookDetails/UploadFileDialog"
-import { useSendToKindle } from "@/app/(v3)/v3/_/components/books/SendToKindle"
+import {
+  useKindleAvailable,
+  useSendToKindle,
+} from "@/app/(v3)/v3/_/components/books/SendToKindle"
 import {
   canShareFiles,
   shareBookFile,
@@ -160,6 +163,7 @@ function FormatFileRow({
 
   const canEdit = usePermission("bookUpdate")
   const canDownload = usePermission("bookDownload")
+  const kindleAvailable = useKindleAvailable()
   const t = useTranslation("BookDetailsPage")
   const tLabels = useTranslation("Labels")
   const tShare = useTranslation("Sharing")
@@ -193,7 +197,8 @@ function FormatFileRow({
 
   const filepath = fmt.filepath ?? ""
   const available = !!filepath && !fmt.missing
-  const canSendToKindle = canDownload && format === "ebook" && available
+  const canSendToKindle =
+    canDownload && format === "ebook" && available && kindleAvailable
   const canReveal = isTauri && !!filepath
   const hasMenu = canEdit || canSendToKindle || canReveal
 

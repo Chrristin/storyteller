@@ -4,6 +4,7 @@ import { describe, it } from "vitest"
 
 import {
   DRIVE_BATCH_SIZE,
+  DRIVE_PREFERENCES_PATH,
   addBatchToTally,
   addFailedBatchToTally,
   chunk,
@@ -102,6 +103,22 @@ describe("driveRedirectUri", () => {
     assert.strictEqual(
       driveRedirectUri("http://localhost:8001/"),
       "http://localhost:8001/api/v2/drive/callback",
+    )
+  })
+})
+
+describe("DRIVE_PREFERENCES_PATH", () => {
+  it("points at the Google Drive section of the Devices tab", () => {
+    const url = new URL(DRIVE_PREFERENCES_PATH, "http://localhost")
+    assert.strictEqual(url.pathname, "/preferences")
+    assert.strictEqual(url.searchParams.get("tab"), "devices")
+    assert.strictEqual(url.searchParams.get("section"), "googleDrive")
+  })
+
+  it("matches the address the server sends users back to after Google", () => {
+    assert.strictEqual(
+      driveRedirectUri("https://books.example.com/"),
+      "https://books.example.com/api/v2/drive/callback",
     )
   })
 })

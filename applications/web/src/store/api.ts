@@ -102,6 +102,7 @@ import {
 import { type UserBookRating } from "@/database/userRatings"
 import { type ProfileUpdate, type UserPermissionSet } from "@/database/users"
 import {
+  type DeliveryStatus,
   type DriveBookFiles,
   type DriveStatus,
   type DriveSyncResponse,
@@ -245,7 +246,9 @@ export const api = createApi({
     "Orphans",
     "MetadataProviders",
     "GoogleDrive",
+    "DriveClient",
     "DriveBooks",
+    "Delivery",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -395,6 +398,7 @@ export const api = createApi({
         "Settings",
         "ImportRules",
         "MetadataProviders",
+        "Delivery",
       ],
     }),
     updatePreferenceDefaults: build.mutation<
@@ -1965,7 +1969,7 @@ export const api = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["UserSettings"],
+      invalidatesTags: ["UserSettings", "Delivery"],
     }),
     sendToKindle: build.mutation<
       { sent: number; skipped: number },
@@ -2752,26 +2756,34 @@ export const api = createApi({
       query: () => "/drive",
       providesTags: ["GoogleDrive"],
     }),
+    getDriveClient: build.query<{ clientId: string | null }, void>({
+      query: () => "/drive/client",
+      providesTags: ["DriveClient"],
+    }),
     saveDriveClient: build.mutation<
       { saved: true },
       { clientId: string; clientSecret: string }
     >({
-      query: (body) => ({ url: "/drive", method: "PUT", body }),
-      invalidatesTags: ["GoogleDrive"],
+      query: (body) => ({ url: "/drive/client", method: "PUT", body }),
+      invalidatesTags: ["GoogleDrive", "DriveClient", "DriveBooks", "Delivery"],
     }),
-    disconnectDrive: build.mutation<{ disconnected: true }, { all?: boolean }>({
-      query: ({ all }) => ({
-        url: "/drive",
-        method: "DELETE",
-        ...(all && { params: { all: "true" } }),
-      }),
-      invalidatesTags: ["GoogleDrive", "DriveBooks"],
+    removeDriveClient: build.mutation<{ removed: true }, void>({
+      query: () => ({ url: "/drive/client", method: "DELETE" }),
+      invalidatesTags: ["GoogleDrive", "DriveClient", "DriveBooks", "Delivery"],
+    }),
+    disconnectDrive: build.mutation<{ disconnected: true }, void>({
+      query: () => ({ url: "/drive", method: "DELETE" }),
+      invalidatesTags: ["GoogleDrive", "DriveBooks", "Delivery"],
     }),
     connectDrive: build.mutation<
       { url: string; redirectUri: string },
       { origin: string }
     >({
       query: (body) => ({ url: "/drive/connect", method: "POST", body }),
+    }),
+    getDelivery: build.query<DeliveryStatus, void>({
+      query: () => "/delivery",
+      providesTags: ["Delivery"],
     }),
     getDriveBooks: build.query<DriveBookFiles, UUID[]>({
       query: (books) => ({
@@ -3041,7 +3053,10 @@ export const {
   useSetHardcoverTokenMutation,
   useClearHardcoverTokenMutation,
   useGetDriveStatusQuery,
+  useGetDriveClientQuery,
   useSaveDriveClientMutation,
+  useRemoveDriveClientMutation,
+  useGetDeliveryQuery,
   useDisconnectDriveMutation,
   useConnectDriveMutation,
   useGetDriveBooksQuery,

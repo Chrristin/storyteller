@@ -15,6 +15,20 @@ export type DriveStatus = {
   accountEmail: string | null
 }
 
+/** What the signed-in user can send ebooks to, from GET /api/v2/delivery. */
+export type DeliveryStatus = {
+  drive: DriveStatus
+  kindle: {
+    smtpConfigured: boolean
+    hasAddress: boolean
+    defaultAddress: string | null
+    available: boolean
+  }
+}
+
+export const DRIVE_PREFERENCES_PATH =
+  "/preferences?tab=devices&section=googleDrive"
+
 export type DriveBookFiles = Record<
   string,
   { syncedAt: string; fileName: string }

@@ -19,6 +19,7 @@ export const PREFERENCE_SECTIONS = [
   { id: "linkedAccounts", tab: "profile" },
   { id: "pairDevice", tab: "devices" },
   { id: "kindle", tab: "devices" },
+  { id: "googleDrive", tab: "devices" },
   { id: "apiTokens", tab: "devices" },
   { id: "language", tab: "general" },
   { id: "accent", tab: "appearance" },
