@@ -15,6 +15,8 @@ import { WaveProgress } from "@/components/WaveProgress"
 import { Icon } from "@/components/ui/icon"
 import { PortalHost } from "@/components/ui/portal-context"
 import { Text } from "@/components/ui/text"
+import { useAutoplayWhenReady } from "@/hooks/useAutoplayWhenReady"
+import { isAutoplayParam } from "@/lib/openOptions"
 import { useSpansFold } from "@/lib/pose"
 import { cn } from "@/lib/utils"
 import {
@@ -60,9 +62,14 @@ function getTrackStartPositions(tracks: StorytellerTrack[]) {
 }
 
 export default function PlayerScreen() {
-  const { uuid, format = "readaloud" } = useLocalSearchParams() as {
+  const {
+    uuid,
+    format = "readaloud",
+    autoplay,
+  } = useLocalSearchParams() as {
     uuid: UUID
     format?: "readaloud" | "ebook" | "audiobook"
+    autoplay?: string
   }
 
   const { data: book } = useGetBookQuery(uuid ? { uuid } : skipToken)
@@ -125,6 +132,12 @@ export default function PlayerScreen() {
     setBookPrefs(uuid, { lastFormat: format, closed: false })
     dispatch(bookshelfSlice.actions.bookOpened({ bookUuid: uuid, format }))
   }, [dispatch, format, uuid])
+
+  useAutoplayWhenReady({
+    enabled: isAutoplayParam(autoplay),
+    uuid,
+    format,
+  })
 
   const tracks = useAppSelector(getTracks)
   const currentTrackIndex = useAppSelector(getCurrentTrackIndex)

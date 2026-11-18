@@ -3,6 +3,7 @@ import { useCallback } from "react"
 
 import { type BookWithRelations } from "@/database/books"
 import { type BookFormat, getBookPrefs, setBookPrefs } from "@/lib/bookPrefs"
+import { autoplayParam } from "@/lib/openOptions"
 
 /** Formats that can be opened right now, in the order they are offered. */
 export function getOpenableFormats(book: BookWithRelations): BookFormat[] {
@@ -32,11 +33,19 @@ export function useOpenBook() {
   const router = useRouter()
 
   const openFormat = useCallback(
-    (book: BookWithRelations, format: BookFormat) => {
+    (
+      book: BookWithRelations,
+      format: BookFormat,
+      options?: { autoplay?: boolean },
+    ) => {
       setBookPrefs(book.uuid, { lastFormat: format, closed: false })
       router.push({
         pathname: format === "audiobook" ? "/listen/[uuid]" : "/read/[uuid]",
-        params: { uuid: book.uuid, format },
+        params: {
+          uuid: book.uuid,
+          format,
+          autoplay: autoplayParam(format, options),
+        },
       })
     },
     [router],

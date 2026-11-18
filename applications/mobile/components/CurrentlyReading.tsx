@@ -11,6 +11,7 @@ import { useCSSVariable } from "uniwind"
 
 import { type BookWithRelations } from "@/database/books"
 import { pickFormat, useOpenBook } from "@/hooks/useOpenBook"
+import { shouldAutoplay } from "@/lib/openOptions"
 
 import { AudiobookCover } from "./AudiobookCover"
 import { BookCover } from "./BookCover"
@@ -172,10 +173,12 @@ export function CurrentlyReading({ books }: { books: BookWithRelations[] }) {
       : undefined
   const current = expandedBook ?? first
 
-  function resume(book: BookWithRelations) {
+  /** The card body opens the book; the play and Continue buttons also play. */
+  function resume(book: BookWithRelations, autoplay = false) {
     const format = pickFormat(book)
-    if (format) openFormat(book, format)
-    else openDetails(book)
+    if (format) {
+      openFormat(book, format, { autoplay: autoplay && shouldAutoplay(format) })
+    } else openDetails(book)
   }
 
   const percent = getPercent(current)
@@ -257,7 +260,7 @@ export function CurrentlyReading({ books }: { books: BookWithRelations[] }) {
                 accessibilityLabel={`Continue ${current.title}`}
                 accessibilityRole="button"
                 className="bg-primary h-10 flex-1 items-center justify-center rounded-full"
-                onPress={() => resume(current)}
+                onPress={() => resume(current, true)}
               >
                 <Text className="text-primary-foreground text-sm font-semibold">
                   Continue
@@ -313,14 +316,19 @@ export function CurrentlyReading({ books }: { books: BookWithRelations[] }) {
                   textClassName="text-muted-foreground text-[11px]"
                 />
               </View>
-              <View className="bg-primary size-10 items-center justify-center rounded-full">
+              <Pressable
+                accessibilityLabel={`Play ${first.title}`}
+                accessibilityRole="button"
+                className="bg-primary size-10 items-center justify-center rounded-full"
+                onPress={() => resume(first, true)}
+              >
                 <Icon
                   as={Play}
                   className="text-primary-foreground"
                   fill="currentColor"
                   size={16}
                 />
-              </View>
+              </Pressable>
             </Pressable>
           </Animated.View>
         )}

@@ -4,6 +4,8 @@ import { useEffect } from "react"
 
 import { Epub } from "@/components/Epub"
 import { LoadingView } from "@/components/LoadingView"
+import { useAutoplayWhenReady } from "@/hooks/useAutoplayWhenReady"
+import { isAutoplayParam } from "@/lib/openOptions"
 import { useSpansFold } from "@/lib/pose"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useIsNotBackground } from "@/hooks/useIsNotBackground"
@@ -14,9 +16,10 @@ import { bookshelfSlice } from "@/store/slices/bookshelfSlice"
 import { type UUID } from "@/uuid"
 
 export default function BookScreen() {
-  const { uuid, format } = useLocalSearchParams() as {
+  const { uuid, format, autoplay } = useLocalSearchParams() as {
     uuid: UUID
     format: "readaloud" | "ebook"
+    autoplay?: string
   }
 
   const dispatch = useAppDispatch()
@@ -42,6 +45,15 @@ export default function BookScreen() {
     (isFocused || isReaderSheetOpen) &&
     isNotBackground &&
     !isAudioLoading
+
+  // Read-aloud narration starts once, when the reader is up and the audio is
+  // loaded. An ebook has no audio, so it never autoplays.
+  useAutoplayWhenReady({
+    enabled: isAutoplayParam(autoplay) && format === "readaloud",
+    uuid,
+    format,
+    ready: showEpub,
+  })
 
   useEffect(() => {
     setBookPrefs(uuid, { lastFormat: format, closed: false })
