@@ -14,6 +14,7 @@ import {
 import { CurrentlyReading } from "@/components/CurrentlyReading"
 import { DriveSelectionBars } from "@/components/DriveSelectionBars"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
+import { HomeSection } from "@/components/HomeSection"
 import { Shelf } from "@/components/Shelf"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/ui/icon"
@@ -24,6 +25,12 @@ import { type Collection } from "@/database/collections"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
 import { useBookPrefsSync } from "@/lib/bookPrefsSync"
+import {
+  HOME_SECTIONS,
+  filterRecentlyCompleted,
+  filterToRead,
+  sortRecentlyAdded,
+} from "@/lib/homeSections"
 import { useLibraryLook } from "@/lib/libraryLook"
 import { bookImported } from "@/store/actions"
 import { useAppDispatch } from "@/store/appState"
@@ -32,7 +39,7 @@ import {
   useListCollectionsQuery,
 } from "@/store/localApi"
 
-import { filterCurrentlyReading, filterStartReading } from "./shelf/[type]"
+import { filterCurrentlyReading } from "./shelf/[type]"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
 const EMPTY_COLLECTIONS: Collection[] = []
@@ -73,7 +80,14 @@ export default function Home() {
     return filterCurrentlyReading(books)
   }, [books])
 
-  const startReading = useMemo(() => filterStartReading(books), [books])
+  const sectionBooks = useMemo(
+    () => ({
+      "to-read": filterToRead(books),
+      "recently-added": sortRecentlyAdded(books),
+      "recently-completed": filterRecentlyCompleted(books),
+    }),
+    [books],
+  )
 
   const booksByCollection = useMemo(
     () =>
@@ -165,14 +179,19 @@ export default function Home() {
         }
       >
         {showCurrentlyReading && <CurrentlyReading books={currentlyReading} />}
-        <Shelf
-          label="Recently added"
-          books={startReading}
-          href={{
-            pathname: "/shelf/[type]",
-            params: { type: "start-reading" },
-          }}
-        />
+        {HOME_SECTIONS.map((section) => (
+          <HomeSection
+            key={section.id}
+            title={section.title}
+            books={sectionBooks[section.id]}
+            limit={section.limit}
+            buttonLabel={section.buttonLabel}
+            href={{
+              pathname: "/shelf/[type]",
+              params: { type: section.shelfType },
+            }}
+          />
+        ))}
         {collections.map((collection) => (
           <Shelf
             key={collection.uuid}

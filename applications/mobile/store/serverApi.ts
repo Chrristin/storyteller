@@ -187,7 +187,7 @@ export const serverApi = createApi({
     }),
     updateStatus: build.mutation<
       void,
-      { bookUuid: UUID; serverUuid: UUID; statusUuid: UUID }
+      { bookUuid: UUID; serverUuid: UUID; statusUuid: UUID | null }
     >({
       query: ({ bookUuid, serverUuid, statusUuid }) => ({
         url: `/books/${bookUuid}/status`,

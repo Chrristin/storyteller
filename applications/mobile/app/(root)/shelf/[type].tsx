@@ -3,15 +3,22 @@ import { useMemo } from "react"
 
 import { BookGrid } from "@/components/BookGrid"
 import { type BookWithRelations } from "@/database/books"
+import {
+  filterRecentlyCompleted,
+  filterToRead,
+  sortRecentlyAdded,
+} from "@/lib/homeSections"
 import { useListBooksQuery } from "@/store/localApi"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
 
-type ShelfType = "currently-reading" | "start-reading"
+type ShelfType = "currently-reading" | "start-reading" | "to-read" | "completed"
 
 const SHELF_TITLES: Record<ShelfType, string> = {
   "currently-reading": "Continue",
-  "start-reading": "Recently added",
+  "start-reading": "Recently Added",
+  "to-read": "To Read",
+  completed: "Recently Completed",
 }
 
 export function filterCurrentlyReading(books: BookWithRelations[]) {
@@ -20,19 +27,14 @@ export function filterCurrentlyReading(books: BookWithRelations[]) {
     .sort((a, b) => (b.position?.timestamp ?? 0) - (a.position?.timestamp ?? 0))
 }
 
-/** Every book, newest first. Backs the "Recently added" shelf. */
-export function filterStartReading(books: BookWithRelations[]) {
-  return [...books].sort(
-    (a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf(),
-  )
-}
-
 const SHELF_FILTERS: Record<
   ShelfType,
   (books: BookWithRelations[]) => BookWithRelations[]
 > = {
   "currently-reading": filterCurrentlyReading,
-  "start-reading": filterStartReading,
+  "start-reading": sortRecentlyAdded,
+  "to-read": filterToRead,
+  completed: filterRecentlyCompleted,
 }
 
 export default function ShelfScreen() {

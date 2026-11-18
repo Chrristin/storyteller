@@ -16,6 +16,7 @@ import {
 } from "lucide-react-native"
 import { Fragment, useState } from "react"
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -56,6 +57,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Text } from "@/components/ui/text"
+import { useToReadActions } from "@/hooks/useToRead"
+import { toReadActionForStatus, toReadActionLabel } from "@/lib/homeSections"
 import { useAvailableFormats } from "@/hooks/useAvailableFormats"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
@@ -91,6 +94,8 @@ export default function BookDetailsScreen() {
   const { data: statuses } = useListStatusesQuery()
 
   const [updateStatus] = useUpdateStatusMutation()
+  const toRead = useToReadActions()
+  const [toReadBusy, setToReadBusy] = useState(false)
 
   const [getServerBook, { isLoading: isServerLoading }] =
     useLazyGetServerBookQuery()
@@ -352,6 +357,45 @@ export default function BookDetailsScreen() {
               review={prefs.review ?? ""}
               onSave={(review) => void prefActions.setReview(book, review)}
             />
+            {book.serverUuid &&
+              (() => {
+                const toReadAction = toReadActionForStatus(book.status?.name)
+                if (!toReadAction) return null
+                const serverUuid = book.serverUuid
+                return (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mb-3 self-start rounded-full"
+                    accessibilityLabel={toReadActionLabel(toReadAction)}
+                    disabled={toReadBusy}
+                    onPress={() => {
+                      setToReadBusy(true)
+                      const item = {
+                        uuid: book.uuid,
+                        serverUuid,
+                        statusName: book.status?.name ?? null,
+                      }
+                      void (
+                        toReadAction === "add"
+                          ? toRead.add([item])
+                          : toRead.remove([item])
+                      )
+                        .catch(() => {
+                          Alert.alert(
+                            "Could not update To Read",
+                            toReadAction === "remove"
+                              ? "Removing needs a connection to the server. Try again when you are online."
+                              : "Something went wrong. Try again.",
+                          )
+                        })
+                        .finally(() => setToReadBusy(false))
+                    }}
+                  >
+                    <Text>{toReadActionLabel(toReadAction)}</Text>
+                  </Button>
+                )
+              })()}
             <Group className="mb-4 items-center justify-between self-stretch">
               {book.status && (
                 <Select

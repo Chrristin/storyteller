@@ -443,10 +443,17 @@ export async function getPositionsForBook(
 
 export async function updateBookStatus(uuid: UUID, statusUuid: UUID) {
   await db
-    .updateTable("bookToStatus")
-    .set({ statusUuid, dirty: "true" })
-    .where("bookUuid", "=", uuid)
+    .insertInto("bookToStatus")
+    .values({ uuid: randomUUID(), bookUuid: uuid, statusUuid, dirty: "true" })
+    .onConflict((oc) =>
+      oc.column("bookUuid").doUpdateSet({ statusUuid, dirty: "true" }),
+    )
     .execute()
+}
+
+/** Removes the local status, so the book has none (it is not marked). */
+export async function clearBookStatus(uuid: UUID) {
+  await db.deleteFrom("bookToStatus").where("bookUuid", "=", uuid).execute()
 }
 
 export async function deleteBook(uuid: UUID) {

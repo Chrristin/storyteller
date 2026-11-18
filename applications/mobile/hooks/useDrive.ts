@@ -116,6 +116,10 @@ export interface SelectedBook {
   uuid: UUID
   title: string
   serverUuid: UUID
+  /** True when the book has an ebook, so Drive and Kindle can take it. */
+  sendable: boolean
+  /** The reading status name when selected, used for the To Read action. */
+  statusName: string | null
 }
 
 let selection = new Map<UUID, SelectedBook>()
@@ -127,8 +131,15 @@ function setSelection(next: Map<UUID, SelectedBook>) {
 }
 
 function toSelected(book: BookWithRelations): SelectedBook | null {
-  if (!canSyncToDrive(book)) return null
-  return { uuid: book.uuid, title: book.title, serverUuid: book.serverUuid }
+  // Any book on a server can be selected, so it can be marked To Read.
+  if (book.serverUuid === null) return null
+  return {
+    uuid: book.uuid,
+    title: book.title,
+    serverUuid: book.serverUuid,
+    sendable: canSyncToDrive(book),
+    statusName: book.status?.name ?? null,
+  }
 }
 
 export const driveSelection = {

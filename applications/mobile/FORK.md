@@ -225,3 +225,21 @@ steady muted colour.
 The web library has the same "Titles under covers" switch in Preferences, Books.
 Audiobook cards show the title and author on the waves; every other card has no
 text under it unless that switch is on.
+
+## Home sections
+
+Home shows three 3 column grids under the currently reading strip: To Read
+(first 6, button "Read More"), Recently Added (first 9, button "All") and
+Recently Completed (first 6, button "More"). A section with no books renders
+nothing and its button is hidden when everything already fits. The buttons open
+`shelf/[type]` with type `to-read`, `start-reading` or `completed`. Rules and
+limits live in `lib/homeSections.ts` (tests in `lib/homeSections.test.ts`).
+Recently Completed is ordered by the last reading position timestamp, because
+the local data has no time for when a status was set.
+
+To Read is manual. Books with no status on the server now keep no local status
+(the sync used to turn them into "To read"). The book page and the selection
+bar add "Add to To Read" / "Remove from To Read"; adding sets the local status
+(pushed by the status sync), removing sends status null to the server and then
+deletes the local status, so it needs a connection. Selecting is now allowed
+for any book on a server; Drive and Kindle still only take books with an ebook.

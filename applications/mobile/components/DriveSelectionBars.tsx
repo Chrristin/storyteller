@@ -12,6 +12,13 @@ import {
   useSyncToDrive,
 } from "@/hooks/useDrive"
 import { useIsFocused } from "@/hooks/useIsFocused"
+import { useToReadActions } from "@/hooks/useToRead"
+import {
+  canAddToRead,
+  selectionToReadAction,
+  selectionToReadLabel,
+  toReadProgressLabel,
+} from "@/lib/homeSections"
 import {
   describeActionScope,
   kindleButtonLabel,
@@ -79,6 +86,7 @@ export function DriveSelectionBars({ books }: Props) {
   const syncToDrive = useSyncToDrive()
   const sendToKindle = useSendToKindle()
   const delivery = useDelivery()
+  const toRead = useToReadActions()
   const [overwrite, setOverwrite] = useState(false)
   const [resendChoice, setResendChoice] = useState<boolean | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -89,15 +97,20 @@ export function DriveSelectionBars({ books }: Props) {
 
   const count = selection.size
   const selected = useMemo(() => [...selection.values()], [selection])
+  // Drive and Kindle only take books that have an ebook.
+  const sendable = useMemo(
+    () => selected.filter((book) => book.sendable),
+    [selected],
+  )
   const kindleSent = useKindleSentSet(
     useMemo(
       () =>
         isFocused
-          ? selected.filter((book) =>
+          ? sendable.filter((book) =>
               kindleServersOf(delivery).has(book.serverUuid),
             )
           : [],
-      [isFocused, selected, delivery],
+      [isFocused, sendable, delivery],
     ),
   )
   if (!isFocused || count === 0) return null
@@ -106,8 +119,8 @@ export function DriveSelectionBars({ books }: Props) {
     [...delivery].filter(([, info]) => info.drive).map(([uuid]) => uuid),
   )
   const kindleServers = kindleServersOf(delivery)
-  const drive = splitByServers(selected, driveServers)
-  const kindle = splitByServers(selected, kindleServers)
+  const drive = splitByServers(sendable, driveServers)
+  const kindle = splitByServers(sendable, kindleServers)
   const resendState = kindleResendState(
     kindle.included.map((book) => book.uuid),
     kindleSent,
@@ -115,6 +128,39 @@ export function DriveSelectionBars({ books }: Props) {
   const resend = resendChoice ?? resendState.defaultResend
   const kindleBooks = selectKindleBooks(kindle.included, kindleSent, resend)
   const kindleLabel = kindleButtonLabel(kindleBooks.length, resend)
+
+  const toReadAction = selectionToReadAction(
+    selected.map((book) => book.statusName),
+  )
+  const toReadCount =
+    toReadAction === "add"
+      ? selected.filter((book) => canAddToRead(book.statusName)).length
+      : selected.length
+
+  function runToRead() {
+    if (!toReadAction) return
+    const action = toReadAction
+    void (async () => {
+      setBusy("To Read")
+      setProgress(0)
+      try {
+        await (action === "add" ? toRead.add : toRead.remove)(
+          selected,
+          setProgress,
+        )
+        driveSelection.clear()
+      } catch {
+        Alert.alert(
+          "Could not update To Read",
+          action === "remove"
+            ? "Removing needs a connection to the server. Try again when you are online."
+            : "Something went wrong. Try again.",
+        )
+      } finally {
+        setBusy(null)
+      }
+    })()
+  }
 
   function confirm(
     title: string,
@@ -236,6 +282,21 @@ export function DriveSelectionBars({ books }: Props) {
               </Text>
             </Button>
           </>
+        )}
+        {toReadAction && (
+          <Button
+            size="lg"
+            className="rounded-full"
+            accessibilityLabel={selectionToReadLabel(toReadAction, toReadCount)}
+            disabled={copying}
+            onPress={runToRead}
+          >
+            <Text className="text-primary-foreground">
+              {busy === "To Read"
+                ? toReadProgressLabel(toReadAction, progress, selected.length)
+                : selectionToReadLabel(toReadAction, toReadCount)}
+            </Text>
+          </Button>
         )}
       </View>
     </>

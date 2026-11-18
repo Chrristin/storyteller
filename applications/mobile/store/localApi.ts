@@ -25,6 +25,7 @@ import {
   getPositionsForBook,
   removeBookDownloads,
   updateBookStatus,
+  clearBookStatus,
 } from "@/database/books"
 import {
   type Collection,
@@ -460,6 +461,37 @@ export const localApi = createApi({
         })
       },
     }),
+    clearStatus: build.mutation<null, { bookUuid: UUID }>({
+      async queryFn({ bookUuid }) {
+        await clearBookStatus(bookUuid)
+        return { data: null }
+      },
+      async onQueryStarted({ bookUuid }, { dispatch, queryFulfilled }) {
+        const getBookPatch = dispatch(
+          localApi.util.updateQueryData(
+            "getBook",
+            { uuid: bookUuid },
+            (draft) => {
+              if (!draft) return
+              draft.status = null
+            },
+          ),
+        )
+
+        const listBooksPatch = dispatch(
+          localApi.util.updateQueryData("listBooks", undefined, (draft) => {
+            const draftBook = draft.find(({ uuid }) => uuid === bookUuid)
+            if (!draftBook) return
+            draftBook.status = null
+          }),
+        )
+
+        await queryFulfilled.catch(() => {
+          getBookPatch.undo()
+          listBooksPatch.undo()
+        })
+      },
+    }),
     updatePosition: build.mutation<
       null,
       { bookUuid: UUID; locator: ReadiumLocator; timestamp: number }
@@ -600,6 +632,7 @@ export const {
   useUpdateGlobalPreferenceMutation,
   useUpdateHighlightMutation,
   useUpdateStatusMutation,
+  useClearStatusMutation,
 } = localApi
 
 function compareLocators(a: ReadiumLocator, b: ReadiumLocator) {

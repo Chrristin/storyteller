@@ -91,6 +91,9 @@ export async function upsertServerBooks(
 
     const booksToInsert: NewBook[] = []
     const bookToStatusRecords: NewBookToStatus[] = []
+    // Books the user has not given a status. They keep no local status row, so
+    // "To read" only ever means the user marked it.
+    const unmarkedBookUuids: UUID[] = []
     const positionsToInsert: NewPosition[] = []
     const ebooksToInsert: NewEbook[] = []
     const audiobooksToInsert: NewAudiobook[] = []
@@ -136,11 +139,15 @@ export async function upsertServerBooks(
         createdAt: serverBook.createdAt,
       })
 
-      bookToStatusRecords.push({
-        uuid: randomUUID(),
-        bookUuid: serverBook.uuid,
-        statusUuid: statusUuid,
-      })
+      if (serverBook.status) {
+        bookToStatusRecords.push({
+          uuid: randomUUID(),
+          bookUuid: serverBook.uuid,
+          statusUuid: statusUuid,
+        })
+      } else {
+        unmarkedBookUuids.push(serverBook.uuid)
+      }
 
       if (serverBook.position) {
         const existingPositionTimestamp = existingPositionMap.get(
@@ -451,6 +458,14 @@ export async function upsertServerBooks(
       }
     }
 
+    for (const chunk of partitionByLength(unmarkedBookUuids, 50)) {
+      await tr
+        .deleteFrom("bookToStatus")
+        .where("bookUuid", "in", chunk)
+        .where("dirty", "=", "false")
+        .execute()
+    }
+
     if (positionsToInsert.length > 0) {
       const chunks = partitionByLength(positionsToInsert, 50)
       for (const chunk of chunks) {
@@ -605,17 +620,18 @@ export async function createBookFromServer(
   isReadaloudDownloaded?: boolean,
 ) {
   await db.transaction().execute(async (tr) => {
-    const status =
-      (await tr
-        .selectFrom("status")
-        .select("uuid")
-        .where("name", "=", serverBook.status?.name ?? "To read")
-        .executeTakeFirst()) ??
-      (await tr
-        .selectFrom("status")
-        .select("uuid")
-        .where("isDefault", "=", "true")
-        .executeTakeFirstOrThrow())
+    const status = serverBook.status
+      ? ((await tr
+          .selectFrom("status")
+          .select("uuid")
+          .where("name", "=", serverBook.status.name)
+          .executeTakeFirst()) ??
+        (await tr
+          .selectFrom("status")
+          .select("uuid")
+          .where("isDefault", "=", "true")
+          .executeTakeFirstOrThrow()))
+      : null
 
     await tr
       .insertInto("book")
@@ -646,14 +662,16 @@ export async function createBookFromServer(
       })
       .execute()
 
-    await tr
-      .insertInto("bookToStatus")
-      .values({
-        uuid: randomUUID(),
-        bookUuid: serverBook.uuid,
-        statusUuid: status.uuid,
-      })
-      .execute()
+    if (status) {
+      await tr
+        .insertInto("bookToStatus")
+        .values({
+          uuid: randomUUID(),
+          bookUuid: serverBook.uuid,
+          statusUuid: status.uuid,
+        })
+        .execute()
+    }
 
     if (serverBook.position) {
       await tr

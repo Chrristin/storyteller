@@ -4,12 +4,7 @@ import { Pressable, View } from "react-native"
 import { type BookWithRelations } from "@/database/books"
 import { useAvailableFormats } from "@/hooks/useAvailableFormats"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
-import {
-  canSyncToDrive,
-  driveSelection,
-  useDriveSelection,
-  useDelivery,
-} from "@/hooks/useDrive"
+import { driveSelection, useDriveSelection } from "@/hooks/useDrive"
 import { useOpenBook } from "@/hooks/useOpenBook"
 import { useLibraryLook } from "@/lib/libraryLook"
 import { tiltStyle } from "@/lib/tilt"
@@ -56,14 +51,10 @@ export function BookThumbnail({
   const [downloadBook] = useDownloadBookMutation()
   const [deleteBook] = useDeleteBookMutation()
 
-  const delivery = useDelivery()
   const selection = useDriveSelection()
   const selectionActive = selection.size > 0
-  const driveSelectable =
-    selectable &&
-    canSyncToDrive(book) &&
-    (delivery.get(book.serverUuid)?.drive === true ||
-      delivery.get(book.serverUuid)?.kindle === true)
+  // Any book on a server can be selected: To Read works for all of them.
+  const driveSelectable = selectable && book.serverUuid !== null
   const selected = selection.has(book.uuid)
 
   const { data: statuses } = useListStatusesQuery()
