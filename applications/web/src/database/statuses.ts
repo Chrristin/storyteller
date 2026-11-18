@@ -5,12 +5,12 @@ import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { type DB } from "./schema"
-import { isWellKnownStatus } from "./statusKinds"
+import { isWellKnownStatus, sortStatuses } from "./statusKinds"
 
 export type Status = Selectable<DB["status"]>
 
 export async function getStatuses() {
-  return db.selectFrom("status").selectAll().execute()
+  return sortStatuses(await db.selectFrom("status").selectAll().execute())
 }
 
 export async function getStatus(uuid: UUID) {

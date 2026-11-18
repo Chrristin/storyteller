@@ -137,7 +137,8 @@ function seedStatuses(sqlite: Database) {
     `INSERT OR IGNORE INTO status (name, is_default) VALUES (?, ?)`,
   )
 
-  insert.run("To read", "1")
+  insert.run("Unread", "1")
+  insert.run("To read", "0")
   insert.run("Reading", "0")
   insert.run("Read", "0")
 }

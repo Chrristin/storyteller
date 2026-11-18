@@ -112,6 +112,31 @@ describe("getNextUpInSeries", () => {
     assert.deepStrictEqual(books, [])
   })
 
+  it("ignores Unread books: only an explicit To read counts", async () => {
+    using ctx = setupTestDb()
+    seedUser(ctx, userId)
+
+    const [b1, b2, b3] = seedBooks(ctx, [
+      { title: "one" },
+      { title: "two" },
+      { title: "three" },
+    ]) as [string, string, string]
+    seedSeries(ctx, "saga", [
+      [b1, 1],
+      [b2, 2],
+      [b3, 3],
+    ])
+    setStatus(ctx, b1, "Read")
+    setStatus(ctx, b2, "Unread")
+    setStatus(ctx, b3, "To read")
+
+    const books = await getNextUpInSeries(userId)
+    assert.deepStrictEqual(
+      books.map((b) => b.uuid),
+      [b3],
+    )
+  })
+
   it("accepts explicit To read status but not custom statuses", async () => {
     using ctx = setupTestDb()
     seedUser(ctx, userId)

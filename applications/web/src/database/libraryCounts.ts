@@ -20,6 +20,7 @@ import { type UUID } from "@/uuid"
 import { db } from "./connection"
 import { FIELD_SQL, formatPredicate } from "./fieldSql"
 import { bookVisibleTo, buildFilterExpression } from "./shelfFilter"
+import { statusSortRank } from "./statusKinds"
 import { type Permission, type UserPermissionSet } from "./users"
 
 export { type FacetSection, isFacetSection }
@@ -441,7 +442,7 @@ async function collectionFacets(userId: UUID): Promise<FacetValue[]> {
 }
 
 async function statusFacets(userId: UUID): Promise<FacetValue[]> {
-  return db
+  const rows = await db
     .selectFrom("status")
     .leftJoin("bookToStatus", (join) =>
       join
@@ -456,6 +457,15 @@ async function statusFacets(userId: UUID): Promise<FacetValue[]> {
     ])
     .groupBy(["status.uuid", "status.label", "status.name"])
     .execute()
+
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort(
+      (a, b) =>
+        statusSortRank(a.row.kind) - statusSortRank(b.row.kind) ||
+        a.index - b.index,
+    )
+    .map(({ row }) => row)
 }
 
 async function publicationYearFacets(userId: UUID): Promise<FacetValue[]> {

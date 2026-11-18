@@ -124,7 +124,11 @@ describe("getSectionFacets show-all", () => {
     )
     const byName = Object.fromEntries(facets.map((f) => [f.name, f.bookCount]))
 
-    assert.strictEqual(facets.length, 3)
+    assert.strictEqual(facets.length, 4)
+    assert.deepStrictEqual(
+      facets.map((f) => f.name),
+      ["Unread", "To read", "Reading", "Read"],
+    )
     assert.strictEqual(byName["Reading"], 1)
     assert.strictEqual(byName["To read"], 0)
     assert.strictEqual(byName["Read"], 0)

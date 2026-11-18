@@ -7,7 +7,11 @@ import { type UriReference } from "@/progress/uriReference.ts"
 import { type ProgressionDocument } from "@/schemas/v3/progress.ts"
 import { type UUID } from "@/uuid.ts"
 
-import { STATUS_READ, STATUS_READING, STATUS_TO_READ } from "./statusKinds"
+import {
+  STARTABLE_STATUS_NAMES,
+  STATUS_READ,
+  STATUS_READING,
+} from "./statusKinds"
 
 export async function getProgressionDocument(
   userId: UUID,
@@ -201,14 +205,18 @@ export async function upsertProgression(
     const statuses = await tr.selectFrom("status").selectAll().execute()
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const toRead = statuses.find((status) => status.name === STATUS_TO_READ)!
+    const startable = new Set(
+      statuses
+        .filter((status) => STARTABLE_STATUS_NAMES.has(status.name))
+        .map((status) => status.uuid),
+    )
     const reading = statuses.find((status) => status.name === STATUS_READING)!
     const read = statuses.find((status) => status.name === STATUS_READ)!
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    if ((!status || status.statusUuid === toRead.uuid) && progression < 0.98) {
+    if ((!status || startable.has(status.statusUuid)) && progression < 0.98) {
       logger.debug(
-        'Status is empty or "To read" and progression is less than 98%, setting to "Reading"',
+        'Status is empty, "Unread" or "To read" and progression is less than 98%, setting to "Reading"',
       )
       await tr
         .updateTable("bookToStatus")
@@ -219,12 +227,12 @@ export async function upsertProgression(
     }
     if (
       (!status ||
-        status.statusUuid === toRead.uuid ||
+        startable.has(status.statusUuid) ||
         status.statusUuid === reading.uuid) &&
       progression >= 0.98
     ) {
       logger.debug(
-        'Status is empty or "To read" or "Reading" and progression is greater than 98%, setting to "Read"',
+        'Status is empty, "Unread" or "To read" or "Reading" and progression is greater than 98%, setting to "Read"',
       )
       await tr
         .updateTable("bookToStatus")

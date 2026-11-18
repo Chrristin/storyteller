@@ -68,7 +68,7 @@ afterEach(() => {
   ctx[Symbol.dispose]()
 })
 
-async function setStatus(name: "To read" | "Reading" | "Read") {
+async function setStatus(name: "Unread" | "To read" | "Reading" | "Read") {
   await ctx.db.deleteFrom("bookToStatus").execute()
 
   const status = await ctx.db
@@ -398,6 +398,38 @@ describe("the book's status", () => {
     })
 
     expect(await statusName()).toBe("Reading")
+  })
+
+  it("moves an Unread book the reader started to Reading", async () => {
+    await setStatus("Unread")
+
+    await upsertProgression(userId, bookUuid, "ebook", {
+      ebook: {
+        modified: "2024-01-01T00:00:00.000Z",
+        progression: 0.2,
+        device: DEVICE,
+        title: "Chapter One",
+        references: [],
+      },
+    })
+
+    expect(await statusName()).toBe("Reading")
+  })
+
+  it("marks an Unread book Read at the last two percent", async () => {
+    await setStatus("Unread")
+
+    await upsertProgression(userId, bookUuid, "ebook", {
+      ebook: {
+        modified: "2024-01-01T00:00:00.000Z",
+        progression: 0.99,
+        device: DEVICE,
+        title: "Chapter One",
+        references: [],
+      },
+    })
+
+    expect(await statusName()).toBe("Read")
   })
 
   it("marks a book Read at the last two percent", async () => {
