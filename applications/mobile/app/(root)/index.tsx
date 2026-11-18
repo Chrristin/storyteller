@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native"
 
+import { AuthorCollectionsSection } from "@/components/AuthorCollectionsSection"
 import { CurrentlyReading } from "@/components/CurrentlyReading"
 import { DriveSelectionBars } from "@/components/DriveSelectionBars"
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
@@ -24,6 +25,7 @@ import { type BookWithRelations } from "@/database/books"
 import { type Collection } from "@/database/collections"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useListAllServerBooks } from "@/hooks/useListAllServerBooks"
+import { buildAuthorCollections } from "@/lib/authorCollections"
 import { useBookPrefsSync } from "@/lib/bookPrefsSync"
 import {
   HOME_SECTIONS,
@@ -86,6 +88,11 @@ export default function Home() {
       "recently-added": sortRecentlyAdded(books),
       "recently-completed": filterRecentlyCompleted(books),
     }),
+    [books],
+  )
+
+  const authorCollections = useMemo(
+    () => buildAuthorCollections(books),
     [books],
   )
 
@@ -205,6 +212,7 @@ export default function Home() {
             }}
           />
         ))}
+        <AuthorCollectionsSection collections={authorCollections} />
         {books.length === 0 && (
           <View className="bg-secondary mr-5 gap-3 rounded-xl p-4">
             <Text>You don’t have any books available, yet!</Text>
