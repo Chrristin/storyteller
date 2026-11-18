@@ -278,3 +278,5 @@ with "Add to To Read" on its page, or select several books in the library and us
   Nothing is stored.
 
 - Build 17 adds Add to collection, author collections and the series number fix.
+
+- Build 18: Series replaces Piles, missing numbers show on Series.
