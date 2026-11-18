@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react"
+import { shallowEqual } from "react-redux"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -264,4 +265,47 @@ export function useSendToKindle() {
     },
     [dispatch],
   )
+}
+
+/**
+ * Which of these books were already sent to the user's Kindle. Asks each
+ * server once for the given books; a server that cannot answer (an older one)
+ * counts as nothing sent.
+ */
+export function useKindleSentSet(books: readonly SelectedBook[]) {
+  const dispatch = useAppDispatch()
+  const key = JSON.stringify(
+    [...new Set(books.map((b) => `${b.serverUuid}|${b.uuid}`))].sort(),
+  )
+
+  const requests = useMemo(() => {
+    const byServer = new Map<UUID, UUID[]>()
+    for (const entry of JSON.parse(key) as string[]) {
+      const [serverUuid, uuid] = entry.split("|") as [UUID, UUID]
+      byServer.set(serverUuid, [...(byServer.get(serverUuid) ?? []), uuid])
+    }
+    return [...byServer].map(([serverUuid, uuids]) => ({
+      serverUuid,
+      books: uuids,
+    }))
+  }, [key])
+
+  useEffect(() => {
+    const subscriptions = requests.map((request) =>
+      dispatch(serverApi.endpoints.listKindleSent.initiate(request)),
+    )
+    return () => subscriptions.forEach((s) => s.unsubscribe())
+  }, [dispatch, requests])
+
+  const sentUuids = useAppSelector(
+    (state) =>
+      requests.flatMap((request) =>
+        Object.keys(
+          serverApi.endpoints.listKindleSent.select(request)(state).data ?? {},
+        ),
+      ),
+    shallowEqual,
+  )
+
+  return useMemo(() => new Set<string>(sentUuids), [sentUuids])
 }

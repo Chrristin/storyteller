@@ -55,6 +55,11 @@ export interface Delivery {
   }
 }
 
+export interface KindleSentRecord {
+  sentAt: string
+  address: string | null
+}
+
 export interface KindleSendResponse {
   sent: number
   skipped: number
@@ -62,7 +67,7 @@ export interface KindleSendResponse {
 
 export const serverApi = createApi({
   reducerPath: "serverApi",
-  tagTypes: ["DriveBooks"],
+  tagTypes: ["DriveBooks", "KindleSent"],
   async baseQuery(
     args: FetchArgs,
     baseQueryApi,
@@ -266,6 +271,20 @@ export const serverApi = createApi({
         method: "POST",
         body: { books },
       }),
+      invalidatesTags: ["KindleSent"],
+    }),
+    listKindleSent: build.query<
+      Record<string, KindleSentRecord>,
+      { serverUuid: UUID; books: UUID[] }
+    >({
+      query: ({ serverUuid, books }) => ({
+        url: "/books/kindle/sent",
+        serverUuid,
+        method: "POST",
+        body: { books },
+      }),
+      // An older server answers 404: callers read a missing result as nothing sent.
+      providesTags: ["KindleSent"],
     }),
     listDriveBooks: build.query<
       Record<string, DriveBookFile>,
@@ -301,6 +320,7 @@ export const {
   useGetDeliveryQuery,
   useSendBooksToKindleMutation,
   useListDriveBooksQuery,
+  useListKindleSentQuery,
   useSyncBooksToDriveMutation,
 } = serverApi
 

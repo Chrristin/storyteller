@@ -3,7 +3,7 @@
  * the rule for which books of a mixed selection an action applies to.
  */
 
-import { chunkBooks } from "./driveSync"
+import { chunkBooks, relativeAge } from "./driveSync"
 
 /** The server rejects more books than this in one email. */
 export const KINDLE_BATCH_SIZE = 25
@@ -94,4 +94,31 @@ export function describeActionScope(
   const base = `${action} ${included} ${noun(included)}?`
   if (!excluded) return base
   return `${base} ${excluded} selected ${noun(excluded)} ${excluded === 1 ? "is" : "are"} on a server where this is not available and will be left out.`
+}
+
+/** Text for "Sent ..." on a book that was already sent to the Kindle. */
+export function describeSentAt(
+  sentAt: string | number | Date | null | undefined,
+  now: number = Date.now(),
+) {
+  const age = relativeAge(sentAt, now)
+  return age === null ? "Sent" : `Sent ${age}`
+}
+
+/**
+ * Label for the Kindle button in the selection bar. "Resend" only when every
+ * book it applies to was already sent; an empty set stays "Send".
+ */
+export function kindleButtonLabel(
+  uuids: readonly string[],
+  sent: ReadonlySet<string>,
+) {
+  const noun = uuids.length === 1 ? "book" : "books"
+  const again = uuids.length > 0 && uuids.every((uuid) => sent.has(uuid))
+  return {
+    resend: again,
+    button: `${again ? "Resend" : "Send"} ${uuids.length} to Kindle`,
+    action: again ? "Resend" : "Send",
+    busy: `Sending ${uuids.length} ${noun}...`,
+  }
 }

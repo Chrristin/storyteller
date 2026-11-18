@@ -5,7 +5,9 @@ import { test } from "vitest"
 import {
   describeActionScope,
   describeKindleStop,
+  describeSentAt,
   kindleBatches,
+  kindleButtonLabel,
   kindleErrorMessage,
   splitByServers,
   summarizeKindleSend,
@@ -96,4 +98,33 @@ test("describeActionScope names books that are left out", () => {
     describeActionScope("Send", 1, 2),
     "Send 1 book? 2 selected books are on a server where this is not available and will be left out.",
   )
+})
+
+test("describeSentAt shows how long ago", () => {
+  const now = Date.parse("2026-01-10T12:00:00Z")
+  assert.equal(describeSentAt("2026-01-10T11:59:40Z", now), "Sent just now")
+  assert.equal(
+    describeSentAt("2026-01-10T11:55:00Z", now),
+    "Sent 5 minutes ago",
+  )
+  assert.equal(describeSentAt("2026-01-07T12:00:00Z", now), "Sent 3 days ago")
+  assert.equal(describeSentAt("2026-01-09T12:00:00Z", now), "Sent 1 day ago")
+  assert.equal(describeSentAt("nonsense", now), "Sent")
+  assert.equal(describeSentAt(null, now), "Sent")
+})
+
+test("kindleButtonLabel says Resend only when all were sent", () => {
+  const sent = new Set(["a", "b"])
+  assert.equal(kindleButtonLabel(["a", "b"], sent).button, "Resend 2 to Kindle")
+  assert.equal(kindleButtonLabel(["a", "b"], sent).action, "Resend")
+  assert.equal(kindleButtonLabel(["a"], sent).button, "Resend 1 to Kindle")
+  assert.equal(kindleButtonLabel(["a", "c"], sent).button, "Send 2 to Kindle")
+  assert.equal(kindleButtonLabel(["c"], sent).action, "Send")
+  assert.equal(kindleButtonLabel([], sent).button, "Send 0 to Kindle")
+  assert.equal(kindleButtonLabel(["a", "c"], sent).busy, "Sending 2 books...")
+  assert.equal(kindleButtonLabel(["a"], sent).busy, "Sending 1 book...")
+})
+
+test("describeActionScope handles Resend", () => {
+  assert.equal(describeActionScope("Resend", 3, 0), "Resend 3 books?")
 })

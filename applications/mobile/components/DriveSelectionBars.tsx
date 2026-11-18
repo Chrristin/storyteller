@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react-native"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, View } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
@@ -7,15 +7,26 @@ import {
   driveSelection,
   useDelivery,
   useDriveSelection,
+  useKindleSentSet,
   useSendToKindle,
   useSyncToDrive,
 } from "@/hooks/useDrive"
 import { useIsFocused } from "@/hooks/useIsFocused"
-import { describeActionScope, splitByServers } from "@/lib/kindleSend"
+import {
+  describeActionScope,
+  kindleButtonLabel,
+  splitByServers,
+} from "@/lib/kindleSend"
 
 import { Button } from "./ui/button"
 import { Icon } from "./ui/icon"
 import { Text } from "./ui/text"
+
+function kindleServersOf(delivery: ReturnType<typeof useDelivery>) {
+  return new Set(
+    [...delivery].filter(([, info]) => info.kindle).map(([uuid]) => uuid),
+  )
+}
 
 interface Props {
   /** The books on this screen, used by "Select all". */
@@ -36,17 +47,30 @@ export function DriveSelectionBars({ books }: Props) {
   useEffect(() => () => driveSelection.clear(), [])
 
   const count = selection.size
+  const selected = useMemo(() => [...selection.values()], [selection])
+  const kindleSent = useKindleSentSet(
+    useMemo(
+      () =>
+        isFocused
+          ? selected.filter((book) =>
+              kindleServersOf(delivery).has(book.serverUuid),
+            )
+          : [],
+      [isFocused, selected, delivery],
+    ),
+  )
   if (!isFocused || count === 0) return null
 
-  const selected = [...selection.values()]
   const driveServers = new Set(
     [...delivery].filter(([, info]) => info.drive).map(([uuid]) => uuid),
   )
-  const kindleServers = new Set(
-    [...delivery].filter(([, info]) => info.kindle).map(([uuid]) => uuid),
-  )
+  const kindleServers = kindleServersOf(delivery)
   const drive = splitByServers(selected, driveServers)
   const kindle = splitByServers(selected, kindleServers)
+  const kindleLabel = kindleButtonLabel(
+    kindle.included.map((book) => book.uuid),
+    kindleSent,
+  )
 
   function confirm(
     title: string,
@@ -87,7 +111,7 @@ export function DriveSelectionBars({ books }: Props) {
   const runKindle = () =>
     confirm(
       "Send to Kindle",
-      "Send",
+      kindleLabel.action,
       kindle,
       (books) => sendToKindle(books),
       "Could not send",
@@ -166,14 +190,14 @@ export function DriveSelectionBars({ books }: Props) {
           <Button
             size="lg"
             className="rounded-full"
-            accessibilityLabel={`Send ${kindle.included.length} to Kindle`}
+            accessibilityLabel={kindleLabel.button}
             disabled={copying}
             onPress={runKindle}
           >
             <Text className="text-primary-foreground">
               {busy === "Send to Kindle"
-                ? `Sending ${kindle.included.length} ${kindle.included.length === 1 ? "book" : "books"}...`
-                : `Send ${kindle.included.length} to Kindle`}
+                ? kindleLabel.busy
+                : kindleLabel.button}
             </Text>
           </Button>
         )}

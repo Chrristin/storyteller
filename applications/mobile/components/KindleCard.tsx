@@ -1,11 +1,14 @@
-import { Send } from "lucide-react-native"
+import { Check, Send } from "lucide-react-native"
 import { useState } from "react"
 import { Alert, View } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
 import { useBookDelivery } from "@/hooks/useDrive"
-import { kindleErrorMessage } from "@/lib/kindleSend"
-import { useSendBooksToKindleMutation } from "@/store/serverApi"
+import { describeSentAt, kindleErrorMessage } from "@/lib/kindleSend"
+import {
+  useListKindleSentQuery,
+  useSendBooksToKindleMutation,
+} from "@/store/serverApi"
 
 import { Button } from "./ui/button"
 import { Icon } from "./ui/icon"
@@ -18,14 +21,21 @@ export function KindleCard({ book }: { book: BookWithRelations }) {
   const { kindle, kindleAddress } = useBookDelivery(book)
   const serverUuid = book.serverUuid
   const [send, { isLoading }] = useSendBooksToKindleMutation()
-  const [sent, setSent] = useState(false)
+  const [justSent, setJustSent] = useState<string | null>(null)
+  const { data: records } = useListKindleSentQuery(
+    { serverUuid: serverUuid!, books: [book.uuid] },
+    { skip: !kindle || !serverUuid },
+  )
 
   if (!kindle || !serverUuid) return null
+
+  const sentAt = justSent ?? records?.[book.uuid]?.sentAt ?? null
+  const sent = sentAt !== null
 
   async function run() {
     try {
       await send({ serverUuid: serverUuid!, books: [book.uuid] }).unwrap()
-      setSent(true)
+      setJustSent(new Date().toISOString())
     } catch (error) {
       Alert.alert("Could not send", kindleErrorMessage(error))
     }
@@ -54,17 +64,20 @@ export function KindleCard({ book }: { book: BookWithRelations }) {
         </Button>
       ) : sent ? (
         <View className="flex-row items-center justify-between gap-3">
-          <Text className="font-semibold" style={{ color: SENT_GREEN }}>
-            Sent
-          </Text>
+          <View className="flex-row items-center gap-1.5">
+            <Icon as={Check} size={16} color={SENT_GREEN} />
+            <Text className="font-semibold" style={{ color: SENT_GREEN }}>
+              {describeSentAt(sentAt)}
+            </Text>
+          </View>
           <Button
             variant="outline"
             size="sm"
             className="border-primary rounded-full"
-            accessibilityLabel="Send to Kindle again"
+            accessibilityLabel="Resend to Kindle"
             onPress={() => void run()}
           >
-            <Text className="text-primary text-xs">Send again</Text>
+            <Text className="text-primary text-xs">Resend</Text>
           </Button>
         </View>
       ) : (

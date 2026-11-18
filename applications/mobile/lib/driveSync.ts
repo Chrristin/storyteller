@@ -73,23 +73,29 @@ export function driveErrorMessage(error: unknown): string {
   return "Something went wrong while copying to Drive"
 }
 
+/** "just now", "5 minutes ago", "3 days ago". Null when the date is unusable. */
+export function relativeAge(
+  value: string | number | Date | null | undefined,
+  now: number = Date.now(),
+) {
+  if (value === null || value === undefined) return null
+  const time = new Date(value).getTime()
+  if (Number.isNaN(time)) return null
+  const minutes = Math.floor((now - time) / 60_000)
+  if (minutes < 1) return "just now"
+  if (minutes < 60)
+    return `${minutes} ${plural(minutes, "minute", "minutes")} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} ${plural(hours, "hour", "hours")} ago`
+  const days = Math.floor(hours / 24)
+  return `${days} ${plural(days, "day", "days")} ago`
+}
+
 /** Text for "Copied ..." under a book that is already on Drive. */
 export function describeSyncedAt(
   syncedAt: string | number | Date | null | undefined,
   now: number = Date.now(),
 ) {
-  if (syncedAt === null || syncedAt === undefined) return "On Drive"
-  const time = new Date(syncedAt).getTime()
-  if (Number.isNaN(time)) return "On Drive"
-  const minutes = Math.floor((now - time) / 60_000)
-  if (minutes < 1) return "Copied just now"
-  if (minutes < 60) {
-    return `Copied ${minutes} ${plural(minutes, "minute", "minutes")} ago`
-  }
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) {
-    return `Copied ${hours} ${plural(hours, "hour", "hours")} ago`
-  }
-  const days = Math.floor(hours / 24)
-  return `Copied ${days} ${plural(days, "day", "days")} ago`
+  const age = relativeAge(syncedAt, now)
+  return age === null ? "On Drive" : `Copied ${age}`
 }
