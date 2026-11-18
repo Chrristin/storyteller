@@ -41,7 +41,10 @@ import { CreateSeriesDialog } from "@/app/(v3)/v3/_/components/books/CreateSerie
 import { CreateTagDialog } from "@/app/(v3)/v3/_/components/books/CreateTagDialog"
 import { DeleteBooksDialog } from "@/app/(v3)/v3/_/components/books/DeleteBooksDialog"
 import { useBulkDriveSync } from "@/app/(v3)/v3/_/components/books/DriveSync"
-import { useSendToKindle } from "@/app/(v3)/v3/_/components/books/SendToKindle"
+import {
+  useBulkKindleSend,
+  useSendToKindle,
+} from "@/app/(v3)/v3/_/components/books/SendToKindle"
 import {
   bookLink,
   canShareFiles,
@@ -179,8 +182,10 @@ export function useBookActionItems({
   const canDownload = !!permissions?.bookDownload
   const tShare = useTranslation("Sharing")
   const kindle = useSendToKindle()
+  const bulkKindle = useBulkKindleSend(books, mode === "bulk")
   const drive = useBulkDriveSync(books, mode === "bulk")
   const tDrive = useTranslation("Sharing.drive")
+  const tKindle = useTranslation("Sharing.kindle")
   const postDownload = usePostDownload()
   const basePath = useVersionBasePath()
 
@@ -690,15 +695,14 @@ export function useBookActionItems({
 
     const kindleBlocked = kindleRefusal(books)
 
-    if (mode === "bulk" && kindle.available) {
+    if (mode === "bulk" && bulkKindle.available) {
       entries.push({
         key: "sendToKindle",
-        label: tShare.plain("sendToKindle"),
+        label: tKindle.plain(bulkKindle.allSent ? "bulkResend" : "bulkSend", {
+          count: bulkKindle.count,
+        }),
         icon: <icon.Send className="size-4" />,
-        title: kindleBlocked ? kindle.refusalMessage(kindleBlocked) : undefined,
-        onSelect: (modifiers) => {
-          kindle.send(books, modifiers)
-        },
+        onSelect: bulkKindle.openDialog,
       })
     }
 
@@ -1045,6 +1049,7 @@ export function useBookActionItems({
 
       {processingRun.dialog}
       {kindle.dialog}
+      {mode === "bulk" && bulkKindle.dialog}
       {mode === "bulk" && drive.dialog}
       {postDownload.form}
     </>

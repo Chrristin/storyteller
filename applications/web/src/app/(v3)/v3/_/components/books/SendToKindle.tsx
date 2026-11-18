@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
+import {
+  type BulkPhase,
+  BulkSendDialog,
+} from "@v3/_/components/books/BulkSendDialog"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
@@ -27,6 +31,13 @@ import {
   type KindleAddress,
   KindleAddressSchema,
 } from "@/database/userPreferencesTypes"
+import {
+  DRIVE_BATCH_SIZE,
+  type DriveSyncTally,
+  addFailedBatchToTally,
+  chunk,
+  emptyTally,
+} from "@/driveSync"
 import { usePermission } from "@/hooks/usePermission"
 import * as icon from "@/icons"
 import {
@@ -34,9 +45,15 @@ import {
   KINDLE_MAX_BYTES,
   type KindleRefusal,
   defaultKindleAddress,
+  kindleBooks,
   kindleRefusal,
   showKindleButton,
 } from "@/kindle"
+import {
+  addKindleBatchToTally,
+  allKindleSent,
+  selectKindleTargets,
+} from "@/kindleBulk"
 import {
   useGetDeliveryQuery,
   useGetKindleSentQuery,
@@ -47,7 +64,11 @@ import { formatBytes } from "@/strings"
 import { type UUID } from "@/uuid"
 
 type KindleError = {
-  code?: KindleRefusal | "smtp-not-configured" | "no-kindle-address"
+  code?:
+    | KindleRefusal
+    | "smtp-not-configured"
+    | "no-kindle-address"
+    | "send-failed"
   message?: string
   sender?: string
 }
@@ -545,4 +566,187 @@ export function SendToKindleButton({
       {kindle.dialog}
     </>
   )
+}
+
+type BulkKindleBook = Pick<BookWithRelations, "uuid" | "title" | "ebook">
+
+/**
+ * Sends the selected books to a Kindle in sequential batches of 25 and reports
+ * progress. Mirrors useBulkDriveSync.
+ */
+export function useBulkKindleSend(books: BulkKindleBook[], enabled: boolean) {
+  const t = useTranslation("Sharing.kindle")
+  const available = useKindleAvailable(enabled)
+  const { kindleAddresses } = useUserPreferences()
+  const [sendToKindle] = useSendToKindleMutation()
+  const [open, setOpen] = useState(false)
+  const [resendChoice, setResendChoice] = useState<boolean | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [phase, setPhase] = useState<BulkPhase>("idle")
+  const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [tally, setTally] = useState<DriveSyncTally>(emptyTally)
+  const [stopReason, setStopReason] = useState<string | null>(null)
+  const cancelled = useRef(false)
+
+  const sendable = kindleBooks(books)
+  const { data: sent } = useGetKindleSentQuery(
+    sendable.map((book) => book.uuid),
+    { skip: !enabled || !available || sendable.length === 0 },
+  )
+  const allSent = allKindleSent(sendable, sent)
+  const includeSent = resendChoice ?? allSent
+  const { targets, leftOut } = selectKindleTargets(sendable, sent, includeSent)
+  // The menu entry counts what the dialog would send with its starting choice.
+  const entryTargets = selectKindleTargets(sendable, sent, allSent).targets
+
+  const errorMessage = useCallback(
+    (error: unknown) => {
+      const data = (error as { data?: KindleError } | undefined)?.data
+      switch (data?.code) {
+        case "smtp-not-configured":
+          return t.plain("smtpNotConfigured")
+        case "no-kindle-address":
+          return t.plain("noAddress")
+        case "send-failed":
+        default:
+          return data?.message ?? t.plain("failed")
+      }
+    },
+    [t],
+  )
+
+  const run = useCallback(
+    async (to?: string[]) => {
+      const list = targets
+      cancelled.current = false
+      setPhase("running")
+      setStopReason(null)
+      setProgress({ done: 0, total: list.length })
+      let current = emptyTally()
+      setTally(current)
+
+      let done = 0
+      for (const batch of chunk(list, DRIVE_BATCH_SIZE)) {
+        if (cancelled.current) break
+        try {
+          const response = await sendToKindle({
+            books: batch.map((book) => book.uuid),
+            to,
+          }).unwrap()
+          current = addKindleBatchToTally(current, response, batch)
+        } catch (error) {
+          // Email setup problems would fail every batch, so stop here and
+          // count this batch as failed.
+          const message = errorMessage(error)
+          current = addFailedBatchToTally(current, batch, message)
+          setTally(current)
+          setStopReason(message)
+          break
+        }
+        done += batch.length
+        setProgress({ done, total: list.length })
+        setTally(current)
+      }
+      setPhase("done")
+    },
+    [targets, sendToKindle, errorMessage],
+  )
+
+  const start = useCallback(() => {
+    if (kindleAddresses.length === 0) {
+      void run()
+      return
+    }
+    if (
+      kindleAddresses.length === 1 ||
+      kindleAddresses.some((a) => a.default)
+    ) {
+      const target = defaultKindleAddress(kindleAddresses)
+      void run(target ? [target.email] : undefined)
+      return
+    }
+    setPicking(true)
+  }, [kindleAddresses, run])
+
+  const openDialog = useCallback(() => {
+    setPhase("idle")
+    setTally(emptyTally())
+    setStopReason(null)
+    setResendChoice(null)
+    setOpen(true)
+  }, [])
+
+  const dialog = (
+    <>
+      <BulkSendDialog
+        open={open}
+        title={t("bulkTitle")}
+        description={t("bulkDescription", { count: targets.length })}
+        idleContent={
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={includeSent}
+                onCheckedChange={(checked) => {
+                  setResendChoice(checked)
+                }}
+              />
+              {t("alsoResend")}
+            </label>
+            {leftOut > 0 && (
+              <p className="text-muted-foreground text-xs">
+                {t("leftOut", { count: leftOut })}
+              </p>
+            )}
+          </div>
+        }
+        phase={phase}
+        progress={progress}
+        progressLabel={t("progress", {
+          done: progress.done,
+          total: progress.total,
+        })}
+        summary={t("summary", {
+          sent: tally.sent,
+          skipped: tally.skipped,
+          failed: tally.failed,
+        })}
+        failuresTitle={t("failuresTitle")}
+        stopReason={stopReason && t("stopped", { message: stopReason })}
+        startLabel={t("start")}
+        stopLabel={t("stop")}
+        closeLabel={t("close")}
+        startDisabled={targets.length === 0}
+        tally={tally}
+        onStart={start}
+        onStop={() => {
+          cancelled.current = true
+        }}
+        onOpenChange={(next) => {
+          if (!next && phase === "running") return
+          setOpen(next)
+        }}
+      />
+      {picking && (
+        <KindlePickerDialog
+          addresses={kindleAddresses}
+          onOpenChange={(next) => {
+            if (!next) setPicking(false)
+          }}
+          onSend={(emails) => {
+            setPicking(false)
+            void run(emails)
+          }}
+        />
+      )}
+    </>
+  )
+
+  return {
+    available: enabled && available && sendable.length > 0,
+    count: entryTargets.length,
+    allSent,
+    openDialog,
+    dialog,
+  }
 }

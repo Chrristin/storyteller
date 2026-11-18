@@ -116,7 +116,7 @@ import {
   compareJobs,
   queueJobNext,
 } from "@/jobList"
-import { type KindleSentBooks } from "@/kindle"
+import { type KindleSendResponse, type KindleSentBooks } from "@/kindle"
 import { type OrphanFolder, type StorageUsage } from "@/maintenance"
 import { type Role } from "@/metadata/marcRelators"
 import { type AutoImportResult } from "@/metadataAutoImport"
@@ -1976,7 +1976,7 @@ export const api = createApi({
       invalidatesTags: ["UserSettings", "Delivery"],
     }),
     sendToKindle: build.mutation<
-      { sent: number; skipped: number },
+      KindleSendResponse,
       { books: UUID[]; to?: string[] }
     >({
       query: (body) => ({

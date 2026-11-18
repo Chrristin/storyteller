@@ -4,16 +4,12 @@ import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
+import {
+  type BulkPhase,
+  BulkSendDialog,
+} from "@v3/_/components/books/BulkSendDialog"
 import { Button } from "@v3/_/components/ui/button"
 import { Checkbox } from "@v3/_/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@v3/_/components/ui/dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useTranslation } from "@v3/_/hooks/use-translation"
@@ -176,8 +172,6 @@ export function SyncToDriveButton({ book }: { book: DriveBook }) {
   )
 }
 
-type Phase = "idle" | "running" | "done"
-
 /** Sends the selected books' ebooks in sequential batches and reports progress. */
 export function useBulkDriveSync(books: DriveBook[], enabled: boolean) {
   const connected = useDriveConnected(enabled)
@@ -185,7 +179,7 @@ export function useBulkDriveSync(books: DriveBook[], enabled: boolean) {
   const [sync] = useSyncBooksToDriveMutation()
   const [open, setOpen] = useState(false)
   const [overwrite, setOverwrite] = useState(false)
-  const [phase, setPhase] = useState<Phase>("idle")
+  const [phase, setPhase] = useState<BulkPhase>("idle")
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [tally, setTally] = useState<DriveSyncTally>(emptyTally)
   const [stopReason, setStopReason] = useState<string | null>(null)
@@ -278,7 +272,7 @@ function BulkDriveSyncDialog({
   count: number
   overwrite: boolean
   onOverwriteChange: (value: boolean) => void
-  phase: Phase
+  phase: BulkPhase
   progress: { done: number; total: number }
   tally: DriveSyncTally
   stopReason: string | null
@@ -289,114 +283,53 @@ function BulkDriveSyncDialog({
   const t = useTranslation("Sharing.drive")
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("bulkTitle")}</DialogTitle>
-          <DialogDescription>
-            {t("bulkDescription", { count })}
-          </DialogDescription>
-        </DialogHeader>
-
-        {phase === "idle" && (
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={overwrite}
-              onCheckedChange={(checked) => {
-                onOverwriteChange(checked)
-              }}
-            />
-            {t("replaceExisting")}
-          </label>
-        )}
-
-        {phase === "running" && (
-          <div className="space-y-2" role="status">
-            <p className="flex items-center gap-2 text-sm">
-              <Spinner className="size-3.5" />
-              {t("progress", {
-                done: progress.done,
-                total: progress.total,
-              })}
-            </p>
-            <div className="bg-muted h-1.5 overflow-hidden rounded-full">
-              <div
-                className="bg-primary h-full rounded-full transition-all"
-                style={{
-                  width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {phase === "done" && (
-          <div className="space-y-2 text-sm" role="status">
-            <p>
-              {t("summary", {
-                sent: tally.sent,
-                skipped: tally.skipped,
-                failed: tally.failed,
-              })}
-              {tally.replaced > 0 && (
-                <>
-                  {" "}
-                  <span className="text-muted-foreground">
-                    ({t("summaryReplaced", { replaced: tally.replaced })})
-                  </span>
-                </>
-              )}
-            </p>
-            {stopReason && (
-              <p className="text-destructive text-xs">
-                {t("stopped", { message: stopReason })}
-              </p>
-            )}
-            {tally.failures.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs font-medium">{t("failuresTitle")}</p>
-                <ul className="border-border max-h-40 space-y-1 overflow-y-auto rounded-md border p-2 text-xs">
-                  {tally.failures.map((failure) => (
-                    <li key={failure.uuid}>
-                      <span className="font-medium">{failure.title}</span>
-                      {failure.message && (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          {failure.message}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        <DialogFooter>
-          {phase === "idle" && (
-            <Button className="rounded-full" onClick={onStart}>
-              <icon.Upload className="size-3.5" />
-              {t("start")}
-            </Button>
+    <BulkSendDialog
+      open={open}
+      title={t("bulkTitle")}
+      description={t("bulkDescription", { count })}
+      idleContent={
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={overwrite}
+            onCheckedChange={(checked) => {
+              onOverwriteChange(checked)
+            }}
+          />
+          {t("replaceExisting")}
+        </label>
+      }
+      phase={phase}
+      progress={progress}
+      progressLabel={t("progress", {
+        done: progress.done,
+        total: progress.total,
+      })}
+      summary={
+        <>
+          {t("summary", {
+            sent: tally.sent,
+            skipped: tally.skipped,
+            failed: tally.failed,
+          })}
+          {tally.replaced > 0 && (
+            <>
+              {" "}
+              <span className="text-muted-foreground">
+                ({t("summaryReplaced", { replaced: tally.replaced })})
+              </span>
+            </>
           )}
-          {phase === "running" && (
-            <Button variant="outline" className="rounded-full" onClick={onStop}>
-              {t("stop")}
-            </Button>
-          )}
-          {phase === "done" && (
-            <Button
-              className="rounded-full"
-              onClick={() => {
-                onOpenChange(false)
-              }}
-            >
-              {t("close")}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+      failuresTitle={t("failuresTitle")}
+      stopReason={stopReason && t("stopped", { message: stopReason })}
+      startLabel={t("start")}
+      stopLabel={t("stop")}
+      closeLabel={t("close")}
+      tally={tally}
+      onStart={onStart}
+      onStop={onStop}
+      onOpenChange={onOpenChange}
+    />
   )
 }

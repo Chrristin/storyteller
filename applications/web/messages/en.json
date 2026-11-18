@@ -2979,7 +2979,21 @@
       "pickDescription": "Choose which Kindle address to send to.",
       "defaultBadge": "Default",
       "send": "Send",
-      "shiftHint": "hold shift to send to default"
+      "shiftHint": "hold shift to send to default",
+      "bulkSend": "Send {count} to Kindle",
+      "bulkResend": "Resend {count} to Kindle",
+      "bulkTitle": "Send to Kindle",
+      "bulkDescription": "{count, plural, one {Email the ebook of # book} other {Email the ebooks of # books}} to your Kindle.",
+      "alsoResend": "Also resend books already sent",
+      "leftOut": "{count, plural, one {# book was left out because it was already sent} other {# books were left out because they were already sent}}",
+      "start": "Start sending",
+      "progress": "Sending {done} of {total}",
+      "summary": "{sent} sent, {skipped} skipped (no ebook), {failed} failed",
+      "failuresTitle": "These books could not be sent",
+      "stopped": "Stopped early: {message}",
+      "noAddress": "No Kindle address is saved yet. Add one in your preferences.",
+      "close": "Close",
+      "stop": "Stop after this batch"
     },
     "drive": {
       "sync": "Sync to Drive",
