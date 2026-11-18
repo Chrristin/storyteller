@@ -39,6 +39,7 @@ import {
 } from "@/kindle"
 import {
   useGetDeliveryQuery,
+  useGetKindleSentQuery,
   useSendToKindleMutation,
   useUpdateUserSettingsMutation,
 } from "@/store/api"
@@ -469,6 +470,10 @@ export function SendToKindleButton({
       setState({ status, book: books[0] ?? null })
     },
   })
+  const { data: sentBooks } = useGetKindleSentQuery([book.uuid], {
+    skip: !kindle.available,
+  })
+  const sentRecord = sentBooks?.[book.uuid]
 
   if (!showKindleButton(book, kindle.available)) return null
 
@@ -490,10 +495,19 @@ export function SendToKindleButton({
         {t("buttonSending")}
       </Button>
     )
-  } else if (status === "sent") {
+  } else if (status === "sent" || sentRecord) {
     content = (
       <div className="flex items-center gap-1">
-        <span className="bg-cover-accent/15 text-cover-accent inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium">
+        <span
+          className="bg-cover-accent/15 text-cover-accent inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium"
+          title={
+            sentRecord
+              ? t.plain("sentOn", {
+                  date: new Date(sentRecord.sentAt).toLocaleDateString(),
+                })
+              : undefined
+          }
+        >
           <icon.Check className="size-3.5" />
           {t("buttonSent")}
         </span>
@@ -505,7 +519,7 @@ export function SendToKindleButton({
             kindle.send([book])
           }}
         >
-          {t("sendAgain")}
+          {t("resend")}
         </Button>
       </div>
     )

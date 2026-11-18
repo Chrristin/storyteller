@@ -1,6 +1,7 @@
 import { safeFilename } from "@/assets/bookArchive"
 import { withHasPermission } from "@/auth/auth"
 import { getBooks } from "@/database/books"
+import { recordKindleSends } from "@/database/kindleSends"
 import { getSettings } from "@/database/settings"
 import { resolveUserPreferences } from "@/database/userPreferencesTypes"
 import { getUserSettings } from "@/database/userSettings"
@@ -93,6 +94,18 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
       },
       { status: 502 },
     )
+  }
+
+  // Remembering is best effort: the email is already out, so a failure here
+  // must not turn the send into an error.
+  try {
+    await recordKindleSends(
+      request.auth.user.id,
+      sendable.map((book) => book.uuid),
+      recipients[0] ?? null,
+    )
+  } catch (error) {
+    logger.error({ msg: "Failed to record Kindle send", err: error })
   }
 
   return Response.json({

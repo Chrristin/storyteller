@@ -116,6 +116,7 @@ import {
   compareJobs,
   queueJobNext,
 } from "@/jobList"
+import { type KindleSentBooks } from "@/kindle"
 import { type OrphanFolder, type StorageUsage } from "@/maintenance"
 import { type Role } from "@/metadata/marcRelators"
 import { type AutoImportResult } from "@/metadataAutoImport"
@@ -249,6 +250,7 @@ export const api = createApi({
     "GoogleDrive",
     "DriveClient",
     "DriveBooks",
+    "KindleSent",
     "Delivery",
     "SeriesGaps",
   ],
@@ -1982,6 +1984,7 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["KindleSent"],
     }),
     setUserSetting: build.mutation<
       Record<string, unknown>,
@@ -2808,6 +2811,15 @@ export const api = createApi({
       providesTags: ["DriveBooks"],
       keepUnusedDataFor: 0,
     }),
+    getKindleSent: build.query<KindleSentBooks, UUID[]>({
+      query: (books) => ({
+        url: "/books/kindle/sent",
+        method: "POST",
+        body: { books },
+      }),
+      providesTags: ["KindleSent"],
+      keepUnusedDataFor: 0,
+    }),
     syncBooksToDrive: build.mutation<
       DriveSyncResponse,
       { books: UUID[]; overwrite?: boolean }
@@ -3076,6 +3088,7 @@ export const {
   useDisconnectDriveMutation,
   useConnectDriveMutation,
   useGetDriveBooksQuery,
+  useGetKindleSentQuery,
   useSyncBooksToDriveMutation,
   useImportBookMetadataMutation,
   useAutoImportBookMetadataMutation,

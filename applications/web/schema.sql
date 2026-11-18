@@ -1776,3 +1776,10 @@ CREATE TABLE book_drive_file (
   synced_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, book_uuid)
 );
+CREATE TABLE book_kindle_send (
+  user_id TEXT NOT NULL REFERENCES user (id) ON DELETE CASCADE,
+  book_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  sent_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  address TEXT,
+  PRIMARY KEY (user_id, book_uuid)
+);

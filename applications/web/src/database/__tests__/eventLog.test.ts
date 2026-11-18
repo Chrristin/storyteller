@@ -166,6 +166,7 @@ const TABLES = {
   position: { exclude: "not part of the v3 API" },
   bookNote: { exclude: "fork-only shared notes, not part of the v3 API" },
   bookDriveFile: { exclude: "fork-only Google Drive sync state" },
+  bookKindleSend: { exclude: "fork-only Send to Kindle history" },
   googleDriveConfig: {
     exclude: "fork-only Google Drive sign-in, server-internal",
   },

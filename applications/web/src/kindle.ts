@@ -50,3 +50,9 @@ export function showKindleButton(
 ) {
   return kindleAvailable && !!downloadableAsset(book, "ebook")
 }
+
+/** Books this user sent to a Kindle, by book id. Never-sent books are absent. */
+export type KindleSentBooks = Record<
+  string,
+  { sentAt: string; address: string | null }
+>

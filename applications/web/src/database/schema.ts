@@ -668,6 +668,13 @@ export interface BookDriveFile {
   userId: import("@/uuid").UUID
 }
 
+export interface BookKindleSend {
+  address: string | null
+  bookUuid: import("@/uuid").UUID
+  sentAt: Generated<string>
+  userId: import("@/uuid").UUID
+}
+
 export interface UserBookRating {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
@@ -737,6 +744,7 @@ export interface DB {
   bookAccess: BookAccess
   bookAccessView: BookAccessView
   bookDriveFile: BookDriveFile
+  bookKindleSend: BookKindleSend
   bookNote: BookNote
   bookToCollection: BookToCollection
   bookToCreator: BookToCreator
