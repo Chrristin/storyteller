@@ -243,3 +243,8 @@ bar add "Add to To Read" / "Remove from To Read"; adding sets the local status
 (pushed by the status sync), removing sends status null to the server and then
 deletes the local status, so it needs a connection. Selecting is now allowed
 for any book on a server; Drive and Kindle still only take books with an ebook.
+
+After the update that added the To Read section, books you never marked are no
+longer in To Read (the first sync removes the old automatic marking). Mark a book
+with "Add to To Read" on its page, or select several books in the library and use
+"Add N to To Read".
