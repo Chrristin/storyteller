@@ -72,6 +72,15 @@ export default function ModalLayout() {
         }}
       />
       <Stack.Screen
+        name="add-to-collection"
+        options={{
+          presentation: "formSheet",
+          sheetAllowedDetents: [0.9],
+          sheetGrabberVisible: false,
+          sheetLargestUndimmedDetentIndex: "none",
+        }}
+      />
+      <Stack.Screen
         name="footnote"
         options={{
           presentation: "formSheet",
@@ -86,6 +95,8 @@ export default function ModalLayout() {
       />
       <Stack.Screen name="shelf/[type]" />
       <Stack.Screen name="author/[uuid]" />
+      <Stack.Screen name="author-collection/[author]" />
+      <Stack.Screen name="author-collections" />
       <Stack.Screen
         name="server"
         options={{

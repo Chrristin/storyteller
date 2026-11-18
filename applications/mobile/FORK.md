@@ -248,3 +248,29 @@ After the update that added the To Read section, books you never marked are no
 longer in To Read (the first sync removes the old automatic marking). Mark a book
 with "Add to To Read" on its page, or select several books in the library and use
 "Add N to To Read".
+
+## Add to collection and author collections
+
+- **Add to collection.** The selection bar's bottom row has a round Drive
+  button, a round Kindle button (each only where it applies) and a wide "Add to
+  collection" button. A caption above the row keeps the counts. The button opens
+  the `add-to-collection` form sheet (`components/AddToCollectionSheet.tsx`):
+  search, filter chips, "Create new...", and one mixed list of collections,
+  series, genres and authors built from the local books
+  (`lib/addToCollection.ts`, pure, with tests). Same names merge (authors by
+  `normaliseAuthorName`, series by `normaliseSeriesName`), and an item on two
+  servers is one row. Nothing is ever removed; books already in the item are
+  left out.
+- **Server routes:** collection `POST /collections` then `POST
+  /collections/books`; series `POST /series/books` (a new series numbers the
+  books 1..N in selection order, an existing one continues after its highest
+  whole position); genre `POST /books/tags`; author `POST /books/creators` with
+  role `aut` (asks for confirmation first). A 403 shows a permission message.
+  After a change the app re-reads the books of that server so the sync updates
+  the local tables.
+- **Author collections.** Home shows an "Authors" section after the user's own
+  collections: every author with two or more books (all credited authors count,
+  spellings merged), as stacked covers with "N books, M series"
+  (`lib/authorCollections.ts`). Tap one for the series piles and the books in
+  no series (`author-collection/[author]`). "All N" opens `author-collections`.
+  Nothing is stored.

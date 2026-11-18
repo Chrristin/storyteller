@@ -305,6 +305,22 @@ export const serverApi = createApi({
       }),
       providesTags: ["DriveBooks"],
     }),
+    /**
+     * A plain POST to a server route, used by "Add to collection" for
+     * /collections, /collections/books, /series/books, /books/tags and
+     * /books/creators. The reply is the created object or empty (204).
+     */
+    postServerJson: build.mutation<
+      unknown,
+      { serverUuid: UUID; url: string; body: unknown }
+    >({
+      query: ({ serverUuid, url, body }) => ({
+        url,
+        serverUuid,
+        method: "POST",
+        body,
+      }),
+    }),
     syncBooksToDrive: build.mutation<
       DriveSyncResponse,
       { serverUuid: UUID; books: UUID[]; overwrite?: boolean }
