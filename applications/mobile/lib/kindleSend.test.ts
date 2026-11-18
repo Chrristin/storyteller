@@ -8,8 +8,12 @@ import {
   describeSentAt,
   kindleBatches,
   kindleButtonLabel,
+  kindleProgressLabel,
+  kindleResendState,
   kindleErrorMessage,
+  selectKindleBooks,
   splitByServers,
+  summarizeKindleResults,
   summarizeKindleSend,
 } from "./kindleSend"
 
@@ -113,16 +117,71 @@ test("describeSentAt shows how long ago", () => {
   assert.equal(describeSentAt(null, now), "Sent")
 })
 
-test("kindleButtonLabel says Resend only when all were sent", () => {
+test("selectKindleBooks leaves out sent books unless resending", () => {
+  const books = [{ uuid: "a" }, { uuid: "b" }, { uuid: "c" }]
   const sent = new Set(["a", "b"])
-  assert.equal(kindleButtonLabel(["a", "b"], sent).button, "Resend 2 to Kindle")
-  assert.equal(kindleButtonLabel(["a", "b"], sent).action, "Resend")
-  assert.equal(kindleButtonLabel(["a"], sent).button, "Resend 1 to Kindle")
-  assert.equal(kindleButtonLabel(["a", "c"], sent).button, "Send 2 to Kindle")
-  assert.equal(kindleButtonLabel(["c"], sent).action, "Send")
-  assert.equal(kindleButtonLabel([], sent).button, "Send 0 to Kindle")
-  assert.equal(kindleButtonLabel(["a", "c"], sent).busy, "Sending 2 books...")
-  assert.equal(kindleButtonLabel(["a"], sent).busy, "Sending 1 book...")
+  assert.deepEqual(selectKindleBooks(books, sent, false), [{ uuid: "c" }])
+  assert.equal(selectKindleBooks(books, sent, true).length, 3)
+})
+
+test("kindleResendState shows the checkbox only when some were sent", () => {
+  const sent = new Set(["a", "b"])
+  assert.deepEqual(kindleResendState(["c"], sent), {
+    showCheckbox: false,
+    defaultResend: false,
+  })
+  assert.deepEqual(kindleResendState(["a", "c"], sent), {
+    showCheckbox: true,
+    defaultResend: false,
+  })
+  assert.deepEqual(kindleResendState(["a", "b"], sent), {
+    showCheckbox: true,
+    defaultResend: true,
+  })
+  assert.deepEqual(kindleResendState([], sent), {
+    showCheckbox: false,
+    defaultResend: false,
+  })
+})
+
+test("kindleButtonLabel and progress", () => {
+  assert.equal(kindleButtonLabel(4, false).button, "Send 4 to Kindle")
+  assert.equal(kindleButtonLabel(2, true).button, "Resend 2 to Kindle")
+  assert.equal(kindleButtonLabel(2, true).action, "Resend")
+  assert.equal(kindleProgressLabel(25, 60), "Sending 25 of 60")
+})
+
+test("summarizeKindleResults counts results and lists failures", () => {
+  const titles = new Map([["x", "Dune"]])
+  const out = summarizeKindleResults(
+    [
+      { uuid: "a", status: "sent" },
+      { uuid: "b", status: "sent" },
+      { uuid: "c", status: "skipped" },
+      { uuid: "x", status: "failed", message: "Too big" },
+      { uuid: "y", status: "failed" },
+    ],
+    titles,
+  )
+  assert.equal(
+    out.summary,
+    "2 sent, 1 skipped because it has no ebook, 2 failed",
+  )
+  assert.equal(
+    out.message,
+    "2 sent, 1 skipped because it has no ebook, 2 failed\n\nDune: Too big\nA book: Could not send this book",
+  )
+})
+
+test("summarizeKindleResults falls back to old server counts", () => {
+  assert.equal(
+    summarizeKindleResults([], new Map(), { sent: 27, skipped: 3 }).message,
+    "27 sent, 3 skipped because they have no ebook",
+  )
+  assert.equal(
+    summarizeKindleResults([], new Map()).message,
+    "Nothing was sent",
+  )
 })
 
 test("describeActionScope handles Resend", () => {

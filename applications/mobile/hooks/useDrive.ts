@@ -9,9 +9,10 @@ import {
   summarizeDriveResults,
 } from "@/lib/driveSync"
 import {
-  describeKindleStop,
+  type KindleResult,
   kindleBatches,
-  summarizeKindleSend,
+  kindleErrorMessage,
+  summarizeKindleResults,
 } from "@/lib/kindleSend"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useListServersQuery } from "@/store/localApi"
@@ -182,7 +183,11 @@ export function useSyncToDrive() {
   const dispatch = useAppDispatch()
 
   return useCallback(
-    async (books: readonly SelectedBook[], overwrite: boolean) => {
+    async (
+      books: readonly SelectedBook[],
+      overwrite: boolean,
+      onProgress?: (done: number) => void,
+    ) => {
       const byServer = new Map<UUID, UUID[]>()
       for (const book of books) {
         byServer.set(book.serverUuid, [
@@ -203,6 +208,7 @@ export function useSyncToDrive() {
               }),
             ).unwrap()
             results.push(...response.results)
+            onProgress?.(results.length)
           }
         }
       } catch (error) {
@@ -223,22 +229,28 @@ export function useSyncToDrive() {
   )
 }
 
-/** Sends books to the user's Kindle, one email per group of 25, in order. */
+/** Sends books to the user's Kindle in batches of 25, one after the other. */
 export function useSendToKindle() {
   const dispatch = useAppDispatch()
 
   return useCallback(
-    async (books: readonly SelectedBook[]) => {
+    async (
+      books: readonly SelectedBook[],
+      onProgress?: (done: number) => void,
+    ) => {
       const byServer = new Map<UUID, UUID[]>()
+      const titles = new Map<string, string>()
       for (const book of books) {
+        titles.set(book.uuid, book.title)
         byServer.set(book.serverUuid, [
           ...(byServer.get(book.serverUuid) ?? []),
           book.uuid,
         ])
       }
 
-      let sent = 0
-      let skipped = 0
+      const results: KindleResult[] = []
+      const legacy = { sent: 0, skipped: 0 }
+      let done = 0
       try {
         for (const [serverUuid, uuids] of byServer) {
           for (const batch of kindleBatches(uuids)) {
@@ -248,19 +260,30 @@ export function useSendToKindle() {
                 books: batch,
               }),
             ).unwrap()
-            sent += response.sent
-            skipped += response.skipped
+            if (response.results) results.push(...response.results)
+            else {
+              legacy.sent += response.sent
+              legacy.skipped += response.skipped
+            }
+            done += batch.length
+            onProgress?.(done)
           }
         }
       } catch (error) {
+        const summary = summarizeKindleResults(results, titles, legacy)
+        const before =
+          summary.sent || summary.skipped || summary.failed
+            ? `${summary.summary} before it stopped. `
+            : ""
         return {
           ok: false,
-          message: describeKindleStop(sent, skipped, error),
+          message: `${before}${kindleErrorMessage(error)}`,
         } satisfies DriveBatchOutcome
       }
+      const summary = summarizeKindleResults(results, titles, legacy)
       return {
         ok: true,
-        message: summarizeKindleSend(sent, skipped),
+        message: summary.message,
       } satisfies DriveBatchOutcome
     },
     [dispatch],

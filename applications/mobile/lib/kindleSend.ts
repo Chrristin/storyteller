@@ -105,20 +105,78 @@ export function describeSentAt(
   return age === null ? "Sent" : `Sent ${age}`
 }
 
+export interface KindleResult {
+  uuid: string
+  status: "sent" | "skipped" | "failed"
+  message?: string | undefined
+}
+
+/** Which books to send: all of them when resending, else only the unsent. */
+export function selectKindleBooks<T extends { uuid: string }>(
+  books: readonly T[],
+  sent: ReadonlySet<string>,
+  resend: boolean,
+): T[] {
+  return resend ? [...books] : books.filter((book) => !sent.has(book.uuid))
+}
+
 /**
- * Label for the Kindle button in the selection bar. "Resend" only when every
- * book it applies to was already sent; an empty set stays "Send".
+ * State of the "Also resend books already sent" row. It shows only when some
+ * eligible book was already sent, and starts ticked when all of them were.
  */
-export function kindleButtonLabel(
+export function kindleResendState(
   uuids: readonly string[],
   sent: ReadonlySet<string>,
 ) {
-  const noun = uuids.length === 1 ? "book" : "books"
-  const again = uuids.length > 0 && uuids.every((uuid) => sent.has(uuid))
+  const sentCount = uuids.filter((uuid) => sent.has(uuid)).length
   return {
-    resend: again,
-    button: `${again ? "Resend" : "Send"} ${uuids.length} to Kindle`,
-    action: again ? "Resend" : "Send",
-    busy: `Sending ${uuids.length} ${noun}...`,
+    showCheckbox: sentCount > 0,
+    defaultResend: uuids.length > 0 && sentCount === uuids.length,
   }
+}
+
+/** Label for the Kindle button, given how many books it will send. */
+export function kindleButtonLabel(count: number, resend: boolean) {
+  const action = resend ? "Resend" : "Send"
+  return { action, button: `${action} ${count} to Kindle` }
+}
+
+/** Text for the busy button, like "Sending 25 of 60". */
+export function kindleProgressLabel(done: number, total: number) {
+  return `Sending ${done} of ${total}`
+}
+
+/**
+ * Plain English summary of a send. Uses the per book results when the server
+ * gave them; counts from an older server (sent and skipped only) are added.
+ */
+export function summarizeKindleResults(
+  results: readonly KindleResult[],
+  titles: ReadonlyMap<string, string>,
+  legacy: { sent: number; skipped: number } = { sent: 0, skipped: 0 },
+) {
+  const count = (status: KindleResult["status"]) =>
+    results.filter((result) => result.status === status).length
+  const sent = count("sent") + legacy.sent
+  const skipped = count("skipped") + legacy.skipped
+  const failed = results.filter((result) => result.status === "failed")
+
+  const parts: string[] = []
+  if (sent) parts.push(`${sent} sent`)
+  if (skipped) {
+    parts.push(
+      `${skipped} skipped because ${skipped === 1 ? "it has" : "they have"} no ebook`,
+    )
+  }
+  if (failed.length) parts.push(`${failed.length} failed`)
+
+  const summary = parts.length ? parts.join(", ") : "Nothing was sent"
+  const failures = failed.map(
+    (result) =>
+      `${titles.get(result.uuid) ?? "A book"}: ${result.message ?? "Could not send this book"}`,
+  )
+  const message = failures.length
+    ? `${summary}\n\n${failures.join("\n")}`
+    : summary
+  return { summary, failures, message, sent, skipped, failed: failed.length }
 }

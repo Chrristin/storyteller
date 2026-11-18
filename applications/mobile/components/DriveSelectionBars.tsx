@@ -15,6 +15,9 @@ import { useIsFocused } from "@/hooks/useIsFocused"
 import {
   describeActionScope,
   kindleButtonLabel,
+  kindleProgressLabel,
+  kindleResendState,
+  selectKindleBooks,
   splitByServers,
 } from "@/lib/kindleSend"
 
@@ -25,6 +28,42 @@ import { Text } from "./ui/text"
 function kindleServersOf(delivery: ReturnType<typeof useDelivery>) {
   return new Set(
     [...delivery].filter(([, info]) => info.kindle).map(([uuid]) => uuid),
+  )
+}
+
+function CheckRow({
+  checked,
+  label,
+  disabled,
+  onToggle,
+}: {
+  checked: boolean
+  label: string
+  disabled: boolean
+  onToggle: () => void
+}) {
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+      className="flex-row items-center gap-3"
+      disabled={disabled}
+      onPress={onToggle}
+    >
+      <View
+        className={
+          checked
+            ? "bg-primary border-primary size-6 items-center justify-center rounded-md border-2"
+            : "border-border size-6 items-center justify-center rounded-md border-2"
+        }
+      >
+        {checked && (
+          <Icon as={Check} size={16} className="text-primary-foreground" />
+        )}
+      </View>
+      <Text className="text-sm">{label}</Text>
+    </Pressable>
   )
 }
 
@@ -41,7 +80,9 @@ export function DriveSelectionBars({ books }: Props) {
   const sendToKindle = useSendToKindle()
   const delivery = useDelivery()
   const [overwrite, setOverwrite] = useState(false)
+  const [resendChoice, setResendChoice] = useState<boolean | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
   const copying = busy !== null
 
   useEffect(() => () => driveSelection.clear(), [])
@@ -67,10 +108,13 @@ export function DriveSelectionBars({ books }: Props) {
   const kindleServers = kindleServersOf(delivery)
   const drive = splitByServers(selected, driveServers)
   const kindle = splitByServers(selected, kindleServers)
-  const kindleLabel = kindleButtonLabel(
+  const resendState = kindleResendState(
     kindle.included.map((book) => book.uuid),
     kindleSent,
   )
+  const resend = resendChoice ?? resendState.defaultResend
+  const kindleBooks = selectKindleBooks(kindle.included, kindleSent, resend)
+  const kindleLabel = kindleButtonLabel(kindleBooks.length, resend)
 
   function confirm(
     title: string,
@@ -89,6 +133,7 @@ export function DriveSelectionBars({ books }: Props) {
           onPress: () => {
             void (async () => {
               setBusy(title)
+              setProgress(0)
               const outcome = await work(split.included)
               setBusy(null)
               Alert.alert(outcome.ok ? title : failTitle, outcome.message)
@@ -105,15 +150,15 @@ export function DriveSelectionBars({ books }: Props) {
       "Google Drive",
       "Sync",
       drive,
-      (books) => syncToDrive(books, overwrite),
+      (books) => syncToDrive(books, overwrite, setProgress),
       "Could not copy",
     )
   const runKindle = () =>
     confirm(
       "Send to Kindle",
       kindleLabel.action,
-      kindle,
-      (books) => sendToKindle(books),
+      { included: kindleBooks, excluded: kindle.excluded },
+      (books) => sendToKindle(books, setProgress),
       "Could not send",
     )
 
@@ -146,31 +191,12 @@ export function DriveSelectionBars({ books }: Props) {
       <View className="bg-background border-border pb-safe px-safe-or-4 absolute right-0 bottom-0 left-0 z-50 gap-3 border-t pt-3">
         {drive.included.length > 0 && (
           <>
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: overwrite }}
-              accessibilityLabel="Replace files already in Drive"
-              className="flex-row items-center gap-3"
+            <CheckRow
+              checked={overwrite}
+              label="Replace files already in Drive"
               disabled={copying}
-              onPress={() => setOverwrite(!overwrite)}
-            >
-              <View
-                className={
-                  overwrite
-                    ? "bg-primary border-primary size-6 items-center justify-center rounded-md border-2"
-                    : "border-border size-6 items-center justify-center rounded-md border-2"
-                }
-              >
-                {overwrite && (
-                  <Icon
-                    as={Check}
-                    size={16}
-                    className="text-primary-foreground"
-                  />
-                )}
-              </View>
-              <Text className="text-sm">Replace files already in Drive</Text>
-            </Pressable>
+              onToggle={() => setOverwrite(!overwrite)}
+            />
             <Button
               size="lg"
               className="rounded-full"
@@ -180,26 +206,36 @@ export function DriveSelectionBars({ books }: Props) {
             >
               <Text className="text-primary-foreground">
                 {busy === "Google Drive"
-                  ? `Copying ${drive.included.length} ${drive.included.length === 1 ? "book" : "books"}...`
+                  ? `Copying ${progress} of ${drive.included.length}`
                   : `Sync ${drive.included.length} to Drive`}
               </Text>
             </Button>
           </>
         )}
         {kindle.included.length > 0 && (
-          <Button
-            size="lg"
-            className="rounded-full"
-            accessibilityLabel={kindleLabel.button}
-            disabled={copying}
-            onPress={runKindle}
-          >
-            <Text className="text-primary-foreground">
-              {busy === "Send to Kindle"
-                ? kindleLabel.busy
-                : kindleLabel.button}
-            </Text>
-          </Button>
+          <>
+            {resendState.showCheckbox && (
+              <CheckRow
+                checked={resend}
+                label="Also resend books already sent"
+                disabled={copying}
+                onToggle={() => setResendChoice(!resend)}
+              />
+            )}
+            <Button
+              size="lg"
+              className="rounded-full"
+              accessibilityLabel={kindleLabel.button}
+              disabled={copying || kindleBooks.length === 0}
+              onPress={runKindle}
+            >
+              <Text className="text-primary-foreground">
+                {busy === "Send to Kindle"
+                  ? kindleProgressLabel(progress, kindleBooks.length)
+                  : kindleLabel.button}
+              </Text>
+            </Button>
+          </>
         )}
       </View>
     </>

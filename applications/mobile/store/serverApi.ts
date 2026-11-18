@@ -63,6 +63,13 @@ export interface KindleSentRecord {
 export interface KindleSendResponse {
   sent: number
   skipped: number
+  emails?: number
+  /** Per book outcomes. Missing from older servers. */
+  results?: {
+    uuid: string
+    status: "sent" | "skipped" | "failed"
+    message?: string
+  }[]
 }
 
 export const serverApi = createApi({
