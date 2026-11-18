@@ -49,6 +49,10 @@ import {
 import { type ChangelogEntry } from "@/database/changelog"
 import { type CollectionWithRelations } from "@/database/collections"
 import { type AddCreatorInput, type Creator } from "@/database/creators"
+import {
+  type HardcoverIdentityStatus,
+  type ReviewPage,
+} from "@/database/hardcoverIdentity"
 import { type HomeStats } from "@/database/homeStats"
 import {
   type Identifier,
@@ -107,6 +111,8 @@ import {
   type DriveStatus,
   type DriveSyncResponse,
 } from "@/driveSync"
+import { type ApplyResult } from "@/hardcover/apply"
+import { type HardcoverIdentifyStatus } from "@/hardcover/status"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
 import {
   type JobListFilter,
@@ -253,6 +259,7 @@ export const api = createApi({
     "KindleSent",
     "Delivery",
     "SeriesGaps",
+    "HardcoverIdentify",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -2757,6 +2764,41 @@ export const api = createApi({
       query: () => ({ url: "/metadata/providers", method: "DELETE" }),
       invalidatesTags: ["MetadataProviders"],
     }),
+    getHardcoverIdentify: build.query<HardcoverIdentifyStatus, void>({
+      query: () => "/hardcover",
+      providesTags: ["HardcoverIdentify", "MetadataProviders"],
+    }),
+    runHardcoverIdentify: build.mutation<
+      { started: true },
+      { mode: "new" | "all" }
+    >({
+      query: (body) => ({ url: "/hardcover/run", method: "POST", body }),
+      invalidatesTags: ["HardcoverIdentify"],
+    }),
+    stopHardcoverIdentify: build.mutation<{ stopping: true }, void>({
+      query: () => ({ url: "/hardcover/stop", method: "POST" }),
+      invalidatesTags: ["HardcoverIdentify"],
+    }),
+    getHardcoverReview: build.query<
+      ReviewPage,
+      {
+        status: Exclude<HardcoverIdentityStatus, "pending" | "error">
+        cursor?: string
+      }
+    >({
+      query: (params) => ({ url: "/hardcover/review", params }),
+      providesTags: ["HardcoverIdentify"],
+    }),
+    acceptAllHardcover: build.mutation<ApplyResult, void>({
+      query: () => ({ url: "/hardcover/accept-all", method: "POST" }),
+      invalidatesTags: [
+        "HardcoverIdentify",
+        "Books",
+        "Series",
+        "Tags",
+        "SeriesGaps",
+      ],
+    }),
     getDriveStatus: build.query<DriveStatus, void>({
       query: () => "/drive",
       providesTags: ["GoogleDrive"],
@@ -3079,6 +3121,11 @@ export const {
   useGetMetadataProvidersQuery,
   useSetHardcoverTokenMutation,
   useClearHardcoverTokenMutation,
+  useGetHardcoverIdentifyQuery,
+  useRunHardcoverIdentifyMutation,
+  useStopHardcoverIdentifyMutation,
+  useGetHardcoverReviewQuery,
+  useAcceptAllHardcoverMutation,
   useGetDriveStatusQuery,
   useGetSeriesGapsQuery,
   useGetDriveClientQuery,

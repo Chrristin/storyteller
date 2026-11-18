@@ -37,6 +37,12 @@ export const SETTINGS_SECTIONS = [
   { id: "readBehavior", page: "metadata", key: "readBehavior" },
   { id: "metadataProviders", page: "metadata", key: "metadataProviders" },
   { id: "defaultStatus", page: "metadata", key: "defaultStatus" },
+  {
+    id: "hardcoverIdentify",
+    page: "metadata",
+    key: "hardcoverIdentify",
+    permission: "settingsUpdate",
+  },
   { id: "alignment", page: "processing", key: "alignment" },
   { id: "audio", page: "processing", key: "audio" },
   { id: "readaloud", page: "processing", key: "readaloud" },

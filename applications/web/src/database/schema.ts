@@ -675,6 +675,30 @@ export interface BookKindleSend {
   userId: import("@/uuid").UUID
 }
 
+export type HardcoverIdentityStatus =
+  | "pending"
+  | "sure"
+  | "check"
+  | "none"
+  | "accepted"
+  | "error"
+
+export interface HardcoverIdentity {
+  acceptedAt: string | null
+  bookUuid: import("@/uuid").UUID
+  checkedAt: string | null
+  error: string | null
+  genres: string | null
+  hardcoverId: string | null
+  matchedAuthors: string | null
+  matchedTitle: string | null
+  moods: string | null
+  seriesName: string | null
+  seriesPosition: number | null
+  sourceQuery: string | null
+  status: Generated<HardcoverIdentityStatus>
+}
+
 export interface UserBookRating {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
@@ -762,6 +786,7 @@ export interface DB {
   externalSource: ExternalSource
   googleDriveConfig: GoogleDriveConfig
   googleDriveConnection: GoogleDriveConnection
+  hardcoverIdentity: HardcoverIdentity
   homeSection: HomeSection
   identifier: Identifier
   identifierType: IdentifierType

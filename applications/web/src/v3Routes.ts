@@ -23,6 +23,7 @@ export const V3_ROOTS = [
   "shelves",
   "formats",
   "quality",
+  "identify",
   "identifiers",
   "not-found",
   "test",

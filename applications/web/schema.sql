@@ -1783,3 +1783,21 @@ CREATE TABLE book_kindle_send (
   address TEXT,
   PRIMARY KEY (user_id, book_uuid)
 );
+CREATE TABLE hardcover_identity (
+  book_uuid TEXT PRIMARY KEY NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (
+    status IN ('pending', 'sure', 'check', 'none', 'accepted', 'error')
+  ),
+  hardcover_id TEXT,
+  matched_title TEXT,
+  matched_authors TEXT,
+  series_name TEXT,
+  series_position REAL,
+  genres TEXT,
+  moods TEXT,
+  checked_at TEXT,
+  accepted_at TEXT,
+  error TEXT,
+  source_query TEXT
+);
+CREATE INDEX idx_hardcover_identity_status ON hardcover_identity (status);

@@ -1,5 +1,6 @@
 "use client"
 
+import { HardcoverIdentifySection } from "./hardcover-identify-section"
 import { MetadataProvidersSection } from "./metadata-providers-section"
 import { DefaultStatusSection, ReadBehaviorSection } from "./metadata-tab"
 
@@ -9,6 +10,7 @@ export function MetadataPage() {
       <ReadBehaviorSection />
       <MetadataProvidersSection />
       <DefaultStatusSection />
+      <HardcoverIdentifySection />
     </div>
   )
 }
