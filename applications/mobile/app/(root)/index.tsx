@@ -151,9 +151,9 @@ export default function Home() {
                 },
               },
               {
-                id: "piles",
-                title: "Piles",
-                onPress: () => router.push("/piles"),
+                id: "series",
+                title: "Series",
+                onPress: () => router.push("/series-list"),
               },
               {
                 id: "settings",

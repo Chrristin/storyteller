@@ -197,22 +197,24 @@ name that you already have is left as it is. Pure white on pure black is the
 maximum contrast (21:1); these sit at about 10:1 to 13:1, which most people find
 easier on the eyes for long reading.
 
-## Piles and missing books
+## Series and missing books
 
-The Library menu (the three dots) has a "Piles" item. It opens a screen that
-shows your series, or your authors, as piles of three covers with the name and
-the number of books. Tap a pile to open that series or author. Series piles
-show the first three books by series position; author piles show the newest
-three. If the same series name comes from two servers it is one pile.
+The Library menu (the three dots) has a "Series" item (`app/(root)/series-list.tsx`,
+route `/series-list`). It shows your series as tiles of three covers with the
+name, the number of books and, when there are gaps, "M missing" in amber. Tap a
+tile to open the series page. Series tiles show the first three books by series
+position. If the same series name comes from two servers it is one tile. The old
+Piles screen, its Authors tab and the Missing books list are gone: authors are
+covered by the automatic Author collections on Home.
 
 Missing books are found on the phone from the series positions the app already
 stores, so it works offline and the server is not involved. Only whole numbers
 from 1 up count, and a series needs two different owned positions. The gaps are
 the numbers between the lowest and highest owned book, so a series is never
-guessed past its last owned book. When there are gaps, the Piles header shows
-"Missing books (N)", and the series page shows a dashed amber "#3 Missing"
-tile in the right place. The logic is in `lib/seriesGaps.ts`, `lib/piles.ts` and
-`lib/seriesLayout.ts` (all pure, with tests). The amber colour is the
+guessed past its last owned book. The series page shows a dashed amber
+"#3 Missing" tile in the right place. The logic is in `lib/seriesGaps.ts`,
+`lib/piles.ts` (the series and author grouping, also used by author collections)
+and `lib/seriesLayout.ts` (all pure, with tests). The amber colour is the
 `missing` token in `global.css`.
 
 ## After updating the app
@@ -271,7 +273,7 @@ with "Add to To Read" on its page, or select several books in the library and us
 - **Author collections.** Home shows an "Authors" section after the user's own
   collections: every author with two or more books (all credited authors count,
   spellings merged), as stacked covers with "N books, M series"
-  (`lib/authorCollections.ts`). Tap one for the series piles and the books in
+  (`lib/authorCollections.ts`). Tap one for its series and the books in
   no series (`author-collection/[author]`). "All N" opens `author-collections`.
   Nothing is stored.
 
