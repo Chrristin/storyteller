@@ -34,6 +34,7 @@ import { type DisplayField } from "@/sort"
 import {
   api,
   useGetSectionFacetsQuery,
+  useGetSeriesGapsQuery,
   useListCollectionsQuery,
   useListSeriesQuery,
   useListUserShelvesQuery,
@@ -100,6 +101,16 @@ export function LibraryPage({
 
   const isSeriesSection = section.entityType === "series"
 
+  // One request for every series with gaps (the same cached query the series
+  // page uses), turned into a lookup by series uuid.
+  const { data: seriesGaps } = useGetSeriesGapsQuery(undefined, {
+    skip: !isSeriesSection,
+  })
+  const missingBySeries = useMemo(
+    () => new Map((seriesGaps ?? []).map((g) => [g.uuid, g.missing.length])),
+    [seriesGaps],
+  )
+
   const allItems = useMemo<FacetValue[]>(() => {
     if (!facets) return []
 
@@ -114,6 +125,9 @@ export function LibraryPage({
           key: facet.key,
           name: itemLabels?.[facet.key] ?? facet.name,
           bookCount: facet.bookCount,
+          ...(isSeriesSection && missingBySeries.has(facet.key)
+            ? { missingCount: missingBySeries.get(facet.key) }
+            : {}),
           icon: facet.icon,
           color: section.itemColor?.(facet.key) ?? facet.color,
           kind: facet.kind,
@@ -131,7 +145,15 @@ export function LibraryPage({
     }
 
     return items
-  }, [facets, noneLabel, itemLabels, section, t])
+  }, [
+    facets,
+    noneLabel,
+    itemLabels,
+    section,
+    t,
+    isSeriesSection,
+    missingBySeries,
+  ])
 
   const visibleItems = useMemo(() => {
     let items = allItems

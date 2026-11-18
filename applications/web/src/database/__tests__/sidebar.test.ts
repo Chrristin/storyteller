@@ -137,3 +137,30 @@ describe("sidebar section visibility", () => {
     assert.equal((await shelvesGroup()).hidden, true)
   })
 })
+
+describe("retired sidebar entries", () => {
+  it("drops a stored builtin key that no longer exists", async () => {
+    using ctx = setupTestDb()
+    seedUser(ctx, userId)
+    await ensureSidebarDefaults(userId)
+
+    const main = (await getSidebarGroups(userId)).find((g) => g.kind === "main")
+    assert.ok(main)
+    for (const key of ["piles", "missing"]) {
+      ctx.sqlite
+        .prepare(
+          `INSERT INTO sidebar_item (uuid, user_id, group_uuid, kind, builtin_key, position, hidden) VALUES (?, ?, ?, 'builtin', ?, 99, 0)`,
+        )
+        .run(crypto.randomUUID(), userId, main.uuid, key)
+    }
+
+    await ensureSidebarDefaults(userId)
+
+    const keys = (await getSidebarGroups(userId)).flatMap((g) =>
+      g.items.map((i) => i.builtinKey),
+    )
+    assert.ok(!keys.includes("piles"))
+    assert.ok(!keys.includes("missing"))
+    assert.ok(keys.includes("series"))
+  })
+})

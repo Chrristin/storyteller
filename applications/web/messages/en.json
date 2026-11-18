@@ -336,26 +336,6 @@
       "alwaysLoadAllHint": "Loads every match at once. Slower on large libraries."
     }
   },
-  "PilesPage": {
-    "title": "Piles",
-    "tabs": {
-      "series": "Series",
-      "authors": "Authors"
-    },
-    "bookCount": "{count, plural, one {# book} other {# books}}",
-    "missingCount": "{count} missing",
-    "missingBooksLink": "Missing books",
-    "showMore": "Show more",
-    "emptySeries": "No series yet",
-    "emptyAuthors": "No authors yet"
-  },
-  "MissingBooksPage": {
-    "title": "Missing books",
-    "piles": "Piles",
-    "missingList": "Missing {positions}",
-    "missingTitle": "#{n} is missing",
-    "empty": "No gaps found. This only finds gaps between books you own."
-  },
   "BookList": {
     "missingBook": "Missing",
     "emptyState": "No books found",
@@ -377,6 +357,7 @@
     },
     "emptyStateSub": "Select an item in the sidebar to see its books",
     "allItems": "All",
+    "missingCount": "{count} missing",
     "Shelves": {
       "plain": "Shelves",
       "by": "By Shelf",
@@ -1859,7 +1840,6 @@
     "home": "Home",
     "books": "Books",
     "alignmentQuality": "Book Reports",
-    "piles": "Piles",
     "allBooks": "All books",
     "collections": "Collections",
     "allCollections": "All collections",

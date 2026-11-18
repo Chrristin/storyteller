@@ -635,6 +635,7 @@ function SidebarRow({
   const tIssues = useTranslation("ShelfFilterIssues")
   const hiddenLabel = tEntity.plain("hiddenFromSidebar")
   const issuesLabel = tIssues.plain("shelfBroken")
+  const tLibrary = useTranslation("LibraryPage")
 
   if (!firstPathSegment) return null
 
@@ -685,6 +686,12 @@ function SidebarRow({
               />
             ) : null}
             <span className="min-w-0 truncate">{item.name}</span>
+
+            {item.missingCount != null && item.missingCount > 0 && (
+              <span className="shrink-0 text-xs text-amber-600 dark:text-amber-400">
+                {tLibrary.plain("missingCount", { count: item.missingCount })}
+              </span>
+            )}
 
             {item.filterIssues && item.filterIssues.length > 0 && (
               <icon.AlertTriangle

@@ -19,6 +19,8 @@ export type FacetValue = {
   key: string
   name: string
   bookCount: number
+  /** Series only: how many whole numbers are missing between owned books. */
+  missingCount?: number
   icon?: string | null
   color?: string | null
   kind?: string
