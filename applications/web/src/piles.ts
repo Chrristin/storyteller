@@ -1,5 +1,6 @@
 import {
   chooseCanonical,
+  cleanSeriesDisplayName,
   normaliseAuthorName,
   normaliseSeriesName,
 } from "@/nameKey"
@@ -131,7 +132,10 @@ export function buildPiles<B extends PileBook>(
       return {
         kind,
         uuid: representative.uuid,
-        name: display.name,
+        name:
+          kind === "series"
+            ? cleanSeriesDisplayName(display.name)
+            : display.name,
         count: all.length,
         covers:
           kind === "series"

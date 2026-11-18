@@ -2,7 +2,11 @@ import assert from "node:assert"
 
 import { describe, it } from "vitest"
 
-import { normaliseAuthorName, normaliseSeriesName } from "@/nameKey"
+import {
+  cleanSeriesDisplayName,
+  normaliseAuthorName,
+  normaliseSeriesName,
+} from "@/nameKey"
 
 describe("name keys", () => {
   it("joins initials and ignores case and punctuation for authors", () => {
@@ -29,5 +33,27 @@ describe("name keys", () => {
       normaliseSeriesName("Mistborn"),
       normaliseSeriesName("Mistborn Era Two"),
     )
+  })
+})
+
+describe("series numbers on the end", () => {
+  it("treats Expanse 05 and The Expanse as one series", () => {
+    assert.strictEqual(
+      normaliseSeriesName("Expanse 05"),
+      normaliseSeriesName("The Expanse"),
+    )
+    assert.strictEqual(
+      normaliseSeriesName("Malazan Empire 01"),
+      "malazan empire",
+    )
+    assert.strictEqual(normaliseSeriesName("Saga, Book 2"), "saga")
+  })
+  it("cleans the number off the display name", () => {
+    assert.strictEqual(cleanSeriesDisplayName("Expanse 05"), "Expanse")
+    assert.strictEqual(
+      cleanSeriesDisplayName("Malazan Empire 01"),
+      "Malazan Empire",
+    )
+    assert.strictEqual(cleanSeriesDisplayName("Dune"), "Dune")
   })
 })

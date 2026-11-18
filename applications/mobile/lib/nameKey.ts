@@ -40,6 +40,9 @@ export function normaliseSeriesName(name: string): string {
   const stripped = key
     .replace(/^the /, "")
     .replace(/ (series|saga|trilogy|cycle)$/, "")
+    // A book number left on the end, like "Expanse 05" or "Saga book 2".
+    .replace(/ (?:(?:book|vol|volume|part|no) )?\d{1,2}$/, "")
+    .replace(/ (series|saga|trilogy|cycle)$/, "")
   // Never reduce a name to nothing, for example a series called "The Series".
   if (stripped) key = stripped
   return key
@@ -66,4 +69,15 @@ export function chooseCanonical<
       a.uuid.localeCompare(b.uuid),
   )
   return sorted[0] as T
+}
+
+/** The series name for display, without a book number left on the end. */
+export function cleanSeriesDisplayName(name: string): string {
+  const cleaned = name
+    .replace(
+      /[\s,:#-]+(?:\b(?:book|vol|volume|part|no)\b\.?\s*)?#?\d{1,2}$/i,
+      "",
+    )
+    .trim()
+  return cleaned || name
 }
