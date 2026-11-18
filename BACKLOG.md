@@ -58,3 +58,5 @@ section. Move an item to "Done" when it ships.
   Recently added.
 - Piles (series and authors), Missing books (gaps), and the library tidy preview.
 - Tall 2 by 3 web cards, titles on the waves, "Titles under covers" switch.
+
+- Web: scrollbars are hidden everywhere (globals.css base layer). Revert there if some list needs one.

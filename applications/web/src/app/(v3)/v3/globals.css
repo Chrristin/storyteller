@@ -629,6 +629,13 @@ html:not(.dark) [data-shell="spine"] [data-slot="sidebar"] {
   body {
     @apply bg-background text-foreground font-sans;
   }
+  /* No visible scrollbars anywhere. Everything still scrolls. */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @utility scrollbar-hidden {
