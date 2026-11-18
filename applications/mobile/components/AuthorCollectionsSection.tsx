@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router"
 import { View, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -6,11 +5,10 @@ import { type BookWithRelations } from "@/database/books"
 import { type AuthorCollection } from "@/lib/authorCollections"
 
 import { AuthorCollectionTile } from "./AuthorCollectionTile"
-import { Button } from "./ui/button"
-import { Text } from "./ui/text"
+import { SectionHeader } from "./SectionHeader"
 
 const GAP = 12
-/** How many author collections Home shows before the "All" button. */
+/** How many author collections Home shows; "All" in the title row has the rest. */
 export const HOME_AUTHOR_LIMIT = 6
 
 /**
@@ -22,7 +20,6 @@ export function AuthorCollectionsSection({
 }: {
   collections: readonly AuthorCollection<BookWithRelations>[]
 }) {
-  const router = useRouter()
   const dimensions = useWindowDimensions()
   const insets = useSafeAreaInsets()
 
@@ -35,7 +32,7 @@ export function AuthorCollectionsSection({
 
   return (
     <View className="gap-2">
-      <Text className="text-[15px] font-semibold">Authors</Text>
+      <SectionHeader title="Authors" href="/author-collections" />
       <View className="flex-row flex-wrap" style={{ columnGap: GAP }}>
         {shown.map((collection) => (
           <AuthorCollectionTile
@@ -45,17 +42,6 @@ export function AuthorCollectionsSection({
           />
         ))}
       </View>
-      {collections.length > shown.length && (
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full rounded-full"
-          accessibilityLabel="All author collections"
-          onPress={() => router.push("/author-collections")}
-        >
-          <Text>All {collections.length}</Text>
-        </Button>
-      )}
     </View>
   )
 }

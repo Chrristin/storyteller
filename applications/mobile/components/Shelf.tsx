@@ -1,12 +1,11 @@
-import { type HrefObject, useRouter } from "expo-router"
-import { TouchableOpacity, View } from "react-native"
+import { type HrefObject } from "expo-router"
 import { FlatList } from "react-native-gesture-handler"
 
 import { type BookWithRelations } from "@/database/books"
 
 import { BookThumbnail } from "./BookThumbnail"
+import { SectionHeader } from "./SectionHeader"
 import { Stack } from "./ui/Stack"
-import { Text } from "./ui/text"
 
 interface Props {
   label: string
@@ -20,27 +19,11 @@ interface Props {
 const COVER_WIDTH = 104
 
 export function Shelf({ label, href, books, showProgress = false }: Props) {
-  const router = useRouter()
-
   if (!books.length) return null
 
   return (
     <Stack className="gap-2">
-      <View className="flex-row items-baseline justify-between">
-        <Text className="text-[15px] font-semibold">{label}</Text>
-
-        {href && (
-          <TouchableOpacity
-            accessibilityLabel={`View all ${label} books`}
-            accessibilityRole="button"
-            onPress={() => router.push(href)}
-          >
-            <Text className="text-primary text-[13px] font-semibold">
-              All {books.length}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <SectionHeader title={label} href={href} />
 
       <FlatList
         horizontal

@@ -57,6 +57,10 @@ import {
   down as addBookCoverColorsDown,
   up as addBookCoverColorsUp,
 } from "./1793100000000_add_book_cover_colors"
+import {
+  down as addUnreadStatusDown,
+  up as addUnreadStatusUp,
+} from "./1793200000000_add_unread_status"
 
 export const migrations = {
   "1757893743063_init": {
@@ -120,5 +124,9 @@ export const migrations = {
   "1793100000000_add_book_cover_colors": {
     up: addBookCoverColorsUp,
     down: addBookCoverColorsDown,
+  },
+  "1793200000000_add_unread_status": {
+    up: addUnreadStatusUp,
+    down: addUnreadStatusDown,
   },
 }

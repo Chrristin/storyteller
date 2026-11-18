@@ -89,6 +89,21 @@ export async function upsertServerBooks(
     const statusMap = new Map(statuses.map((s) => [s.name, s.uuid]))
     const defaultStatus = statuses.find((s) => s.isDefault)!
 
+    // The server can have statuses this phone does not know yet (for example
+    // "Unread", or one the user made on the web). Create them here so a book
+    // keeps its real status instead of falling back to the default.
+    for (const serverBook of serverBooks) {
+      const name = serverBook.status?.name
+      if (name && !statusMap.has(name)) {
+        const created = await tr
+          .insertInto("status")
+          .values({ uuid: randomUUID(), name, isDefault: "false" })
+          .returning("uuid")
+          .executeTakeFirstOrThrow()
+        statusMap.set(name, created.uuid)
+      }
+    }
+
     const booksToInsert: NewBook[] = []
     const bookToStatusRecords: NewBookToStatus[] = []
     // Books the user has not given a status. They keep no local status row, so
@@ -627,9 +642,13 @@ export async function createBookFromServer(
           .where("name", "=", serverBook.status.name)
           .executeTakeFirst()) ??
         (await tr
-          .selectFrom("status")
-          .select("uuid")
-          .where("isDefault", "=", "true")
+          .insertInto("status")
+          .values({
+            uuid: randomUUID(),
+            name: serverBook.status.name,
+            isDefault: "false",
+          })
+          .returning("uuid")
           .executeTakeFirstOrThrow()))
       : null
 

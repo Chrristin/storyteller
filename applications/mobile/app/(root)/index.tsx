@@ -29,6 +29,7 @@ import { buildAuthorCollections } from "@/lib/authorCollections"
 import { useBookPrefsSync } from "@/lib/bookPrefsSync"
 import {
   HOME_SECTIONS,
+  type HomeSectionId,
   filterRecentlyCompleted,
   filterToRead,
   sortRecentlyAdded,
@@ -117,6 +118,22 @@ export default function Home() {
 
   const scrollViewRef = useRef<ScrollViewInstance>(null)
 
+  const renderSection = (id: HomeSectionId) => {
+    const section = HOME_SECTIONS.find((candidate) => candidate.id === id)
+    if (!section) return null
+    return (
+      <HomeSection
+        title={section.title}
+        books={sectionBooks[section.id]}
+        limit={section.limit}
+        href={{
+          pathname: "/shelf/[type]",
+          params: { type: section.shelfType },
+        }}
+      />
+    )
+  }
+
   return (
     <View className="pt-safe flex-1 items-center gap-2 bg-transparent">
       <StatusBar verticalBarBehaviorIOS="disabled" />
@@ -186,19 +203,7 @@ export default function Home() {
         }
       >
         {showCurrentlyReading && <CurrentlyReading books={currentlyReading} />}
-        {HOME_SECTIONS.map((section) => (
-          <HomeSection
-            key={section.id}
-            title={section.title}
-            books={sectionBooks[section.id]}
-            limit={section.limit}
-            buttonLabel={section.buttonLabel}
-            href={{
-              pathname: "/shelf/[type]",
-              params: { type: section.shelfType },
-            }}
-          />
-        ))}
+        {renderSection("to-read")}
         {collections.map((collection) => (
           <Shelf
             key={collection.uuid}
@@ -213,6 +218,8 @@ export default function Home() {
           />
         ))}
         <AuthorCollectionsSection collections={authorCollections} />
+        {renderSection("recently-added")}
+        {renderSection("recently-completed")}
         {books.length === 0 && (
           <View className="bg-secondary mr-5 gap-3 rounded-xl p-4">
             <Text>You don’t have any books available, yet!</Text>

@@ -1,8 +1,9 @@
 /**
  * Pure rules for the Home screen sections: which books each section shows,
- * in what order, how many, and what the button under the grid says.
+ * in what order and how many. Each section's title row has an "All" link.
  */
 
+export const STATUS_UNREAD = "Unread"
 export const STATUS_TO_READ = "To read"
 export const STATUS_READING = "Reading"
 export const STATUS_READ = "Read"
@@ -22,7 +23,6 @@ export interface HomeSectionConfig {
   /** The shelf screen type that lists every book of the section. */
   shelfType: "to-read" | "start-reading" | "completed"
   limit: number
-  buttonLabel: string
 }
 
 export const HOME_SECTIONS: readonly HomeSectionConfig[] = [
@@ -31,21 +31,18 @@ export const HOME_SECTIONS: readonly HomeSectionConfig[] = [
     title: "To Read",
     shelfType: "to-read",
     limit: 6,
-    buttonLabel: "Read More",
   },
   {
     id: "recently-added",
     title: "Recently Added",
     shelfType: "start-reading",
     limit: 9,
-    buttonLabel: "All",
   },
   {
     id: "recently-completed",
     title: "Recently Completed",
     shelfType: "completed",
     limit: 6,
-    buttonLabel: "More",
   },
 ]
 
@@ -62,7 +59,10 @@ export function sortRecentlyAdded<T extends SectionBook>(books: readonly T[]) {
   return [...books].sort(newestAddedFirst)
 }
 
-/** Books the user marked "To read", newest added first. */
+/**
+ * Books the user marked "To read", newest added first. Books that only
+ * arrived ("Unread", or no status) are not on this list.
+ */
 export function filterToRead<T extends SectionBook>(books: readonly T[]) {
   return books
     .filter((book) => book.status?.name === STATUS_TO_READ)
@@ -103,7 +103,10 @@ export function sectionView<T>(
 
 export type ToReadAction = "add" | "remove" | null
 
-/** The one tap To Read action for a single book. */
+/**
+ * The one tap To Read action for a single book. "To read" removes the mark;
+ * Reading and Read are left alone; anything else (Unread, none, custom) adds.
+ */
 export function toReadActionForStatus(
   statusName: string | null | undefined,
 ): ToReadAction {
@@ -145,4 +148,27 @@ export function toReadProgressLabel(
   total: number,
 ) {
   return `${action === "add" ? "Adding" : "Removing"} ${done} of ${total}`
+}
+
+const STATUS_ORDER = [
+  STATUS_UNREAD,
+  STATUS_TO_READ,
+  STATUS_READING,
+  STATUS_READ,
+]
+
+/** Menu order for statuses: Unread, To read, Reading, Read, then the rest. */
+export function sortStatuses<T extends { name: string }>(
+  statuses: readonly T[],
+) {
+  const rank = (name: string) => {
+    const index = STATUS_ORDER.indexOf(name)
+    return index === -1 ? STATUS_ORDER.length : index
+  }
+  return statuses
+    .map((status, index) => ({ status, index }))
+    .sort(
+      (a, b) => rank(a.status.name) - rank(b.status.name) || a.index - b.index,
+    )
+    .map(({ status }) => status)
 }

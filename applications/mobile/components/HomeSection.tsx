@@ -1,4 +1,4 @@
-import { type HrefObject, useRouter } from "expo-router"
+import { type HrefObject } from "expo-router"
 import { View, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -8,23 +8,20 @@ import { sectionView } from "@/lib/homeSections"
 
 import { BookThumbnail } from "./BookThumbnail"
 import { calculateBookGridLayout } from "./bookGridLayout"
-import { Button } from "./ui/button"
-import { Text } from "./ui/text"
+import { SectionHeader } from "./SectionHeader"
 
 interface Props {
   title: string
   books: readonly BookWithRelations[]
   limit: number
-  buttonLabel: string
   href: HrefObject
 }
 
 /**
- * A Home section: a heading, a three column grid of the first few books and
- * one button to the full list. Renders nothing when there are no books.
+ * A Home section: a title row with "All" on the right, then a three column
+ * grid of the first few books. Renders nothing when there are no books.
  */
-export function HomeSection({ title, books, limit, buttonLabel, href }: Props) {
-  const router = useRouter()
+export function HomeSection({ title, books, limit, href }: Props) {
   const dimensions = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const [{ showTitles }] = useLibraryLook()
@@ -41,7 +38,7 @@ export function HomeSection({ title, books, limit, buttonLabel, href }: Props) {
 
   return (
     <View className="gap-2">
-      <Text className="text-[15px] font-semibold">{title}</Text>
+      <SectionHeader title={title} href={href} />
       <View className="-mx-1.5 flex-row flex-wrap">
         {view.shown.map((book) => (
           <View
@@ -53,17 +50,6 @@ export function HomeSection({ title, books, limit, buttonLabel, href }: Props) {
           </View>
         ))}
       </View>
-      {view.hasMore && (
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full rounded-full"
-          accessibilityLabel={`${buttonLabel}: ${title}`}
-          onPress={() => router.push(href)}
-        >
-          <Text>{buttonLabel}</Text>
-        </Button>
-      )}
     </View>
   )
 }

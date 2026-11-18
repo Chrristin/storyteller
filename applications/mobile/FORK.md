@@ -5,7 +5,7 @@
 - **Tokens** live in `global.css`. Tailwind v4 `@theme` declares the defaults
   (light); `@layer theme` re-declares them under Uniwind's `@variant light` and
   `@variant dark`. The app follows the system setting (`userInterfaceStyle:
-  "automatic"` in `app.config.ts`).
+"automatic"` in `app.config.ts`).
 - **Class names** use the shadcn-style semantic tokens: `bg-background`,
   `bg-card`, `bg-secondary`, `bg-muted`, `text-foreground`,
   `text-muted-foreground`, `bg-primary` / `text-primary-foreground`,
@@ -23,17 +23,17 @@
 
 ## Screens (`app/(root)`)
 
-| Screen | File |
-| --- | --- |
-| Library / shelves (home) | `index.tsx`, `components/Shelf.tsx` |
-| Full shelf, collection, series, author, narrator, tag | `shelf/[type]`, `collection/[uuid]`, ... all use `components/BookGrid.tsx` |
-| Search | `search.tsx` |
-| Book detail | `book/[uuid].tsx` |
-| Reader | `read/[uuid].tsx`, `components/Epub.tsx`, `Toolbar.tsx`, `SelectionMenu.tsx` |
-| Player | `listen/[uuid].tsx`, `components/MiniPlayerWidget.tsx`, `PlayPause.tsx`, `ProgressBar.tsx` |
-| Reader sheets | `reading-settings`, `navigation-menu/*`, `speed-menu`, `footnote`, `custom-theme/*`, `custom-fonts` |
-| Settings | `settings.tsx`, `components/ReadingSettings.tsx` |
-| Login / server | `server.tsx` (add server), `components/LoginButton.tsx` (browser login through the server) |
+| Screen                                                | File                                                                                                |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Library / shelves (home)                              | `index.tsx`, `components/Shelf.tsx`                                                                 |
+| Full shelf, collection, series, author, narrator, tag | `shelf/[type]`, `collection/[uuid]`, ... all use `components/BookGrid.tsx`                          |
+| Search                                                | `search.tsx`                                                                                        |
+| Book detail                                           | `book/[uuid].tsx`                                                                                   |
+| Reader                                                | `read/[uuid].tsx`, `components/Epub.tsx`, `Toolbar.tsx`, `SelectionMenu.tsx`                        |
+| Player                                                | `listen/[uuid].tsx`, `components/MiniPlayerWidget.tsx`, `PlayPause.tsx`, `ProgressBar.tsx`          |
+| Reader sheets                                         | `reading-settings`, `navigation-menu/*`, `speed-menu`, `footnote`, `custom-theme/*`, `custom-fonts` |
+| Settings                                              | `settings.tsx`, `components/ReadingSettings.tsx`                                                    |
+| Login / server                                        | `server.tsx` (add server), `components/LoginButton.tsx` (browser login through the server)          |
 
 There is no in-app username/password form. Login opens the server's
 `/api/v2/token/app` page in a browser and returns to the app through the
@@ -76,12 +76,22 @@ There is no in-app username/password form. Login opens the server's
   the cover tilts, never text, buttons, progress rings or the selection check.
   A book that is selected for Drive or Kindle straightens. The big cover on the
   book page leans a fixed amount to the left.
-- **Currently reading strip.** `components/CurrentlyReading.tsx` replaces the
-  big continue card and the "Also in progress" shelf on the home screen. The
-  book read last is a compact card; other books in progress are round covers
-  with a progress ring. Tap one to expand the card, tap the up arrow to go
-  back. It uses only data the app already has (title, author, percent, format,
-  chapter title and last read time when the position has them).
+- **Currently reading strip.** `components/CurrentlyReading.tsx` is the top of
+  Home. The book read last is a compact card with a play button (opens and
+  plays). Below it, the other books in progress are small round covers (40px,
+  overlapping, thin accent ring) with "Now Reading" and a chevron on the right;
+  there is no "N more" text. The row is hidden when no other book is in
+  progress. Tapping the circles or "Now Reading" opens the **Now Reading
+  page**. That page is the existing shelf screen `shelf/currently-reading`
+  (reused, not new), now titled "Now Reading": every book with status
+  Reading, most recently read first, in the normal book grid. Ordering rules
+  are in `lib/nowReading.ts` (with tests).
+- **Home sections.** Order: currently reading card, To Read (6), your
+  collections, Authors, Recently Added (9), Recently Completed (6). Each title
+  row shows the title on the left and "All" (accent colour, 14px semibold,
+  label `All: <title>`) on the right of the same line
+  (`components/SectionHeader.tsx`), always shown when the section is shown. The
+  big outlined button under the grids is gone.
 - **Settings, "Library look".** Four controls, saved on the phone (AsyncStorage,
   `lib/libraryLook.ts`, defaults in `lib/libraryLookDefaults.ts`) and applied
   at once through `useLibraryLook()`:
@@ -264,7 +274,7 @@ with "Add to To Read" on its page, or select several books in the library and us
   servers is one row. Nothing is ever removed; books already in the item are
   left out.
 - **Server routes:** collection `POST /collections` then `POST
-  /collections/books`; series `POST /series/books` (a new series numbers the
+/collections/books`; series `POST /series/books` (a new series numbers the
   books 1..N in selection order, an existing one continues after its highest
   whole position); genre `POST /books/tags`; author `POST /books/creators` with
   role `aut` (asks for confirmation first). A 403 shows a permission message.
@@ -280,3 +290,30 @@ with "Add to To Read" on its page, or select several books in the library and us
 - Build 17 adds Add to collection, author collections and the series number fix.
 
 - Build 18: Series replaces Piles, missing numbers show on Series.
+
+## Unread status (server and phone)
+
+Before, every new book got the library default status "To read", so a book the
+user had marked could not be told apart from one that merely arrived.
+
+- **Server.** Migration `134_unread_status.sql` adds a status "Unread", makes
+  it the library default, and **converts every existing "To read" row of every
+  user to "Unread", once**. After that, "To read" only means books somebody
+  marked. If the statuses were renamed and no "To read" exists, the conversion
+  is skipped; a status already named "Unread" is reused. A user's personal
+  default-status setting (if any) is not touched. Starting a book (progress or
+  position upload) moves a book with no status, "Unread" or "To read" to
+  "Reading", and to "Read" at 98%, as it did for "To read". Next up in a series
+  still only takes books explicitly marked "To read". Unread is a well-known
+  status (cannot be deleted) and is listed first: Unread, To read, Reading,
+  Read, then custom ones.
+- **Phone.** To Read on Home shows only "To read". The add/remove action adds
+  to To Read for Unread and status-less books and removes for "To read". A
+  server book with no status keeps none locally. A status name the phone does
+  not know (such as "Unread" or a custom one) is created locally during sync
+  instead of falling back to the default, and phone migration
+  `1793200000000_add_unread_status` adds "Unread" so it shows in the "Move to"
+  menus. Books imported on the phone still start as "To read" (unchanged).
+- Not run on a real device, browser or NAS. Check after the server is updated
+  that Home To Read shrinks to the books you had marked (all old "To read"
+  books are now Unread, so it starts empty until you mark some).

@@ -2,6 +2,8 @@ import { type Selectable } from "kysely"
 
 import { type UUID } from "@/uuid"
 
+import { sortStatuses } from "@/lib/homeSections"
+
 import { db } from "./db"
 import { type DB } from "./schema"
 
@@ -22,8 +24,8 @@ export function getStatusByName(name: string) {
     .executeTakeFirstOrThrow()
 }
 
-export function getStatuses() {
-  return db.selectFrom("status").selectAll().execute()
+export async function getStatuses() {
+  return sortStatuses(await db.selectFrom("status").selectAll().execute())
 }
 
 export function getDirtyStatuses() {

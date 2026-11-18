@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   HOME_SECTIONS,
+  canAddToRead,
+  sortStatuses,
   filterRecentlyCompleted,
   filterToRead,
   selectionToReadAction,
@@ -28,13 +30,11 @@ function book(
 }
 
 describe("sections config", () => {
-  it("has the approved limits and labels", () => {
-    expect(
-      HOME_SECTIONS.map((s) => [s.title, s.limit, s.buttonLabel, s.shelfType]),
-    ).toEqual([
-      ["To Read", 6, "Read More", "to-read"],
-      ["Recently Added", 9, "All", "start-reading"],
-      ["Recently Completed", 6, "More", "completed"],
+  it("has the approved limits and shelves", () => {
+    expect(HOME_SECTIONS.map((s) => [s.title, s.limit, s.shelfType])).toEqual([
+      ["To Read", 6, "to-read"],
+      ["Recently Added", 9, "start-reading"],
+      ["Recently Completed", 6, "completed"],
     ])
   })
 })
@@ -49,6 +49,7 @@ describe("filters", () => {
     book("f", "2024-05-01", "Read", 300),
     book("g", "2024-04-01", "Read", 300),
     book("h", "2024-01-01", "Read"),
+    book("i", "2023-06-01", "Unread"),
   ]
 
   it("sorts every book newest added first", () => {
@@ -58,6 +59,12 @@ describe("filters", () => {
 
   it("keeps only To read, newest first", () => {
     expect(filterToRead(books).map((b) => b.uuid)).toEqual(["b", "a"])
+  })
+
+  it("leaves Unread and status-less books off To Read", () => {
+    const uuids = filterToRead(books).map((b) => b.uuid)
+    expect(uuids).not.toContain("i")
+    expect(uuids).not.toContain("d")
   })
 
   it("orders completed by last position, then newest added", () => {
@@ -101,6 +108,7 @@ describe("To Read actions", () => {
   it("picks the single book action", () => {
     expect(toReadActionForStatus(null)).toBe("add")
     expect(toReadActionForStatus("Custom")).toBe("add")
+    expect(toReadActionForStatus("Unread")).toBe("add")
     expect(toReadActionForStatus("To read")).toBe("remove")
     expect(toReadActionForStatus("Reading")).toBeNull()
     expect(toReadActionForStatus("Read")).toBeNull()
@@ -115,9 +123,22 @@ describe("To Read actions", () => {
     expect(selectionToReadAction(["To read", null])).toBe("add")
     expect(selectionToReadAction(["Read", "Reading"])).toBeNull()
     expect(selectionToReadAction(["Read", null])).toBe("add")
+    expect(selectionToReadAction(["Unread", "Unread"])).toBe("add")
+    expect(selectionToReadAction(["To read", "Unread"])).toBe("add")
+    expect(canAddToRead("Unread")).toBe(true)
+    expect(canAddToRead("To read")).toBe(false)
     expect(selectionToReadLabel("add", 3)).toBe("Add 3 to To Read")
     expect(selectionToReadLabel("remove", 2)).toBe("Remove 2 from To Read")
     expect(toReadProgressLabel("add", 1, 4)).toBe("Adding 1 of 4")
     expect(toReadProgressLabel("remove", 1, 4)).toBe("Removing 1 of 4")
+  })
+})
+
+describe("sortStatuses", () => {
+  it("puts Unread first, then To read, Reading, Read, then the rest", () => {
+    const names = ["Read", "Zebra", "Reading", "Unread", "Abandoned", "To read"]
+    expect(
+      sortStatuses(names.map((name) => ({ name }))).map((s) => s.name),
+    ).toEqual(["Unread", "To read", "Reading", "Read", "Zebra", "Abandoned"])
   })
 })
