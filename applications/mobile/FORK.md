@@ -274,3 +274,5 @@ with "Add to To Read" on its page, or select several books in the library and us
   (`lib/authorCollections.ts`). Tap one for the series piles and the books in
   no series (`author-collection/[author]`). "All N" opens `author-collections`.
   Nothing is stored.
+
+- Build 17 adds Add to collection, author collections and the series number fix.
