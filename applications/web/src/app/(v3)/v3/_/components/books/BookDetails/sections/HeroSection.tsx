@@ -17,6 +17,7 @@ import {
 } from "@v3/_/components/books/ProgressDisplayBar"
 import { RatingDisplay, RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
+import { SendToKindleButton } from "@v3/_/components/books/SendToKindle"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
@@ -518,6 +519,7 @@ export function HeroSection({
                 )}
 
                 <SyncToDriveButton book={book} />
+                <SendToKindleButton book={book} />
               </div>
             </div>
           </motion.div>

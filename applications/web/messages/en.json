@@ -2952,6 +2952,9 @@
     "moreActions": "More actions",
     "kindle": {
       "sending": "Sending to Kindle…",
+      "buttonSending": "Sending...",
+      "buttonSent": "Sent",
+      "sendAgain": "Send again",
       "sent": "{count, plural, one {Sent to your Kindle} other {Sent # books to your Kindle}}",
       "skipped": "{count, plural, one {# book has no ebook and was left out} other {# books have no ebook and were left out}}",
       "failed": "Couldn't send to Kindle",

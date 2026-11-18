@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Badge } from "@v3/_/components/ui/badge"
@@ -17,6 +17,7 @@ import {
 } from "@v3/_/components/ui/dialog"
 import { Field, FieldLabel } from "@v3/_/components/ui/field"
 import { Input } from "@v3/_/components/ui/input"
+import { Spinner } from "@v3/_/components/ui/spinner"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { useVersionBasePath } from "@v3/_/components/version-context"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
@@ -27,12 +28,14 @@ import {
   KindleAddressSchema,
 } from "@/database/userPreferencesTypes"
 import { usePermission } from "@/hooks/usePermission"
+import * as icon from "@/icons"
 import {
   KINDLE_MAX_BOOKS,
   KINDLE_MAX_BYTES,
   type KindleRefusal,
   defaultKindleAddress,
   kindleRefusal,
+  showKindleButton,
 } from "@/kindle"
 import {
   useGetDeliveryQuery,
@@ -286,8 +289,14 @@ export function useKindleAvailable(enabled = true) {
   return !!canDownload && !!data?.kindle.available
 }
 
-export function useSendToKindle() {
+export type KindleSendStatus = "sending" | "sent" | "failed"
+
+export function useSendToKindle(options?: {
+  onStatus?: (status: KindleSendStatus, books: UUID[]) => void
+}) {
   const t = useTranslation("Sharing.kindle")
+  const onStatusRef = useRef(options?.onStatus)
+  onStatusRef.current = options?.onStatus
   const router = useRouter()
   const basePath = useVersionBasePath()
   const canManageSettings = usePermission("settingsUpdate")
@@ -316,9 +325,11 @@ export function useSendToKindle() {
   const sendUuids = useCallback(
     async (books: UUID[], to?: string[]) => {
       const toastId = toast.loading(t.plain("sending"))
+      onStatusRef.current?.("sending", books)
 
       try {
         const result = await sendToKindle({ books, to }).unwrap()
+        onStatusRef.current?.("sent", books)
         toast.success(t.plain("sent", { count: result.sent }), {
           id: toastId,
           description:
@@ -328,6 +339,7 @@ export function useSendToKindle() {
         })
       } catch (error) {
         const data = (error as { data?: KindleError }).data
+        onStatusRef.current?.("failed", books)
 
         switch (data?.code) {
           case "no-kindle-address": {
@@ -439,4 +451,84 @@ export function useSendToKindle() {
   )
 
   return { send, dialog, refusalMessage, available: useKindleAvailable() }
+}
+
+export function SendToKindleButton({
+  book,
+}: {
+  book: Pick<BookWithRelations, "uuid" | "ebook">
+}) {
+  const t = useTranslation("Sharing.kindle")
+  const tShare = useTranslation("Sharing")
+  const [state, setState] = useState<{
+    status: KindleSendStatus
+    book: UUID | null
+  } | null>(null)
+  const kindle = useSendToKindle({
+    onStatus: (status, books) => {
+      setState({ status, book: books[0] ?? null })
+    },
+  })
+
+  if (!showKindleButton(book, kindle.available)) return null
+
+  // Only trust the state for the book it was recorded for, so moving to
+  // another book goes back to idle.
+  const status = state?.book === book.uuid ? state.status : null
+
+  let content
+  if (status === "sending") {
+    content = (
+      <Button
+        variant="cover"
+        size="sm"
+        className="rounded-full"
+        disabled
+        aria-busy
+      >
+        <Spinner className="size-3.5" />
+        {t("buttonSending")}
+      </Button>
+    )
+  } else if (status === "sent") {
+    content = (
+      <div className="flex items-center gap-1">
+        <span className="bg-cover-accent/15 text-cover-accent inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium">
+          <icon.Check className="size-3.5" />
+          {t("buttonSent")}
+        </span>
+        <Button
+          variant="real-ghost"
+          size="xs"
+          className="text-muted-foreground rounded-full underline underline-offset-2"
+          onClick={() => {
+            kindle.send([book])
+          }}
+        >
+          {t("sendAgain")}
+        </Button>
+      </div>
+    )
+  } else {
+    content = (
+      <Button
+        variant="cover"
+        size="sm"
+        className="rounded-full"
+        onClick={(event) => {
+          kindle.send([book], { shiftKey: event.shiftKey })
+        }}
+      >
+        <icon.Send className="size-4" />
+        {tShare("sendToKindle")}
+      </Button>
+    )
+  }
+
+  return (
+    <>
+      {content}
+      {kindle.dialog}
+    </>
+  )
 }

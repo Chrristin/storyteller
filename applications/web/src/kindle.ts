@@ -42,3 +42,11 @@ export function kindleRefusal(
 
   return null
 }
+
+/** Whether the book details page shows the Send to Kindle button. */
+export function showKindleButton(
+  book: Pick<BookWithRelations, "ebook">,
+  kindleAvailable: boolean,
+) {
+  return kindleAvailable && !!downloadableAsset(book, "ebook")
+}
