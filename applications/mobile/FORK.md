@@ -317,3 +317,5 @@ user had marked could not be told apart from one that merely arrived.
 - Not run on a real device, browser or NAS. Check after the server is updated
   that Home To Read shrinks to the books you had marked (all old "To read"
   books are now Unread, so it starts empty until you mark some).
+
+- Build 19: Unread status, home headers with All, Now Reading row.
