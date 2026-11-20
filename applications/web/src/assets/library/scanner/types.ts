@@ -26,6 +26,11 @@ export type Candidate = {
   titleHint?: string
   existingBook?: BookWithRelations
   /**
+   * set when the folder holds several epubs that are each their own book.
+   * the worker must not link folder siblings of this candidate to one book.
+   */
+  standalone?: boolean
+  /**
    * which collections newly created books should be added to, through association with import rules
    */
   collections?: UUID[]

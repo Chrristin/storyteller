@@ -76,6 +76,7 @@ import {
   EPUB_VERSION_PLACEHOLDER,
   type Epub2ImportStrategy,
   type ImportRuleInput,
+  type MultiEpubFolderStrategy,
   type Settings,
   renderEpubSuffix,
 } from "@/database/settingsTypes"
@@ -880,6 +881,41 @@ function Epub2StrategyField() {
   )
 }
 
+function MultiEpubFolderStrategyField() {
+  const t = useTranslation("SettingsPage.tabs.files.sections.importRules")
+  const options: { value: MultiEpubFolderStrategy; label: string }[] = [
+    { value: "skip", label: t("multiEpubSkip") },
+    { value: "separate-books", label: t("multiEpubSeparateBooks") },
+  ]
+
+  return (
+    <SettingsFormField
+      name="multiEpubFolderStrategy"
+      label={t("multiEpubFolderStrategy")}
+      tip={t("multiEpubFolderStrategyTip")}
+      render={(field, _, fieldLocked) => (
+        <Select
+          disabled={fieldLocked}
+          value={field.value}
+          onValueChange={field.onChange}
+          items={options}
+        >
+          <SelectTrigger className="max-w-fit">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="w-fit">
+            {options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    />
+  )
+}
+
 function Epub2BackupSuffixField() {
   const t = useTranslation("SettingsPage.tabs.files.sections.importRules")
 
@@ -1121,6 +1157,8 @@ export function ImportRulesSection() {
         />
 
         <Epub2StrategyField />
+
+        <MultiEpubFolderStrategyField />
 
         <Tabs
           value={activeTab}

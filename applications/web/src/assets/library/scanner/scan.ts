@@ -449,6 +449,8 @@ async function runWorkers(
             const sibling = group[j]
             if (!sibling) continue
             if (sibling.existingBook || sibling.bookUuidHint) continue
+            // several epubs in one folder are separate books
+            if (sibling.standalone) continue
             sibling.existingBook = resultBook
           }
         }

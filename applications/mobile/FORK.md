@@ -430,6 +430,42 @@ title you changed since.
   genres as tags, mark accepted), only for rows that are Check or Sure at that
   moment. Accept all still only takes the Sure rows. Not seen running.
 
+## Folders with several ebooks (server)
+
+- **Why.** The scanner assumed one book per folder: a folder with more than one
+  regular epub was skipped ("multiple epubs of the same kind; skipping until
+  cleaned up"), or, if a book already lived there, only the existing books were
+  kept. Author-level folders (dozens of epubs) were never imported.
+- **Setting.** `multiEpubFolderStrategy` (Settings, Files, Import rules, "Folders
+  with several ebooks"): `skip` (default, upstream behaviour) or
+  `separate-books`. Global, not per import rule. Can be set in the config file
+  like the other settings.
+- **Behaviour with `separate-books`** (`listBookCandidates` in
+  `src/assets/library/scanner/folder.ts`). Only applies when a folder has more
+  than one regular epub or more than one readaloud epub. Every epub becomes its
+  own candidate (`ebook` or `readaloud`, marked `standalone`), with the rule's
+  collections, import mode and EPUB 2 strategy. Epubs already referenced by a
+  book (plain or canonical path) are not emitted as new; their existing
+  candidates are kept as before. `existingBook` is never taken from the folder
+  owner. Audio files in such a folder are not imported (a warning is logged once
+  per folder), because it cannot be known which ebook they belong to. A folder
+  with exactly one epub (plus audio) behaves as before, pairing them.
+- **Other change.** `scan.ts` links the candidates of one folder to the book that
+  the first of them created. That is skipped for `standalone` candidates, or all
+  the epubs of an author folder would have collapsed into one book.
+- **Not changed, and fine.** Asset directories come from the book title
+  (collisions get a suffix), so copy/move/hardlink never clash. Fingerprints and
+  ingest are keyed by file path. EPUB 2 backups (`name_epub2.epub`) next to each
+  converted file are still ignored by `classifyFolder`.
+- **Risks.** The first scan of an author folder creates dozens of books in one
+  go, and with an EPUB 2 strategy other than skip converts them all (backup and
+  convert writes one backup per file). Folders of one author are scanned by one
+  worker, one file after another. When any file in such a folder changes, the
+  watcher rescans the whole folder (known books are only re-checked). An
+  audiobook stored in the same flat folder is ignored until it gets its own
+  folder. Tests: `src/assets/library/__tests__/multi-epub-folders.test.ts`. Not
+  seen running on a real library.
+
 - Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
 
 - Build 22: shuffling piles with real covers behind, a flick swaps the book, a tap opens the pile, series of one are hidden.

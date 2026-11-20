@@ -108,6 +108,14 @@ export type Epub2ImportStrategy = (typeof EPUB2_IMPORT_STRATEGIES)[number]
 
 export const Epub2ImportStrategySchema = z.enum(EPUB2_IMPORT_STRATEGIES)
 
+export const MULTI_EPUB_FOLDER_STRATEGIES = ["skip", "separate-books"] as const
+export type MultiEpubFolderStrategy =
+  (typeof MULTI_EPUB_FOLDER_STRATEGIES)[number]
+
+export const MultiEpubFolderStrategySchema = z.enum(
+  MULTI_EPUB_FOLDER_STRATEGIES,
+)
+
 export const EPUB_VERSION_PLACEHOLDER = "{version}"
 
 export const DEFAULT_EPUB_SUFFIX_TEMPLATE = `_epub${EPUB_VERSION_PLACEHOLDER}`
@@ -378,6 +386,8 @@ export const SettingsSchema = z.object({
   // EPUB 2 import settings
   epub2ImportStrategy: Epub2ImportStrategySchema,
   epub2BackupSuffix: z.string(),
+  // Folders holding several ebooks (for example one folder per author)
+  multiEpubFolderStrategy: MultiEpubFolderStrategySchema,
   // Import rules (user-managed, editable)
   importRules: ImportRulesSchema.optional(),
   // Auto-ignore rules (system-generated, read-only display)
@@ -463,6 +473,7 @@ export const SETTINGS_DEFAULTS = {
   metadataFieldOverrides: defaultMetadataFieldOverrides(),
   epub2ImportStrategy: "backup-and-convert",
   epub2BackupSuffix: DEFAULT_EPUB_SUFFIX_TEMPLATE,
+  multiEpubFolderStrategy: "skip",
   cleanCacheAfterReadaloud: false,
   metadataAutoImportThresholds: { audnexus: "high", hardcover: "high" },
 } satisfies Settings

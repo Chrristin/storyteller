@@ -79,6 +79,7 @@ const DEFAULT_SETTINGS: Settings = {
   importMode: "reference",
   epub2ImportStrategy: "backup-and-convert",
   epub2BackupSuffix: DEFAULT_EPUB_SUFFIX_TEMPLATE,
+  multiEpubFolderStrategy: "skip",
   cleanCacheAfterReadaloud: true,
   metadataAutoImportThresholds: { audnexus: "high", hardcover: "high" },
   metadataFieldOverrides: {

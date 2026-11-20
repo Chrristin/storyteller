@@ -1,6 +1,6 @@
 import { type Dirent } from "node:fs"
 import { readdir, realpath } from "node:fs/promises"
-import { extname, join, resolve } from "node:path"
+import { basename, extname, join, resolve } from "node:path"
 
 import { Epub, MemoryAdapter } from "@storyteller-platform/epub"
 import { isHiddenFile } from "@storyteller-platform/fs"
@@ -192,8 +192,11 @@ type UUIDList = Candidate["collections"]
  *   - PLUS candidates for any existing book whose paths live under this folder
  *     (so vanished files get marked missing by checkExistsStep).
  *
- * Enforces "at most one regular epub and one readaloud epub per folder".
- * On violation:
+ * Enforces "at most one regular epub and one readaloud epub per folder",
+ * unless the multiEpubFolderStrategy setting is "separate-books": then each
+ * epub in such a folder becomes its own book (unknown epubs only; known ones
+ * keep their existing candidates) and audio in the folder is not imported.
+ * On violation (strategy "skip"):
  *   - If no book already references this folder: warn and return only the
  *     existing-book candidates (which will be empty here, so effectively []).
  *   - If a book already exists here: warn, return only the existing-book
@@ -213,10 +216,12 @@ export async function listBookCandidates(
     candidateFromExistingBook(folder, book),
   )
 
-  const [epub2BackupSuffix, ignorePaths] = await Promise.all([
-    getSetting("epub2BackupSuffix"),
-    getIgnorePaths(),
-  ])
+  const [epub2BackupSuffix, ignorePaths, multiEpubFolderStrategy] =
+    await Promise.all([
+      getSetting("epub2BackupSuffix"),
+      getIgnorePaths(),
+      getSetting("multiEpubFolderStrategy"),
+    ])
 
   const classification = await classifyFolder(folder, {
     epub2BackupSuffix,
@@ -228,7 +233,11 @@ export async function listBookCandidates(
 
   const violatesConstraint =
     regularEpubs.length > 1 || readaloudEpubs.length > 1
-  if (violatesConstraint) {
+  // "separate-books": a folder with several epubs (for example one folder per
+  // author) is not a violation, every epub is its own book
+  const separateBooks =
+    violatesConstraint && multiEpubFolderStrategy === "separate-books"
+  if (violatesConstraint && !separateBooks) {
     if (knownBooks.length === 0) {
       logger.warn({
         msg: `Folder ${folder} has multiple epubs of the same kind; skipping until cleaned up`,
@@ -261,13 +270,57 @@ export async function listBookCandidates(
   const seen = new Set(existingCandidates.map(candidateKey))
 
   // If exactly one book already lives in this folder, treat it as the
-  // owner for any new format candidates we discover here
-  const folderOwner = knownBooks.length === 1 ? knownBooks[0] : undefined
+  // owner for any new format candidates we discover here. Never in
+  // separate-books mode: several books live in the folder.
+  const folderOwner =
+    !separateBooks && knownBooks.length === 1 ? knownBooks[0] : undefined
 
   function pushIfNew(candidate: Candidate) {
     if (seen.has(candidateKey(candidate))) return
     seen.add(candidateKey(candidate))
     candidates.push(candidate)
+  }
+
+  if (separateBooks) {
+    const knownPaths = await knownEpubPaths(
+      [...regularEpubs, ...readaloudEpubs],
+      opts.books,
+    )
+    const epubs = [
+      ...regularEpubs.map((filepath) => ({
+        filepath,
+        format: "ebook" as const,
+      })),
+      ...readaloudEpubs.map((filepath) => ({
+        filepath,
+        format: "readaloud" as const,
+      })),
+    ].sort((a, b) => a.filepath.localeCompare(b.filepath))
+
+    for (const epub of epubs) {
+      // already belongs to a book: its existing candidate (if any) covers it
+      if (knownPaths.has(epub.filepath)) continue
+      pushIfNew({
+        folder,
+        format: epub.format,
+        filepath: epub.filepath,
+        standalone: true,
+        collections: opts.collections,
+        ...(opts.importMode && { importMode: opts.importMode }),
+        ...(opts.epub2ImportStrategy && {
+          epub2ImportStrategy: opts.epub2ImportStrategy,
+        }),
+      })
+    }
+
+    if (audiobookDir) {
+      logger.warn({
+        msg: `Folder ${folder} has several epubs and audio files; not importing the audio because it cannot be known which ebook it belongs to. Put each audiobook in its own folder.`,
+        epubCount: regularEpubs.length + readaloudEpubs.length,
+      })
+    }
+
+    return candidates
   }
 
   const regularEpub = regularEpubs[0]
@@ -317,6 +370,43 @@ export async function listBookCandidates(
   }
 
   return candidates
+}
+
+/**
+ * Which of `epubPaths` are already the ebook/readaloud of an existing book.
+ * Compares plain paths first, then canonical paths (bind mounts, symlinks)
+ * for books whose file has the same name as one of the epubs.
+ */
+async function knownEpubPaths(
+  epubPaths: string[],
+  books: BookWithRelations[],
+): Promise<Set<string>> {
+  const known = new Set<string>()
+  const byName = new Map<string, string[]>()
+  for (const epubPath of epubPaths) {
+    const list = byName.get(basename(epubPath)) ?? []
+    list.push(epubPath)
+    byName.set(basename(epubPath), list)
+  }
+  for (const book of books) {
+    for (const stored of [book.ebook?.filepath, book.readaloud?.filepath]) {
+      if (!stored) continue
+      const sameName = byName.get(basename(stored))
+      if (!sameName) continue
+      let canonicalStored: string | undefined
+      for (const epubPath of sameName) {
+        if (epubPath === stored) {
+          known.add(epubPath)
+          continue
+        }
+        canonicalStored ??= await canonicalizePath(stored)
+        if (canonicalStored === (await canonicalizePath(epubPath))) {
+          known.add(epubPath)
+        }
+      }
+    }
+  }
+  return known
 }
 
 function candidateKey(candidate: Candidate): string {

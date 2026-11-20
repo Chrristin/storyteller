@@ -14,6 +14,12 @@ each section. Move an item to "Done" when it ships.
 
 ## Decide or finish
 
+- **Folders with several ebooks.** Built (Settings, Files, Import rules,
+  "Folders with several ebooks", default Skip), not run on the real library.
+  Turn it on, run a scan, and check the author folders (J.R.R Tolkien and the
+  others) import as separate books. Audio in the same flat folder is not
+  imported; it needs its own folder. Consider EPUB 2 conversion of many files at
+  once first. See FORK.md.
 - **Re-run Identify after the matching fix.** Books already marked Check or Not
   found because of "01 ..." or "(Unabridged)" titles stay that way until you
   press "Check everything again" in Settings, Metadata (accepted books are
