@@ -699,6 +699,16 @@ export interface HardcoverIdentity {
   status: Generated<HardcoverIdentityStatus>
 }
 
+export interface TitleCleanupLog {
+  appliedAt: Generated<string>
+  batchId: string
+  bookUuid: import("@/uuid").UUID
+  id: Generated<number>
+  newTitle: string
+  oldTitle: string
+  undoneAt: string | null
+}
+
 export interface UserBookRating {
   bookUuid: import("@/uuid").UUID
   createdAt: Generated<string>
@@ -811,6 +821,7 @@ export interface DB {
   sidebarItem: SidebarItem
   status: Status
   tag: Tag
+  titleCleanupLog: TitleCleanupLog
   tokenRevokation: TokenRevokation
   user: User
   userBookRating: UserBookRating

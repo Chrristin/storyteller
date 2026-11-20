@@ -373,3 +373,32 @@ and are hidden at the smallest card size. Audiobook-only cards keep their wave
 cover. The list view and the book page (which still use the two-cover pile) are
 unchanged. Code: `FormatChips` in
 `app/(v3)/v3/_/components/books/Grid/BookCard.tsx`. Not seen running.
+
+## Title clean-up (server, Settings, Metadata)
+
+Strips leftovers from titles and keeps the old ones so it can be undone.
+Nothing runs by itself: open Settings, Metadata, "Clean up titles", press
+Preview (old title, new title, why; 50 per page), then "Apply to all N" (asks to
+confirm). "Undo last clean-up" puts the old titles back, except books whose
+title you changed since.
+
+- **Rules** (`src/titleCleanup.ts`, pure, tested): removes "(Unabridged)",
+  "[Audiobook]", "- Unabridged" style noise (only the words unabridged,
+  abridged, audiobook, audio book, edition, version); removes a leading number
+  only when zero padded ("01 ", "02. ") or equal to the book's series position;
+  restores a missing leading The, A or An only when a known title has the same
+  words (Hardcover matched title of a sure or accepted row, or the same book in
+  the other format with the same author). "1984", "7 Habits", "10 Rules" and
+  "2001: A Space Odyssey" are never touched.
+- **Server** (`src/database/titleCleanup.ts`, routes under
+  `/api/v2/library/title-cleanup`, GET preview, POST apply, POST undo, all need
+  the book update permission). Old titles go to `title_cleanup_log` (migration
+  136) before each batch of 25.
+- **Files on disk.** A title is saved with `updateBook`, the same as the book
+  edit form. That renames the book's internal asset folder (and the epub inside
+  it, when the epub lives there). The apply then queues `queueWritesToFiles`,
+  the same call the edit form makes, which rewrites the title inside the book's
+  epub and audio files (library files included) and updates their fingerprints.
+  So yes: applying this to hundreds of books rewrites those files on the NAS,
+  one at a time in the background, and so does the undo. Not run on a real
+  library.

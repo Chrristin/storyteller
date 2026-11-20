@@ -14,6 +14,11 @@ each section. Move an item to "Done" when it ships.
 
 ## Decide or finish
 
+- **Run the title clean-up.** Built, not run. Settings, Metadata, "Clean up
+  titles": Preview, read the list, Apply. Applying rewrites the title inside
+  every changed book's epub and audio files (see FORK.md); decide whether that
+  is acceptable for the whole library or apply a few books first (the apply
+  route takes a `bookUuids` list).
 - **Level 2 missing books.** Ask Hardcover for each series' full book list, so
   the Series screen and series pages can say "book 6 of 9 is not in your
   library" and show the books after your last one. Needs a free Hardcover

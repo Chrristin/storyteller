@@ -1801,3 +1801,14 @@ CREATE TABLE hardcover_identity (
   source_query TEXT
 );
 CREATE INDEX idx_hardcover_identity_status ON hardcover_identity (status);
+CREATE TABLE title_cleanup_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  book_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  old_title TEXT NOT NULL,
+  new_title TEXT NOT NULL,
+  applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  batch_id TEXT NOT NULL,
+  undone_at TEXT
+);
+CREATE INDEX idx_title_cleanup_log_batch ON title_cleanup_log (batch_id);
+CREATE INDEX idx_title_cleanup_log_book ON title_cleanup_log (book_uuid);

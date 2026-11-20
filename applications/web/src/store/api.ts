@@ -111,6 +111,12 @@ import {
   type DriveStatus,
   type DriveSyncResponse,
 } from "@/driveSync"
+import {
+  type TitleCleanupApplyResult,
+  type TitleCleanupBatch,
+  type TitleCleanupPage,
+  type TitleCleanupUndoResult,
+} from "@/database/titleCleanup"
 import { type ApplyResult } from "@/hardcover/apply"
 import { type HardcoverIdentifyStatus } from "@/hardcover/status"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
@@ -260,6 +266,7 @@ export const api = createApi({
     "Delivery",
     "SeriesGaps",
     "HardcoverIdentify",
+    "TitleCleanup",
   ],
   endpoints: (build) => ({
     createInvite: build.mutation<Invite, InviteRequest>({
@@ -2799,6 +2806,30 @@ export const api = createApi({
         "SeriesGaps",
       ],
     }),
+    getTitleCleanupPreview: build.query<
+      TitleCleanupPreview,
+      { offset: number; limit: number }
+    >({
+      query: (params) => ({ url: "/library/title-cleanup", params }),
+      providesTags: ["TitleCleanup"],
+      keepUnusedDataFor: 0,
+    }),
+    applyTitleCleanup: build.mutation<TitleCleanupApplyResult, void>({
+      query: () => ({
+        url: "/library/title-cleanup/apply",
+        method: "POST",
+        body: {},
+      }),
+      invalidatesTags: ["TitleCleanup", "Books"],
+    }),
+    undoTitleCleanup: build.mutation<TitleCleanupUndoResult, void>({
+      query: () => ({
+        url: "/library/title-cleanup/undo",
+        method: "POST",
+        body: {},
+      }),
+      invalidatesTags: ["TitleCleanup", "Books"],
+    }),
     getDriveStatus: build.query<DriveStatus, void>({
       query: () => "/drive",
       providesTags: ["GoogleDrive"],
@@ -2947,6 +2978,10 @@ export const api = createApi({
     }),
   }),
 })
+
+export type TitleCleanupPreview = TitleCleanupPage & {
+  lastBatch: TitleCleanupBatch | null
+}
 
 export const {
   useAddBooksToCollectionsMutation,
@@ -3126,6 +3161,9 @@ export const {
   useStopHardcoverIdentifyMutation,
   useGetHardcoverReviewQuery,
   useAcceptAllHardcoverMutation,
+  useGetTitleCleanupPreviewQuery,
+  useApplyTitleCleanupMutation,
+  useUndoTitleCleanupMutation,
   useGetDriveStatusQuery,
   useGetSeriesGapsQuery,
   useGetDriveClientQuery,

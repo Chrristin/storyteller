@@ -43,6 +43,12 @@ export const SETTINGS_SECTIONS = [
     key: "hardcoverIdentify",
     permission: "settingsUpdate",
   },
+  {
+    id: "titleCleanup",
+    page: "metadata",
+    key: "titleCleanup",
+    permission: "bookUpdate",
+  },
   { id: "alignment", page: "processing", key: "alignment" },
   { id: "audio", page: "processing", key: "audio" },
   { id: "readaloud", page: "processing", key: "readaloud" },

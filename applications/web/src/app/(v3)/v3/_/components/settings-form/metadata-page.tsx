@@ -3,6 +3,7 @@
 import { HardcoverIdentifySection } from "./hardcover-identify-section"
 import { MetadataProvidersSection } from "./metadata-providers-section"
 import { DefaultStatusSection, ReadBehaviorSection } from "./metadata-tab"
+import { TitleCleanupSection } from "./title-cleanup-section"
 
 export function MetadataPage() {
   return (
@@ -11,6 +12,7 @@ export function MetadataPage() {
       <MetadataProvidersSection />
       <DefaultStatusSection />
       <HardcoverIdentifySection />
+      <TitleCleanupSection />
     </div>
   )
 }
