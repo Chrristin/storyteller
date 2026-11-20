@@ -26,7 +26,6 @@ import {
   stepIndex,
   swipeDecision,
 } from "@/lib/swipePile"
-import { fallbackColor, hexToRgb } from "@/lib/waves"
 
 import { BookCover } from "./BookCover"
 import { Text } from "./ui/text"
@@ -36,7 +35,8 @@ const COVER_RATIO = 0.8
 /** Edge offsets as a share of the tile width: right, and up. */
 const EDGE_DX_RATIO = 0.06
 const EDGE_DY_RATIO = 0.03
-const EDGE_OPACITY = [0.82, 0.64]
+/** How much black is laid over the covers behind the front one. */
+const EDGE_SHADE = [0.3, 0.5]
 /** Only clearly horizontal drags belong to the pile, vertical ones scroll. */
 const ACTIVE_OFFSET_X = 10
 const FAIL_OFFSET_Y = 10
@@ -47,13 +47,6 @@ function lightHaptic() {
   } catch {
     // Haptics are a nicety, never a reason to fail.
   }
-}
-
-function edgeColor(book: BookWithRelations) {
-  const rgb =
-    hexToRgb(book.audioCoverColor ?? book.textCoverColor ?? "") ??
-    fallbackColor(book.uuid)
-  return `rgb(${rgb.r},${rgb.g},${rgb.b})`
 }
 
 interface Props {
@@ -78,8 +71,8 @@ interface Props {
  * tile moves through the books (wrapping round); a tap on the front cover opens that book, a long press on it asks Read or
  * Listen, and a tap on the text under the pile opens the pile.
  *
- * Only the front cover is a real BookCover. The edges are plain rounded
- * rectangles in the books' cover colours, so nothing else is loaded.
+ * The covers behind the front one are the real covers of the next two books,
+ * dimmed, so a pile looks like a stack of the actual books.
  */
 export function SwipePile({
   books,
@@ -245,16 +238,35 @@ export function SwipePile({
                 key={`${depth}-${peekBook.uuid}`}
                 pointerEvents="none"
                 style={{
-                  backgroundColor: edgeColor(peekBook),
                   borderRadius: 6,
                   height: coverHeight,
                   left: dx * depth,
-                  opacity: EDGE_OPACITY[depth - 1],
+                  overflow: "hidden",
                   position: "absolute",
                   top: topPad - dy * depth,
                   width: coverWidth,
                 }}
-              />
+              >
+                <BookCover
+                  book={peekBook}
+                  badge={false}
+                  progressLine={false}
+                  showTitleOverlay={false}
+                  width={coverWidth}
+                  height={coverHeight}
+                />
+                {/* Darker the further back, so the front cover stands out. */}
+                <View
+                  style={{
+                    backgroundColor: `rgba(0,0,0,${EDGE_SHADE[depth - 1]})`,
+                    bottom: 0,
+                    left: 0,
+                    position: "absolute",
+                    right: 0,
+                    top: 0,
+                  }}
+                />
+              </View>
             )
           })}
           <Animated.View
