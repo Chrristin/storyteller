@@ -4,6 +4,7 @@ import {
   type SelectQueryBuilder,
   type Selectable,
   type Transaction,
+  type RawBuilder,
   type Updateable,
   sql,
 } from "kysely"
@@ -16,7 +17,6 @@ import type {
   ProcessingTaskStatus,
   ProcessingTaskType,
 } from "@/apiModels/models/ProcessingStatus"
-import { compareByAuthorSeriesTitle } from "@/archiveSort"
 import { pathBelongsTo } from "@/assets/library/paths"
 import {
   getMetadataFromAudiobook,
@@ -1107,61 +1107,11 @@ export async function countBooks(
   return row?.count ?? 0
 }
 
-/**
- * The Archive view, ordered by author, series and title. The author key is a
- * normalised name, which SQL cannot compute, so the (small) archive is loaded
- * whole, sorted here and then paged.
- */
-async function getArchivedBooksByAuthor(
-  bookUuids: UUID[] | null,
-  userId: UUID | undefined,
-  opts: GetBooksOptions,
-  direction: "asc" | "desc",
-) {
-  let page = applyBookFilters(
-    db.selectFrom("book").select("book.uuid"),
-    bookUuids,
-    userId,
-    opts,
-  )
-  if (userId) {
-    page = page.where((eb) => bookVisibleTo(eb, "book.uuid", userId, "all"))
-  }
-  const all = await hydrateBooks(page, userId, opts)
-  all.sort(compareByAuthorSeriesTitle)
-  if (direction === "desc") all.reverse()
-  const start = opts.offset ?? 0
-  return all.slice(start, opts.limit ? start + opts.limit : undefined)
-}
-
 export async function getBooks(
   bookUuids: UUID[] | null = null,
   userId?: UUID,
   opts?: GetBooksOptions,
 ) {
-  const firstSort =
-    opts?.sort?.[0] ??
-    (opts?.orderBy
-      ? { field: opts.orderBy, direction: opts.orderDirection ?? "desc" }
-      : undefined)
-  if (
-    opts?.archived === "only" &&
-    !opts.search &&
-    firstSort?.field === "authors"
-  ) {
-    const rows = await getArchivedBooksByAuthor(
-      bookUuids,
-      userId,
-      opts,
-      firstSort.direction,
-    )
-    return rows.map((row) => ({
-      ...row,
-      publicationDate: toIsoDateString(row.publicationDate),
-      releaseDate: toIsoDateString(row.releaseDate),
-    }))
-  }
-
   let page = applyBookFilters(
     db.selectFrom("book").select("book.uuid"),
     bookUuids,
@@ -1183,6 +1133,26 @@ export async function getBooks(
 
   if (opts?.search) {
     page = page.orderBy(buildBookSearchRelevance(opts.search), "asc")
+  } else if (opts?.archived === "only" && sort[0]?.field === "authors") {
+    // The Archive by author: first author, then series name and position,
+    // then title. Books without an author, and standalone books within an
+    // author, come last.
+    const direction = sort[0].direction
+    const [seriesName, seriesPosition] = buildSortExpressions(
+      "seriesPosition",
+      { userId },
+    ) as [RawBuilder<unknown>, RawBuilder<unknown>]
+    const author = buildSortExpression("authors")
+    for (const expr of [
+      sql`${author} is null`,
+      author,
+      sql`${seriesName} is null`,
+      seriesName,
+      seriesPosition,
+      buildSortExpression("title"),
+    ]) {
+      page = page.orderBy(expr, direction)
+    }
   } else {
     for (const { field, direction } of sort) {
       for (const expr of buildSortExpressions(field, {

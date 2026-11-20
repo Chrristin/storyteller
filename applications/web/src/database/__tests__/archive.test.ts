@@ -117,7 +117,7 @@ describe("listing and the archive", () => {
     assert.deepStrictEqual(titles(sendable), ["shown"])
   })
 
-  it("sorts the archive by author key, series and title", async () => {
+  it("sorts the archive by first author, series and title, authorless last", async () => {
     using ctx = setupTestDb()
     seedUser(ctx, userId)
     const [b1, b2, b3, b4] = seedBooks(ctx, [
