@@ -168,6 +168,7 @@ const TABLES = {
   bookDriveFile: { exclude: "fork-only Google Drive sync state" },
   bookKindleSend: { exclude: "fork-only Send to Kindle history" },
   hardcoverIdentity: { exclude: "fork-only Hardcover suggestions" },
+  bookJoinExclusion: { exclude: "fork-only do-not-join pairs from Split" },
   titleCleanupLog: { exclude: "fork-only title clean-up undo log" },
   googleDriveConfig: {
     exclude: "fork-only Google Drive sign-in, server-internal",

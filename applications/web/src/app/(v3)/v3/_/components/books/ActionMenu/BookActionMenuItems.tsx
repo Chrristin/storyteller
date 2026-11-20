@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Fragment, type ReactNode, useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -83,6 +84,7 @@ import {
   useGetBooksCacheUsageQuery,
   useGetCurrentUserQuery,
   useMergeBooksMutation,
+  useSplitBookMutation,
   useRecomputeAlignmentReportsMutation,
   useRelocateToInternalMutation,
   useScanBooksMutation,
@@ -177,6 +179,7 @@ export function useBookActionItems({
   const c = useCommon()
   const permissions = usePermissions()
   const canUpdate = !!permissions?.bookUpdate
+  const canCreate = !!permissions?.bookCreate
   const canDelete = !!permissions?.bookDelete
   const canProcess = !!permissions?.bookProcess
   const canCreateCollection = !!permissions?.collectionCreate
@@ -202,6 +205,8 @@ export function useBookActionItems({
   const [upgradeEpub] = useUpgradeBookEpubMutation()
   const [deleteBooks, { isLoading: isDeleting }] = useDeleteBooksMutation()
   const [mergeBooks, { isLoading: isMerging }] = useMergeBooksMutation()
+  const [splitBook, { isLoading: isSplitting }] = useSplitBookMutation()
+  const router = useRouter()
   const [relocateToInternal] = useRelocateToInternalMutation()
   const [archiveBooks] = useArchiveBooksMutation()
   const [bulkRelocateToInternal] = useBulkRelocateToInternalMutation()
@@ -410,6 +415,39 @@ export function useBookActionItems({
     t,
   ])
 
+  // a book with both an ebook and an audiobook (no read-aloud) can be split
+  const canSplit =
+    mode === "single" &&
+    canCreate &&
+    !!singleBook?.ebook &&
+    !!singleBook.audiobook &&
+    !singleBook.readaloud
+
+  const handleSplit = useCallback(async () => {
+    if (!canSplit || !singleBook) return
+    try {
+      const created = await splitBook({
+        bookUuid: singleBook.uuid,
+        keep: "ebook",
+      }).unwrap()
+      toast.success(t("splitSuccess"), {
+        action: {
+          label: t("splitOpen"),
+          onClick: () => {
+            router.push(`${basePath}/books/${created.uuid}`)
+          },
+        },
+      })
+    } catch (error) {
+      console.error(error)
+      const message = (error as { data?: { message?: string } }).data?.message
+      toast.error(t("splitFailed"), {
+        ...(message && { description: message }),
+      })
+    }
+    onAfterDestructive?.()
+  }, [canSplit, singleBook, splitBook, router, basePath, onAfterDestructive, t])
+
   const clearCacheAction = useConfirmAction({
     onConfirm: handleClearCache,
     title: t("clearCacheTitle", { count }),
@@ -453,6 +491,13 @@ export function useBookActionItems({
     description: t("mergeDescription"),
     confirmLabel: t("merge"),
     variant: "destructive",
+  })
+
+  const splitAction = useConfirmAction({
+    onConfirm: handleSplit,
+    title: t("splitTitle"),
+    description: t("splitDescription"),
+    confirmLabel: t("split"),
   })
 
   const entries: BookActionEntry[] = []
@@ -643,6 +688,17 @@ export function useBookActionItems({
         },
       })
     }
+  }
+
+  if (canSplit) {
+    entries.push({
+      key: "split",
+      label: t.plain("split"),
+      icon: <icon.Split className="size-4" />,
+      onSelect: (modifiers) => {
+        splitAction.confirm(modifiers)
+      },
+    })
   }
 
   if (canUpdate) {
@@ -982,6 +1038,7 @@ export function useBookActionItems({
       />
       <ConfirmDialog {...upgradeAction.dialogProps} />
       <ConfirmDialog {...mergeAction.dialogProps} isLoading={isMerging} />
+      <ConfirmDialog {...splitAction.dialogProps} isLoading={isSplitting} />
 
       <Dialog open={relocateOpen} onOpenChange={setRelocateOpen}>
         <DialogContent className="sm:max-w-md">

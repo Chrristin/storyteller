@@ -495,6 +495,12 @@
     "cancelSelection": "Stop selecting"
   },
   "BookActions": {
+    "split": "Split into separate books",
+    "splitTitle": "Split into separate books?",
+    "splitDescription": "This puts the audiobook on a book of its own. The ebook stays here with your reading status, rating and progress. No files are moved or deleted. The two will not be joined again automatically.",
+    "splitSuccess": "The audiobook is now a book of its own",
+    "splitOpen": "Open it",
+    "splitFailed": "Could not split the book",
     "moveToArchive": "Move to Archive",
     "moveBackToLibrary": "Move back to library",
     "archivedToast": "{count, plural, one {# book moved to the Archive} other {# books moved to the Archive}}",

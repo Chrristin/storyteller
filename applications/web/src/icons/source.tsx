@@ -16,6 +16,7 @@ import {
   IconArrowRight,
   IconArrowUp,
   IconArrowUpRight,
+  IconArrowsSplit,
   IconArrowsMaximize,
   IconArrowsSort,
   IconBook2,
@@ -197,6 +198,7 @@ export const Key = /*#__PURE__*/ styled(IconKey)
 export const Pin = /*#__PURE__*/ styled(IconPin)
 export const PinFilled = /*#__PURE__*/ styled(IconPinFilled)
 export const Merge = /*#__PURE__*/ styled(IconArrowMerge)
+export const Split = /*#__PURE__*/ styled(IconArrowsSplit)
 export const GitMerge = /*#__PURE__*/ styled(IconGitMerge)
 export const Copy = /*#__PURE__*/ styled(IconCopy)
 export const Replace = /*#__PURE__*/ styled(IconReplace)

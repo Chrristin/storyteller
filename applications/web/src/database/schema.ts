@@ -669,6 +669,16 @@ export interface BookDriveFile {
   userId: import("@/uuid").UUID
 }
 
+/**
+ * Columns are `book_a_uuid` and `book_b_uuid`. The camel-case plugin cannot
+ * map them (`bookAUuid` becomes `book_auuid`), so use raw SQL; see
+ * `bookJoinExclusions.ts`.
+ */
+export interface BookJoinExclusion {
+  createdAt: Generated<string>
+  id: Generated<number>
+}
+
 export interface BookKindleSend {
   address: string | null
   bookUuid: import("@/uuid").UUID
@@ -779,6 +789,7 @@ export interface DB {
   bookAccess: BookAccess
   bookAccessView: BookAccessView
   bookDriveFile: BookDriveFile
+  bookJoinExclusion: BookJoinExclusion
   bookKindleSend: BookKindleSend
   bookNote: BookNote
   bookToCollection: BookToCollection

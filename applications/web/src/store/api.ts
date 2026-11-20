@@ -972,6 +972,31 @@ export const api = createApi({
         ...from.map((uuid) => ({ type: "Books" as const, id: uuid })),
       ],
     }),
+    splitBook: build.mutation<
+      BookWithRelations,
+      { bookUuid: UUID; keep: "ebook" }
+    >({
+      query: ({ bookUuid, keep }) => ({
+        url: `/books/${bookUuid}/split`,
+        method: "POST",
+        body: { keep },
+      }),
+      invalidatesTags: (_result, _error, { bookUuid }) => [
+        "Books",
+        { type: "Books" as const, id: bookUuid },
+        "HomeSections",
+        "HomeStats",
+        "Series",
+        "Creators",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Tags",
+        "Collections",
+        "UserShelves",
+        "Sidebar",
+      ],
+    }),
     createBook: build.mutation<
       BookWithRelations | { epub2Detected: true; paths: string[] },
       {
@@ -3142,6 +3167,7 @@ export const {
   useListTagsQuery,
   useListUsersQuery,
   useMergeBooksMutation,
+  useSplitBookMutation,
   useProcessBookMutation,
   useGetJobsQuery,
   useGetAlignmentEstimateQuery,

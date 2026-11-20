@@ -5,6 +5,7 @@ import {
   extractAndPersistTextCover,
 } from "@/assets/covers"
 import { relocateAssetsIntoBook } from "@/assets/fs"
+import { joinPairKey, loadJoinExclusions } from "@/database/bookJoinExclusions"
 import {
   type BookRelationsUpdate,
   type BookWithRelations,
@@ -215,7 +216,15 @@ export function findLinkPairs(books: BookWithRelations[]): LinkPair[] {
   return findLinkPlan(books).pairs
 }
 
-export function findLinkPlan(books: BookWithRelations[]): LinkPlan {
+/**
+ * @param excluded pairs that must never be proposed (see `joinPairKey`),
+ *   for example the two books a split produced. They are skipped before
+ *   anything is scored, so they cannot win a match or make one ambiguous.
+ */
+export function findLinkPlan(
+  books: BookWithRelations[],
+  excluded?: ReadonlySet<string>,
+): LinkPlan {
   const ebooks = books.filter((b) => b.ebook && !b.audiobook && !b.readaloud)
   const audiobooks = books.filter(
     (b) => b.audiobook && !b.ebook && !b.readaloud,
@@ -225,6 +234,7 @@ export function findLinkPlan(books: BookWithRelations[]): LinkPlan {
   for (const e of ebooks) {
     const row = new Map<string, Judgement>()
     for (const a of audiobooks) {
+      if (excluded?.has(joinPairKey(e.uuid, a.uuid))) continue
       const judged = judge(e, a)
       if (judged) row.set(a.uuid, judged)
     }
@@ -416,7 +426,8 @@ export async function runBookLinker(
   const level = options.level ?? getLinkLevel()
   // archived books are left out of the pairing
   const books = await getBooks(null, undefined, { archived: "exclude" })
-  const { pairs, ambiguous } = findLinkPlan(books)
+  const excluded = await loadJoinExclusions()
+  const { pairs, ambiguous } = findLinkPlan(books, excluded)
   const result: LinkRunResult = {
     considered: books.length,
     level,

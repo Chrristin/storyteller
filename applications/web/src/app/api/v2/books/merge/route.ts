@@ -4,12 +4,14 @@ import {
 } from "@/assets/covers"
 import { relocateAssetsIntoBook } from "@/assets/fs"
 import { withHasPermission } from "@/auth/auth"
+import { removeJoinExclusion } from "@/database/bookJoinExclusions"
 import {
   type BookRelationsUpdate,
   type BookUpdate,
   getBooks,
   updateBook,
 } from "@/database/books"
+import { db } from "@/database/connection"
 import { type UUID } from "@/uuid"
 import { queueWritesToFiles } from "@/writeToFiles/fileWriteDistributor"
 
@@ -62,6 +64,13 @@ export const POST = withHasPermission("bookCreate")(async (request) => {
       },
       { status: 405 },
     )
+  }
+
+  // A manual merge overrides a "do not join again" left by a split.
+  for (const [i, a] of books.entries()) {
+    for (const b of books.slice(i + 1)) {
+      await removeJoinExclusion(db, a.uuid, b.uuid)
+    }
   }
 
   const [first, ...toMerge] = books

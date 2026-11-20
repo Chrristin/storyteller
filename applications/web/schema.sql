@@ -1813,3 +1813,12 @@ CREATE TABLE title_cleanup_log (
 CREATE INDEX idx_title_cleanup_log_batch ON title_cleanup_log (batch_id);
 CREATE INDEX idx_title_cleanup_log_book ON title_cleanup_log (book_uuid);
 CREATE INDEX idx_book_archived_at ON book (archived_at);
+CREATE TABLE book_join_exclusion (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  book_a_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  book_b_uuid TEXT NOT NULL REFERENCES book (uuid) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CHECK (book_a_uuid < book_b_uuid),
+  UNIQUE (book_a_uuid, book_b_uuid)
+);
+CREATE INDEX idx_book_join_exclusion_b ON book_join_exclusion (book_b_uuid);
