@@ -148,42 +148,62 @@ export function DriveSelectionBars({ books, mode = "library" }: Props) {
       ? selected.filter((book) => canAddToRead(book.statusName)).length
       : selected.length
 
+  /** Marks the bars busy while `work` runs, then clears the selection if it worked. */
+  function runBusy(
+    title: string,
+    work: () => Promise<{
+      ok: boolean
+      alert?: { title: string; message: string }
+    }>,
+  ) {
+    void (async () => {
+      setBusy(title)
+      setProgress(0)
+      const result = await work()
+      setBusy(null)
+      if (result.ok) driveSelection.clear()
+      if (result.alert) Alert.alert(result.alert.title, result.alert.message)
+    })()
+  }
+
   function runToRead() {
     if (!toReadAction) return
     const action = toReadAction
-    void (async () => {
-      setBusy("To Read")
-      setProgress(0)
+    runBusy("To Read", async () => {
       try {
         await (action === "add" ? toRead.add : toRead.remove)(
           selected,
           setProgress,
         )
-        driveSelection.clear()
+        return { ok: true }
       } catch {
-        Alert.alert(
-          "Could not update To Read",
-          action === "remove"
-            ? "Removing needs a connection to the server. Try again when you are online."
-            : "Something went wrong. Try again.",
-        )
-      } finally {
-        setBusy(null)
+        return {
+          ok: false,
+          alert: {
+            title: "Could not update To Read",
+            message:
+              action === "remove"
+                ? "Removing needs a connection to the server. Try again when you are online."
+                : "Something went wrong. Try again.",
+          },
+        }
       }
-    })()
+    })
   }
 
   const inArchive = mode === "archive"
 
   function runArchive() {
-    const archived = !inArchive
-    void (async () => {
-      setBusy("Archive")
-      const outcome = await archiveBooks(selected, archived)
-      setBusy(null)
-      if (outcome.ok) driveSelection.clear()
-      Alert.alert(outcome.ok ? "Archive" : "Could not move", outcome.message)
-    })()
+    runBusy("Archive", async () => {
+      const outcome = await archiveBooks(selected, !inArchive)
+      return {
+        ok: outcome.ok,
+        alert: {
+          title: outcome.ok ? "Archive" : "Could not move",
+          message: outcome.message,
+        },
+      }
+    })
   }
 
   function confirm(
@@ -200,16 +220,17 @@ export function DriveSelectionBars({ books, mode = "library" }: Props) {
         { text: "Cancel", style: "cancel" },
         {
           text: action,
-          onPress: () => {
-            void (async () => {
-              setBusy(title)
-              setProgress(0)
+          onPress: () =>
+            runBusy(title, async () => {
               const outcome = await work(split.included)
-              setBusy(null)
-              Alert.alert(outcome.ok ? title : failTitle, outcome.message)
-              if (outcome.ok) driveSelection.clear()
-            })()
-          },
+              return {
+                ok: outcome.ok,
+                alert: {
+                  title: outcome.ok ? title : failTitle,
+                  message: outcome.message,
+                },
+              }
+            }),
         },
       ],
     )
