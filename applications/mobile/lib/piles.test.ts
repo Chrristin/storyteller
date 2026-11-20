@@ -2,7 +2,12 @@ import assert from "node:assert/strict"
 
 import { test } from "vitest"
 
-import { type PileBook, buildMissing, buildPiles } from "./piles"
+import {
+  type PileBook,
+  buildMissing,
+  buildPiles,
+  keepRealSeries,
+} from "./piles"
 
 interface Opts {
   title?: string
@@ -148,4 +153,16 @@ test("spellings of one author or series merge, with positions unioned", () => {
   const missing = buildMissing(books)
   assert.equal(missing.length, 1)
   assert.deepEqual(missing[0]?.missing, [4])
+})
+
+test("a series is kept with two books, or when a numbered book shows others exist, not alone", () => {
+  const books = [
+    book("a1", { series: "Pair", pos: 1 }),
+    book("a2", { series: "Pair", pos: 2 }),
+    book("b3", { series: "Gap", pos: 3 }),
+    book("c1", { series: "Alone", pos: 1 }),
+    book("d", { series: "NoNumber" }),
+  ]
+  const names = keepRealSeries(buildPiles(books, "series")).map((p) => p.name)
+  assert.deepEqual(names.sort(), ["Gap", "Pair"])
 })

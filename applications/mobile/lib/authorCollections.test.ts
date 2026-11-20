@@ -91,10 +91,11 @@ test("series count merges spellings and number suffixes", () => {
     book("Four", ["X"]),
   ]
   const collection = buildAuthorCollections(books)[0]
-  assert.equal(collection?.seriesCount, 2)
+  // "Other Saga" has one book, so it is not counted as a series.
+  assert.equal(collection?.seriesCount, 1)
   assert.equal(
     authorCollectionLabel(collection as NonNullable<typeof collection>),
-    "4 books, 2 series",
+    "4 books, 1 series",
   )
 })
 

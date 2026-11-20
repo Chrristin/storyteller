@@ -250,3 +250,27 @@ export function buildPiles<B extends PileBook>(
   }
   return piles.sort((a, b) => a.name.localeCompare(b.name))
 }
+
+/**
+ * Series worth showing: one with more than one book, one whose numbers show
+ * that other books are missing, or one whose only book is numbered 2 or higher
+ * (book 3 of a series means books 1 and 2 exist somewhere). A lone book in a
+ * series of one is left out.
+ */
+export function keepRealSeries<B extends PileBook>(
+  piles: Pile<B>[],
+): Pile<B>[] {
+  return piles.filter((pile) => {
+    if (pile.count >= 2 || pile.missing > 0) return true
+    const key = normaliseSeriesName(pile.name)
+    return pile.books.some((book) =>
+      book.series.some(
+        (s) =>
+          normaliseSeriesName(s.name) === key &&
+          typeof s.position === "number" &&
+          Number.isInteger(s.position) &&
+          s.position >= 2,
+      ),
+    )
+  })
+}

@@ -9,7 +9,7 @@ import { pileTileWidth } from "@/components/bookGridLayout"
 import { ScreenHeader } from "@/components/ScreenHeader"
 import { Text } from "@/components/ui/text"
 import { type BookWithRelations } from "@/database/books"
-import { buildPiles } from "@/lib/piles"
+import { buildPiles, keepRealSeries } from "@/lib/piles"
 import { useListBooksQuery } from "@/store/localApi"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
@@ -21,7 +21,10 @@ export default function SeriesListScreen() {
   const insets = useSafeAreaInsets()
   const { data: books = EMPTY_BOOKS } = useListBooksQuery()
 
-  const piles = useMemo(() => buildPiles(books, "series"), [books])
+  const piles = useMemo(
+    () => keepRealSeries(buildPiles(books, "series")),
+    [books],
+  )
 
   const cellWidth = pileTileWidth(
     dimensions.width - (SIDE + Math.max(insets.left, insets.right)) * 2,
@@ -37,7 +40,7 @@ export default function SeriesListScreen() {
       >
         {piles.length === 0 ? (
           <Text className="text-muted-foreground py-6">
-            None of your books are in a series yet.
+            No series with more than one book yet.
           </Text>
         ) : (
           <View className="-mx-1.5 flex-row flex-wrap">

@@ -11,7 +11,13 @@ import {
   normaliseAuthorName,
   normaliseSeriesName,
 } from "./nameKey"
-import { type Pile, type PileBook, authorCovers, buildPiles } from "./piles"
+import {
+  type Pile,
+  type PileBook,
+  authorCovers,
+  buildPiles,
+  keepRealSeries,
+} from "./piles"
 
 /** An author collection needs at least this many books. */
 export const MIN_AUTHOR_COLLECTION_BOOKS = 2
@@ -34,15 +40,19 @@ function time(date: string | Date) {
   return Number.isNaN(value) ? 0 : value
 }
 
+/** Series the books are in that have at least two of them (spellings merged). */
 function distinctSeriesCount(books: readonly PileBook[]) {
-  const keys = new Set<string>()
+  const counts = new Map<string, Set<string>>()
   for (const book of books) {
     for (const series of book.series) {
       const key = normaliseSeriesName(series.name)
-      if (key) keys.add(key)
+      if (!key) continue
+      const set = counts.get(key) ?? new Set<string>()
+      set.add(book.uuid)
+      counts.set(key, set)
     }
   }
-  return keys.size
+  return [...counts.values()].filter((set) => set.size >= 2).length
 }
 
 /** Every author with two or more books, sorted by name. */
@@ -130,9 +140,17 @@ export function authorCollectionDetail<B extends PileBook>(
 ): AuthorCollectionDetail<B> | null {
   const collection = buildAuthorCollections(books).find((c) => c.key === key)
   if (!collection) return null
+  // A series with one book and nothing known to be missing is not shown as a
+  // series: its book is listed with the loose books instead.
+  const series = keepRealSeries(buildPiles(collection.books, "series"))
+  const inShownSeries = new Set(
+    series.flatMap((pile) => pile.books.map((b) => b.uuid)),
+  )
   return {
     collection,
-    series: buildPiles(collection.books, "series"),
-    looseBooks: collection.books.filter((book) => book.series.length === 0),
+    series,
+    looseBooks: collection.books.filter(
+      (book) => !inShownSeries.has(book.uuid),
+    ),
   }
 }
