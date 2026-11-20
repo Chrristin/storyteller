@@ -2806,6 +2806,20 @@ export const api = createApi({
         "SeriesGaps",
       ],
     }),
+    acceptSelectedHardcover: build.mutation<ApplyResult, string[]>({
+      query: (bookUuids) => ({
+        url: "/hardcover/accept",
+        method: "POST",
+        body: { bookUuids },
+      }),
+      invalidatesTags: [
+        "HardcoverIdentify",
+        "Books",
+        "Series",
+        "Tags",
+        "SeriesGaps",
+      ],
+    }),
     getTitleCleanupPreview: build.query<
       TitleCleanupPreview,
       { offset: number; limit: number }
@@ -3161,6 +3175,7 @@ export const {
   useStopHardcoverIdentifyMutation,
   useGetHardcoverReviewQuery,
   useAcceptAllHardcoverMutation,
+  useAcceptSelectedHardcoverMutation,
   useGetTitleCleanupPreviewQuery,
   useApplyTitleCleanupMutation,
   useUndoTitleCleanupMutation,

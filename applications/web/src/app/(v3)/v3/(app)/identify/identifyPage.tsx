@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { SiteHeader } from "@v3/_/components/site-header"
 import { Badge } from "@v3/_/components/ui/badge"
 import { Button } from "@v3/_/components/ui/button"
+import { Checkbox } from "@v3/_/components/ui/checkbox"
 import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import {
   PageContent,
@@ -22,6 +23,7 @@ import { type ReviewItem } from "@/database/hardcoverIdentity"
 import { normaliseAuthorName } from "@/nameKey"
 import {
   useAcceptAllHardcoverMutation,
+  useAcceptSelectedHardcoverMutation,
   useGetHardcoverIdentifyQuery,
   useGetHardcoverReviewQuery,
 } from "@/store/api"
@@ -71,12 +73,43 @@ function authorsDiffer(item: ReviewItem) {
   )
 }
 
-function ReviewRow({ item, tab }: { item: ReviewItem; tab: Tab }) {
+type Selection = {
+  selected: ReadonlySet<string>
+  toggle: (uuids: string[], on: boolean) => void
+}
+
+const GRID = "grid-cols-[1.5fr_1fr_1.3fr_3.5rem]"
+const GRID_SELECTABLE = "grid-cols-[1rem_1.5fr_1fr_1.3fr_3.5rem]"
+
+function ReviewRow({
+  item,
+  tab,
+  selection,
+}: {
+  item: ReviewItem
+  tab: Tab
+  selection?: Selection
+}) {
   const t = useTranslation("IdentifyPage")
   const showSuggestion = tab !== "none"
 
   return (
-    <div className="grid grid-cols-[1.5fr_1fr_1.3fr_3.5rem] items-start gap-3 border-t py-2 text-sm">
+    <div
+      className={cn(
+        "grid items-start gap-3 border-t py-2 text-sm",
+        selection ? GRID_SELECTABLE : GRID,
+      )}
+    >
+      {selection && (
+        <Checkbox
+          className="mt-0.5"
+          aria-label={t.plain("selectBook", { title: item.title })}
+          checked={selection.selected.has(item.bookUuid)}
+          onCheckedChange={(checked) => {
+            selection.toggle([item.bookUuid], checked)
+          }}
+        />
+      )}
       <div className="min-w-0">
         <div className="truncate font-medium">{item.title}</div>
         {showSuggestion && item.genres.length > 0 && (
@@ -122,7 +155,15 @@ function ReviewRow({ item, tab }: { item: ReviewItem; tab: Tab }) {
   )
 }
 
-function ReviewGroupCard({ group, tab }: { group: Group; tab: Tab }) {
+function ReviewGroupCard({
+  group,
+  tab,
+  selection,
+}: {
+  group: Group
+  tab: Tab
+  selection?: Selection
+}) {
   const t = useTranslation("IdentifyPage")
   const authors = group.items[0]?.authors ?? []
   const badge =
@@ -140,10 +181,23 @@ function ReviewGroupCard({ group, tab }: { group: Group; tab: Tab }) {
           ? { label: t("badgeAccepted"), className: "text-muted-foreground" }
           : null
 
+  const uuids = group.items.map((item) => item.bookUuid)
+  const allSelected =
+    !!selection && uuids.every((uuid) => selection.selected.has(uuid))
+
   return (
     <section className="bg-card rounded-xl border p-4">
       {group.series !== null && (
         <header className="mb-1 flex flex-wrap items-center gap-2">
+          {selection && (
+            <Checkbox
+              aria-label={t.plain("selectGroup", { series: group.series })}
+              checked={allSelected}
+              onCheckedChange={(checked) => {
+                selection.toggle(uuids, checked)
+              }}
+            />
+          )}
           <h2 className="font-heading text-base font-semibold">
             {group.series}
           </h2>
@@ -159,14 +213,25 @@ function ReviewGroupCard({ group, tab }: { group: Group; tab: Tab }) {
           )}
         </header>
       )}
-      <div className="text-muted-foreground grid grid-cols-[1.5fr_1fr_1.3fr_3.5rem] gap-3 py-1.5 text-[0.6875rem] tracking-wide uppercase">
+      <div
+        className={cn(
+          "text-muted-foreground grid gap-3 py-1.5 text-[0.6875rem] tracking-wide uppercase",
+          selection ? GRID_SELECTABLE : GRID,
+        )}
+      >
+        {selection && <div />}
         <div>{t("columnBook")}</div>
         <div>{t("columnSeriesNow")}</div>
         <div>{tab === "none" ? "" : t("columnSuggested")}</div>
         <div>{tab === "none" ? "" : t("columnPosition")}</div>
       </div>
       {group.items.map((item) => (
-        <ReviewRow key={item.bookUuid} item={item} tab={tab} />
+        <ReviewRow
+          key={item.bookUuid}
+          item={item}
+          tab={tab}
+          selection={selection}
+        />
       ))}
     </section>
   )
@@ -174,6 +239,12 @@ function ReviewGroupCard({ group, tab }: { group: Group; tab: Tab }) {
 
 function ReviewList({ tab }: { tab: Tab }) {
   const t = useTranslation("IdentifyPage")
+  // Only the "Check this one" tab can be accepted row by row. Nothing starts
+  // selected.
+  const selectable = tab === "check"
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const [acceptSelected, { isLoading: isAcceptingSelected }] =
+    useAcceptSelectedHardcoverMutation()
   const [cursor, setCursor] = useState<string | undefined>()
   const [loaded, setLoaded] = useState<Map<string, ReviewItem>>(new Map())
   const { data, isFetching, isError } = useGetHardcoverReviewQuery({
@@ -198,6 +269,40 @@ function ReviewList({ tab }: { tab: Tab }) {
     [items, tab],
   )
 
+  const selection: Selection | undefined = selectable
+    ? {
+        selected,
+        toggle: (uuids, on) => {
+          setSelected((current) => {
+            const next = new Set(current)
+            for (const uuid of uuids) {
+              if (on) next.add(uuid)
+              else next.delete(uuid)
+            }
+            return next
+          })
+        },
+      }
+    : undefined
+
+  const handleAcceptSelected = async () => {
+    try {
+      const result = await acceptSelected([...selected]).unwrap()
+      toast.success(
+        t.plain("acceptedToast", {
+          seriesAdded: result.seriesAdded,
+          tagsAdded: result.tagsAdded,
+          skipped: result.skipped,
+        }),
+      )
+      setSelected(new Set())
+      setCursor(undefined)
+      setLoaded(new Map())
+    } catch {
+      toast.error(t.plain("acceptFailed"))
+    }
+  }
+
   if (isError) {
     return <p className="text-destructive text-sm">{t("loadFailed")}</p>
   }
@@ -211,13 +316,33 @@ function ReviewList({ tab }: { tab: Tab }) {
   return (
     <div className="space-y-3">
       {tab === "check" && (
-        <p className="text-muted-foreground text-xs">{t("checkNote")}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-muted-foreground max-w-xl text-xs">
+            {t("checkNote")}
+          </p>
+          <Button
+            type="button"
+            className="rounded-full"
+            disabled={selected.size === 0 || isAcceptingSelected}
+            onClick={() => {
+              void handleAcceptSelected()
+            }}
+          >
+            {isAcceptingSelected && <Spinner className="size-3.5" />}
+            {t.plain("acceptSelected", { count: selected.size })}
+          </Button>
+        </div>
       )}
       {tab === "none" && (
         <p className="text-muted-foreground text-xs">{t("noneNote")}</p>
       )}
       {groups.map((group) => (
-        <ReviewGroupCard key={group.key || "none"} group={group} tab={tab} />
+        <ReviewGroupCard
+          key={group.key || "none"}
+          group={group}
+          tab={tab}
+          selection={selection}
+        />
       ))}
       {data?.nextCursor && (
         <Button

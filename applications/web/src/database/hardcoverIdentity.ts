@@ -29,6 +29,7 @@ export type IdentifyBook = {
   title: string
   authors: string[]
   seriesNames: string[]
+  seriesPositions: number[]
 }
 
 export type IdentityCounts = Record<HardcoverIdentityStatus, number> & {
@@ -99,7 +100,7 @@ export async function getBookForIdentify(
   const series = await db
     .selectFrom("bookToSeries")
     .innerJoin("series", "series.uuid", "bookToSeries.seriesUuid")
-    .select("series.name")
+    .select(["series.name", "bookToSeries.position"])
     .where("bookToSeries.bookUuid", "=", uuid)
     .execute()
 
@@ -108,6 +109,9 @@ export async function getBookForIdentify(
     title: book.title,
     authors,
     seriesNames: series.map((row) => row.name),
+    seriesPositions: series
+      .map((row) => row.position)
+      .filter((position): position is number => position !== null),
   }
 }
 
@@ -320,6 +324,48 @@ export async function listReview(
   }
 }
 
+const REVIEW_COLUMNS = [
+  "hardcoverIdentity.bookUuid",
+  "book.title",
+  "hardcoverIdentity.status",
+  "hardcoverIdentity.seriesName",
+  "hardcoverIdentity.seriesPosition",
+  "hardcoverIdentity.genres",
+  "hardcoverIdentity.moods",
+  "hardcoverIdentity.matchedTitle",
+  "hardcoverIdentity.matchedAuthors",
+  "hardcoverIdentity.hardcoverId",
+  "hardcoverIdentity.acceptedAt",
+] as const
+
+/**
+ * The rows of the given books that are 'check' or 'sure' right now and that
+ * the user may see, for "Accept N selected". Any other book is left out.
+ */
+export async function listItemsForBooks(
+  bookUuids: UUID[],
+  userId?: UUID,
+): Promise<ReviewItem[]> {
+  if (bookUuids.length === 0) return []
+  const rows: Parameters<typeof hydrate>[0] = []
+  for (let i = 0; i < bookUuids.length; i += 500) {
+    rows.push(
+      ...(await selectReviewRows(userId)
+        .where("hardcoverIdentity.bookUuid", "in", bookUuids.slice(i, i + 500))
+        .where("hardcoverIdentity.status", "in", ["check", "sure"])
+        .execute()),
+    )
+  }
+  return await hydrate(rows)
+}
+
+function selectReviewRows(userId: UUID | undefined) {
+  return visibleRows(userId)
+    .select([...REVIEW_COLUMNS])
+    .orderBy("hardcoverIdentity.seriesName", "asc")
+    .orderBy("book.title", "asc")
+}
+
 /** Every 'sure' row the user may see, for Accept all. */
 export async function listSureItems(userId?: UUID): Promise<ReviewItem[]> {
   const rows = await visibleRows(userId)
@@ -343,12 +389,15 @@ export async function listSureItems(userId?: UUID): Promise<ReviewItem[]> {
   return await hydrate(rows)
 }
 
-export async function markAccepted(bookUuids: UUID[]) {
+export async function markAccepted(
+  bookUuids: UUID[],
+  fromStatuses: HardcoverIdentityStatus[] = ["sure"],
+) {
   if (bookUuids.length === 0) return
   await db
     .updateTable("hardcoverIdentity")
     .set({ status: "accepted", acceptedAt: new Date().toISOString() })
     .where("bookUuid", "in", bookUuids)
-    .where("status", "=", "sure")
+    .where("status", "in", fromStatuses)
     .execute()
 }

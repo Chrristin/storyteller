@@ -15,7 +15,7 @@ import {
 } from "@/database/hardcoverIdentity"
 import { type UUID } from "@/uuid"
 
-import { acceptAllSure } from "../apply"
+import { acceptAllSure, acceptSelected } from "../apply"
 import { HardcoverAuthError } from "../client"
 import {
   type IdentifyDeps,
@@ -240,6 +240,73 @@ describe("acceptAllSure", () => {
     })
   })
 
+  it("accepts only the selected check rows, like accept all does", async () => {
+    using ctx = setupTestDb()
+    const [a, b, c, none, accepted, sure] = seedBooks(ctx, [
+      { title: "Alpha" },
+      { title: "Beta" },
+      { title: "Gamma" },
+      { title: "Delta" },
+      { title: "Epsilon" },
+      { title: "Zeta" },
+    ]) as UUID[] as [UUID, UUID, UUID, UUID, UUID, UUID]
+    const row = (status: "check" | "none" | "accepted" | "sure", n: number) =>
+      saveIdentity(
+        { check: a, none, accepted, sure }[
+          status === "check" ? "check" : status
+        ],
+        {
+          status,
+          seriesName: "The Saga",
+          seriesPosition: n,
+          genres: ["Fantasy"],
+        },
+      )
+    await row("check", 1)
+    await saveIdentity(b, {
+      status: "check",
+      seriesName: "The Saga",
+      seriesPosition: 2,
+      genres: ["Fantasy"],
+    })
+    await saveIdentity(c, {
+      status: "check",
+      seriesName: "Other",
+      seriesPosition: 1,
+    })
+    await row("none", 9)
+    await row("accepted", 9)
+    await row("sure", 3)
+
+    // Beta and Gamma are never selected. None and accepted rows are ignored
+    // even when sent; the sure row is applied like accept all would.
+    const result = await acceptSelected([a, none, accepted, sure])
+    expect(result).toEqual({
+      seriesAdded: 2,
+      tagsAdded: 2,
+      skipped: 0,
+      accepted: 2,
+    })
+    expect(seriesRows(ctx)).toEqual([
+      { name: "The Saga", title: "Alpha", position: 1 },
+      { name: "The Saga", title: "Zeta", position: 3 },
+    ])
+    expect(
+      (await listReview("check")).items.map((i) => i.title).sort(),
+    ).toEqual(["Beta", "Gamma"])
+    expect((await listReview("accepted")).total).toBe(3)
+    expect((await listReview("none")).total).toBe(1)
+
+    // Asking again for an accepted book, or for nothing, changes nothing.
+    expect(await acceptSelected([a])).toEqual({
+      seriesAdded: 0,
+      tagsAdded: 0,
+      skipped: 0,
+      accepted: 0,
+    })
+    expect((await acceptSelected([])).accepted).toBe(0)
+  })
+
   it("creates the series when the library has none, and reuses it", async () => {
     using ctx = setupTestDb()
     const [one, two] = seedBooks(ctx, [{ title: "One" }, { title: "Two" }]) as [
@@ -286,6 +353,16 @@ describe("identify job", () => {
         "X",
       ]),
     ).toBe("The Two Towers J.R.R. Tolkien")
+  })
+
+  it("builds the query without noise or a track number", () => {
+    expect(
+      buildQuery("01 Eye of the World (Unabridged)", ["Robert Jordan"]),
+    ).toBe("Eye of the World Robert Jordan")
+    expect(buildQuery("14 A Memory of Light", ["Robert Jordan"], [14])).toBe(
+      "A Memory of Light Robert Jordan",
+    )
+    expect(buildQuery("1984", ["George Orwell"])).toBe("1984 George Orwell")
   })
 
   it("identifies new books, one search each, and records the result", async () => {

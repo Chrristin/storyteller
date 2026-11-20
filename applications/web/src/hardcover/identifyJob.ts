@@ -12,7 +12,7 @@ import {
   HardcoverRateLimitError,
   searchHardcover,
 } from "./client"
-import { type HardcoverDoc, matchBook } from "./match"
+import { type HardcoverDoc, cleanLibraryTitle, matchBook } from "./match"
 
 /**
  * Looks books up on Hardcover in the background, one book per tick, about 1.4
@@ -109,9 +109,18 @@ const defaultDeps: IdentifyDeps = {
 }
 
 /** The only text that leaves the server: the title and the first author. */
-export function buildQuery(title: string, authors: string[]) {
-  const cleanTitle = title.replace(/\([^)]*\)|\[[^\]]*\]/g, " ")
-  return [cleanTitle, authors[0] ?? ""].join(" ").replace(/\s+/g, " ").trim()
+export function buildQuery(
+  title: string,
+  authors: string[],
+  seriesPositions?: number[],
+) {
+  // Same noise stripping as the matcher: "(Unabridged)", a zero padded track
+  // number, a number equal to the series position, then any other brackets.
+  const cleaned = cleanLibraryTitle(title, seriesPositions).replace(
+    /\([^)]*\)|\[[^\]]*\]/g,
+    " ",
+  )
+  return [cleaned, authors[0] ?? ""].join(" ").replace(/\s+/g, " ").trim()
 }
 
 function describe(error: unknown) {
@@ -162,7 +171,7 @@ export async function runIdentify(
       first = false
       if (s.stopRequested) break
 
-      const query = buildQuery(book.title, book.authors)
+      const query = buildQuery(book.title, book.authors, book.seriesPositions)
       try {
         const docs = await deps.search(token, query)
         const match = matchBook(
@@ -170,6 +179,7 @@ export async function runIdentify(
             title: book.title,
             authors: book.authors,
             seriesNames: book.seriesNames,
+            seriesPositions: book.seriesPositions,
           },
           docs,
         )

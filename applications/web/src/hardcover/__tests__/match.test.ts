@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { matchBook } from "../match"
+import { type HardcoverDoc, matchBook } from "../match"
 
 import * as f from "./fixtures"
 
@@ -177,5 +177,89 @@ describe("matchBook", () => {
       name: "The Expanse",
       position: null,
     })
+  })
+})
+
+describe("matchBook with noisy library titles", () => {
+  const doc = (title: string, authors: string[]): HardcoverDoc => ({
+    id: 99,
+    title,
+    author_names: authors,
+    series_names: [],
+    users_count: 100,
+  })
+
+  it("matches a zero padded track number without the article", () => {
+    const result = matchBook(
+      { title: "01 Eye of the World", authors: ["Robert Jordan"] },
+      [doc("The Eye of the World", ["Robert Jordan"])],
+    )
+    expect(result.confidence).toBe("sure")
+    expect(result.suggestion?.matchedTitle).toBe("The Eye of the World")
+  })
+
+  it("matches a number equal to the series position", () => {
+    const hit = doc("A Memory of Light", ["Robert Jordan"])
+    const withPosition = matchBook(
+      {
+        title: "14 A Memory of Light",
+        authors: ["Robert Jordan"],
+        seriesPositions: [14],
+      },
+      [hit],
+    )
+    expect(withPosition.confidence).toBe("sure")
+    // Without the position the number stays, so it is only a partial match.
+    const without = matchBook(
+      { title: "14 A Memory of Light", authors: ["Robert Jordan"] },
+      [hit],
+    )
+    expect(without.confidence).toBe("check")
+  })
+
+  it("ignores an (Unabridged) suffix", () => {
+    const result = matchBook(
+      { title: "Dune (Unabridged)", authors: ["Frank Herbert"] },
+      [doc("Dune", ["Frank Herbert"])],
+    )
+    expect(result.confidence).toBe("sure")
+    expect(result.reasons).not.toContain("The title only partly matches")
+  })
+
+  it("is not sure about a book that merely contains the title", () => {
+    const result = matchBook(
+      { title: "The Hobbit", authors: ["J.R.R. Tolkien"] },
+      [doc("The Art of The Hobbit by J.R.R. Tolkien", ["J.R.R. Tolkien"])],
+    )
+    expect(result.confidence).not.toBe("sure")
+  })
+
+  it("drops a series prefix before a colon only when it is the book's series", () => {
+    const hit = doc("The Lightning Thief", ["Rick Riordan"])
+    const title = "Percy Jackson and the Olympians: the lightning thief"
+    const known = matchBook(
+      {
+        title,
+        authors: ["Rick Riordan"],
+        seriesNames: ["Percy Jackson and the Olympians"],
+      },
+      [hit],
+    )
+    expect(known.confidence).toBe("sure")
+    const unknown = matchBook({ title, authors: ["Rick Riordan"] }, [hit])
+    expect(unknown.confidence).toBe("check")
+  })
+
+  it("keeps the strict rules for noisy titles", () => {
+    const result = matchBook(
+      { title: "01 Eye of the World", authors: ["Someone Else"] },
+      [doc("The Eye of the World", ["Robert Jordan"])],
+    )
+    expect(result.confidence).toBe("none")
+    const guide = matchBook(
+      { title: "01 Eye of the World", authors: ["Robert Jordan"] },
+      [doc("Study Guide: The Eye of the World", ["Robert Jordan"])],
+    )
+    expect(guide.confidence).toBe("none")
   })
 })

@@ -1,4 +1,9 @@
-import { baseNormalise, normaliseAuthorName } from "@/nameKey"
+import {
+  baseNormalise,
+  normaliseAuthorName,
+  normaliseSeriesName,
+} from "@/nameKey"
+import { cleanTitle } from "@/titleCleanup"
 
 import { normaliseGenres, normaliseMoods } from "./genres"
 import {
@@ -34,6 +39,8 @@ export type LibraryBookInfo = {
   authors: string[]
   /** The book's own existing series names, used to pick between series names. */
   seriesNames?: string[]
+  /** The book's positions in its series, to tell a track number from a real title number. */
+  seriesPositions?: number[]
 }
 
 export type Confidence = "sure" | "check" | "none"
@@ -214,10 +221,50 @@ function scoreDoc(book: LibraryBookInfo, doc: HardcoverDoc): Candidate | null {
   return { doc, score, title, author, reasons, capped }
 }
 
+/**
+ * "Percy Jackson and the Olympians: the lightning thief" in the series
+ * "Percy Jackson and the Olympians" is the book "the lightning thief". Only a
+ * prefix before a colon that equals one of the book's own series names is
+ * removed, so a real subtitle is never cut.
+ */
+export function stripSeriesPrefix(
+  title: string,
+  seriesNames: readonly string[] = [],
+): string {
+  const colon = title.indexOf(":")
+  if (colon <= 0) return title
+  const prefix = normaliseSeriesName(title.slice(0, colon))
+  const rest = title.slice(colon + 1).trim()
+  if (!prefix || !rest) return title
+  const isSeries = seriesNames.some(
+    (name) => normaliseSeriesName(name) === prefix,
+  )
+  return isSeries ? rest : title
+}
+
+/**
+ * The library title as it should be compared and searched: without
+ * "(Unabridged)" noise, a zero padded track number, or a number equal to the
+ * series position.
+ */
+export function cleanLibraryTitle(
+  title: string,
+  seriesPositions?: readonly number[],
+): string {
+  return cleanTitle(title, { seriesPositions }).title
+}
+
 export function matchBook(
-  book: LibraryBookInfo,
+  rawBook: LibraryBookInfo,
   docs: readonly HardcoverDoc[],
 ): MatchResult {
+  const book: LibraryBookInfo = {
+    ...rawBook,
+    title: stripSeriesPrefix(
+      cleanLibraryTitle(rawBook.title, rawBook.seriesPositions),
+      rawBook.seriesNames,
+    ),
+  }
   const candidates = docs
     .map((doc) => scoreDoc(book, doc))
     .filter((candidate): candidate is Candidate => candidate !== null)

@@ -402,3 +402,23 @@ title you changed since.
   So yes: applying this to hundreds of books rewrites those files on the NAS,
   one at a time in the background, and so does the undo. Not run on a real
   library.
+
+## Identify fixes (noisy titles, Accept selected)
+
+- **Matching noisy titles.** Before searching and before scoring, the library
+  title goes through the same noise stripping as the title clean-up
+  (`cleanLibraryTitle` in `src/hardcover/match.ts`): "(Unabridged)" suffixes, a
+  zero padded track number ("01 Eye of the World"), and a number equal to the
+  book's series position. A leading The/A/An was already ignored when comparing.
+  A prefix before a colon that equals one of the book's own series names
+  ("Percy Jackson and the Olympians: the lightning thief") is dropped for the
+  comparison only, so that book can be Sure; without the series it is Check.
+  The strict rules are unchanged (author required, no summaries, study guides or
+  box sets). Books already checked are not looked at again unless you press
+  "Check everything again".
+- **Accept selected.** On the Check this one tab every row (and every series
+  group) has a tick box, nothing ticked at the start, and a button "Accept N
+  selected". It calls `POST /api/v2/hardcover/accept` with `{ bookUuids }` and
+  applies those books exactly like Accept all (add to the suggested series, add
+  genres as tags, mark accepted), only for rows that are Check or Sure at that
+  moment. Accept all still only takes the Sure rows. Not seen running.

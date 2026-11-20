@@ -14,6 +14,10 @@ each section. Move an item to "Done" when it ships.
 
 ## Decide or finish
 
+- **Re-run Identify after the matching fix.** Books already marked Check or Not
+  found because of "01 ..." or "(Unabridged)" titles stay that way until you
+  press "Check everything again" in Settings, Metadata (accepted books are
+  kept). Cleaning titles first makes the matches better.
 - **Run the title clean-up.** Built, not run. Settings, Metadata, "Clean up
   titles": Preview, read the list, Apply. Applying rewrites the title inside
   every changed book's epub and audio files (see FORK.md); decide whether that

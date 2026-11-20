@@ -1,6 +1,7 @@
 import { db } from "@/database/connection"
 import {
   type ReviewItem,
+  listItemsForBooks,
   listSureItems,
   markAccepted,
 } from "@/database/hardcoverIdentity"
@@ -122,13 +123,28 @@ async function applyGenres(items: ReviewItem[]): Promise<number> {
 }
 
 export async function acceptAllSure(userId?: UUID): Promise<ApplyResult> {
+  return await applyItems(await listSureItems(userId))
+}
+
+/**
+ * "Accept N selected": applies the chosen books exactly like Accept all does,
+ * for books whose suggestion is 'check' or 'sure' right now. A book in any
+ * other state (none, accepted, pending, error, not visible) is ignored.
+ */
+export async function acceptSelected(
+  bookUuids: UUID[],
+  userId?: UUID,
+): Promise<ApplyResult> {
+  return await applyItems(await listItemsForBooks(bookUuids, userId))
+}
+
+async function applyItems(items: ReviewItem[]): Promise<ApplyResult> {
   const result: ApplyResult = {
     seriesAdded: 0,
     tagsAdded: 0,
     skipped: 0,
     accepted: 0,
   }
-  const items = await listSureItems(userId)
   if (items.length === 0) return result
 
   const seriesByKey = await loadSeriesByKey()
@@ -181,7 +197,10 @@ export async function acceptAllSure(userId?: UUID): Promise<ApplyResult> {
 
   for (const batch of chunk(items, BATCH_SIZE)) {
     result.tagsAdded += await applyGenres(batch)
-    await markAccepted(batch.map((item) => item.bookUuid))
+    await markAccepted(
+      batch.map((item) => item.bookUuid),
+      ["sure", "check"],
+    )
     result.accepted += batch.length
   }
 
