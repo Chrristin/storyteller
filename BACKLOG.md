@@ -67,8 +67,10 @@ each section. Move an item to "Done" when it ships.
   where the user has no Drive or Kindle action. The bar flags the ones left out.
 - **Dutch translations.** `messages/nl.json` has none of the new strings (Drive,
   Series, Titles under covers).
-- **Two migrations are both numbered 128.** It works, because migrations are
-  tracked by content, but it is untidy.
+- **Migration numbering.** Two migrations are both numbered 128
+  (`128_event_log.sql` is upstream's, `128_book_notes.sql` is ours) and there is
+  no 135 (134 is followed by 136). It works, because migrations are tracked by
+  content, but it is untidy. Do not renumber files that already ran.
 - **Nothing has been seen running** for the newest screens (waves, text on
   waves, piles, tall web cards). Check them on a phone and in a browser, then
   fix what looks off.

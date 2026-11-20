@@ -23,17 +23,24 @@
 
 ## Screens (`app/(root)`)
 
-| Screen                                                | File                                                                                                |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Library / shelves (home)                              | `index.tsx`, `components/Shelf.tsx`                                                                 |
-| Full shelf, collection, series, author, narrator, tag | `shelf/[type]`, `collection/[uuid]`, ... all use `components/BookGrid.tsx`                          |
-| Search                                                | `search.tsx`                                                                                        |
-| Book detail                                           | `book/[uuid].tsx`                                                                                   |
-| Reader                                                | `read/[uuid].tsx`, `components/Epub.tsx`, `Toolbar.tsx`, `SelectionMenu.tsx`                        |
-| Player                                                | `listen/[uuid].tsx`, `components/MiniPlayerWidget.tsx`, `PlayPause.tsx`, `ProgressBar.tsx`          |
-| Reader sheets                                         | `reading-settings`, `navigation-menu/*`, `speed-menu`, `footnote`, `custom-theme/*`, `custom-fonts` |
-| Settings                                              | `settings.tsx`, `components/ReadingSettings.tsx`                                                    |
-| Login / server                                        | `server.tsx` (add server), `components/LoginButton.tsx` (browser login through the server)          |
+| Screen                                                | File                                                                                                                                    |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Library / shelves (home)                              | `index.tsx`, `components/Shelf.tsx`                                                                                                     |
+| Full shelf, collection, series, author, narrator, tag | `shelf/[type]`, `collection/[uuid]`, ... all use `components/BookGrid.tsx`                                                              |
+| Search                                                | `search.tsx`                                                                                                                            |
+| Book detail                                           | `book/[uuid].tsx`                                                                                                                       |
+| Reader                                                | `read/[uuid].tsx`, `components/Epub.tsx`, `Toolbar.tsx`, `SelectionMenu.tsx`                                                            |
+| Player                                                | `listen/[uuid].tsx`, `components/MiniPlayerWidget.tsx`, `PlayPause.tsx`, `ProgressBar.tsx`                                              |
+| Reader sheets                                         | `reading-settings`, `navigation-menu/*`, `speed-menu`, `footnote`, `custom-theme/*`, `custom-fonts`                                     |
+| Settings                                              | `settings.tsx`, `components/ReadingSettings.tsx`                                                                                        |
+| Login / server                                        | `server.tsx` (add server), `components/LoginButton.tsx` (browser login through the server)                                              |
+| Series list                                           | `series-list.tsx` (Library menu, Series): your series as swipeable piles                                                                |
+| Archive                                               | `archive.tsx` (Library menu, Archive): books moved to the backroom                                                                      |
+| Author collections                                    | `author-collections.tsx` (all authors with two or more books), `author-collection/[author].tsx`                                         |
+| Read or listen sheet                                  | `read-or-listen.tsx`: form sheet that asks Read, Read along or Listen when opening a book from a pile                                   |
+| Add to collection                                     | `add-to-collection.tsx`: form sheet around `components/AddToCollectionSheet.tsx`                                                        |
+| Log                                                   | `log.tsx`: today's log file with Clear and Share, opened from Settings (`/log`)                                                         |
+| Media widget click                                    | `notification.click.tsx`: sends `storyteller:///notification.click` from the Android media widget to the playing book's `listen/[uuid]` |
 
 There is no in-app username/password form. Login opens the server's
 `/api/v2/token/app` page in a browser and returns to the app through the
@@ -144,6 +151,8 @@ formats. It runs every night at 03:30 server time.
   alone.
 - Reading status, rating, shelf entries and progress of the merged-away book
   are kept.
+- A track number on only one title ("03 Dragon Reborn" vs "The Dragon Reborn")
+  and a leading The/A/An are ignored when pairing ebooks and audiobooks.
 - `STORYTELLER_AUTO_LINK=false` turns it off. `STORYTELLER_AUTO_LINK_CRON`
   changes the schedule.
 - To run it now, use Settings, Maintenance, "Join ebooks and audiobooks":
@@ -261,8 +270,10 @@ pile to open the series page. If the same series name comes from two servers it 
 Piles screen, its Authors tab and the Missing books list are gone: authors are
 covered by the automatic Author collections on Home.
 
-Missing books are found on the phone from the series positions the app already
-stores, so it works offline and the server is not involved. Only whole numbers
+The phone finds missing books itself from the series positions the app already
+stores, so it works offline without asking the server. The web app finds gaps on
+the server instead (`GET /api/v2/series/gaps`, `src/seriesGaps.ts`, read with
+`useGetSeriesGapsQuery`), so the two are separate implementations. On the phone only whole numbers
 from 1 up count, and a series needs two different owned positions. The gaps are
 the numbers between the lowest and highest owned book, so a series is never
 guessed past its last owned book. The series page shows a dashed amber
@@ -331,10 +342,6 @@ with "Add to To Read" on its page, or select several books in the library and us
   no series (`author-collection/[author]`). "All N" opens `author-collections`.
   Nothing is stored.
 
-- Build 17 adds Add to collection, author collections and the series number fix.
-
-- Build 18: Series replaces Piles, missing numbers show on Series.
-
 ## Unread status (server and phone)
 
 Before, every new book got the library default status "To read", so a book the
@@ -361,12 +368,6 @@ user had marked could not be told apart from one that merely arrived.
 - Not run on a real device, browser or NAS. Check after the server is updated
   that Home To Read shrinks to the books you had marked (all old "To read"
   books are now Unread, so it starts empty until you mark some).
-
-- Build 19: Unread status, home headers with All, Now Reading row.
-
-- Linker: a track number on only one title ("03 Dragon Reborn" vs "The Dragon Reborn") and a leading The/A/An are ignored when pairing ebooks and audiobooks.
-
-- Build 20: swipeable piles on Home, Series and the author page.
 
 ## Web book card: one cover and format chips
 
@@ -465,10 +466,6 @@ title you changed since.
   folder. Tests: `src/assets/library/__tests__/multi-epub-folders.test.ts`. Not
   seen running on a real library.
 
-- Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
-
-- Build 22: shuffling piles with real covers behind, a flick swaps the book, a tap opens the pile, series of one are hidden.
-
 ## Archive (the backroom)
 
 An archived book stays in the library with all its data (downloads, progress,
@@ -491,8 +488,10 @@ there.
   library" button. The book long-press menu (tiles that are not selectable, such
   as piles) has "Move to Archive" or "Move back to library".
 - **Archive screen** (`app/(root)/archive.tsx`): the library grid, ordered by
-  first author (normalised, so spelling variants sit together), then series and
-  position, then title; books with no author last (`lib/archiveOrder.ts`).
+  first author's name (ignoring case and accents), then series and position, then
+  title; books with no author last (`lib/archiveOrder.ts`). The web Archive page
+  uses the same plain order, done in SQL with the ordinary author sort, so
+  spelling variants of one author are no longer grouped.
   Empty: "Nothing in the Archive."
 - **Sync.** The phone lists books with `GET /books?archived=all` so archived
   books are not mistaken for deleted ones. `POST /api/v2/books/archive`
@@ -500,8 +499,6 @@ there.
   `hooks/useArchiveBooks.ts`; the local rows change at once and are undone for a
   server that refuses. Migration `1793300000000_add_book_archived_at`.
 - Pure logic with tests: `lib/archive.ts`, `lib/archiveOrder.ts`.
-
-- Build 23: Archive (shared backroom) and the library hiding archived books.
 
 ## Web: Listen plays in the mini player
 
@@ -532,3 +529,13 @@ position (the regular sync is throttled and `closeMiniPlayer` does not flush), t
 `closeMiniPlayer`, so the hero returns to status and Listen. While that hero is shown the floating mini player
 for the same book hides itself (`heroPlayerPresence.ts`). The details overlay has
 no minimized state of its own.
+
+## Build history
+
+- Build 17 adds Add to collection, author collections and the series number fix.
+- Build 18: Series replaces Piles, missing numbers show on Series.
+- Build 19: Unread status, home headers with All, Now Reading row.
+- Build 20: swipeable piles on Home, Series and the author page.
+- Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
+- Build 22: shuffling piles with real covers behind, a flick swaps the book, a tap opens the pile, series of one are hidden.
+- Build 23: Archive (shared backroom) and the library hiding archived books.
