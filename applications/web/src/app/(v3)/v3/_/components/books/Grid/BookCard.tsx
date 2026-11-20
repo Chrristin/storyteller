@@ -485,6 +485,12 @@ export const BookCard = memo(function BookCard({
   )
 
   const isSmallestCover = gridCardSize === "smallest"
+  // The same small lift and tilt an ebook cover has on hover, for covers that
+  // are drawn as one fixed tile (joined books, audiobook waves). It listens to
+  // the card, because the link overlay sits above the cover.
+  const hoverLift = isSelecting
+    ? undefined
+    : "transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:-rotate-2"
   const hasEbookFormat = book.ebook !== null || book.readaloud !== null
   const hasAudioFormat = book.audiobook !== null
 
@@ -520,14 +526,14 @@ export const BookCard = memo(function BookCard({
             image={waveImage}
             width={coverWidth}
             showMeta={!titlesUnderCovers}
-            className="rounded-card"
+            className={cn("rounded-card", hoverLift)}
           />
         ) : (
           <div
             className={cn(
               "absolute inset-0 flex items-center justify-center",
               fillCover
-                ? "rounded-card overflow-hidden"
+                ? cn("rounded-card overflow-hidden", hoverLift)
                 : hasDualFormat
                   ? "overflow-visible p-2"
                   : "rounded-card overflow-hidden",
