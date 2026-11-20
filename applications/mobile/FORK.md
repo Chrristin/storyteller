@@ -521,3 +521,11 @@ nothing navigates. The "Back to the book" arrow in the expanded mini player
 still opens the full reader page. Read buttons and direct URLs are unchanged.
 Pure decision logic: `src/store/listenRequest.ts` (tests in
 `src/store/__tests__/listenRequest.test.ts`).
+
+Listen also forces `minimizedMiniPlayer` to false (expanded card) when it starts
+playback, only there. The book details hero shows a control row
+(`HeroPlayerControls`: PlayerControls, SpeedMenu, SeekBar) above the buttons while
+that audiobook is loaded, and the Listen button reads "Listening" with sound bars
+while playing (click pauses). While that hero is shown the floating mini player
+for the same book hides itself (`heroPlayerPresence.ts`). The details overlay has
+no minimized state of its own.

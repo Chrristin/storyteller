@@ -19,6 +19,8 @@ import { RatingDisplay, RatingInput } from "@v3/_/components/books/RatingInput"
 import { ReadingStatusButton } from "@v3/_/components/books/ReadingStatusButton"
 import { SendToKindleButton } from "@v3/_/components/books/SendToKindle"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
+import { HeroPlayerControls } from "@v3/_/components/reader/MiniPlayer/HeroPlayerControls"
+import { useRegisterHeroPlayer } from "@v3/_/components/reader/MiniPlayer/heroPlayerPresence"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
 import { useListenInMiniPlayer } from "@v3/_/hooks/use-listen-in-mini-player"
@@ -39,14 +41,40 @@ import { cn } from "@/cn"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import { IconReadaloud } from "@/icons/IconReadaloud"
+import { pauseButtonPressed } from "@/store/actions"
 import {
   useDeleteUserBookRatingMutation,
   useSetUserBookRatingMutation,
 } from "@/store/api"
+import { useAppDispatch, useAppSelector } from "@/store/appState"
+import { listenButtonState } from "@/store/listenRequest"
+import {
+  selectCurrentTrack,
+  selectIsPlaying,
+} from "@/store/slices/audioPlayerSlice"
+import {
+  selectCurrentBook,
+  selectReadingMode,
+} from "@/store/slices/readingSessionSlice"
 
 const MAX_CREATORS = 5
 
 const XL_BOOK_REM = 36
+
+// three small bars that bounce while the audiobook plays
+function SoundBars() {
+  return (
+    <span aria-hidden="true" className="mr-1 flex h-4 items-end gap-0.5">
+      {[0, 150, 300].map((delay) => (
+        <span
+          key={delay}
+          className="h-full w-0.5 origin-bottom scale-y-50 rounded-full bg-current motion-safe:animate-[pulse_0.9s_ease-in-out_infinite]"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </span>
+  )
+}
 
 // mirrors the @xl/book container query in js so the flex-col/flex-row switch
 // happens in a react render, where motion can flip-animate it.
@@ -91,6 +119,21 @@ export function HeroSection({
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
   const listen = useListenInMiniPlayer()
+  const dispatch = useAppDispatch()
+  const tMini = useTranslation("Reader.miniPlayer")
+  const sessionBook = useAppSelector(selectCurrentBook)
+  const sessionMode = useAppSelector(selectReadingMode)
+  const hasTrack = useAppSelector(selectCurrentTrack) !== null
+  const isPlaying = useAppSelector(selectIsPlaying)
+  const listenState = listenButtonState({
+    sessionBookUuid: sessionBook?.uuid ?? null,
+    sessionMode,
+    hasTrack,
+    playing: isPlaying,
+    bookUuid: book.uuid,
+  })
+  const showPlayer = listenState !== "idle" && !!book.audiobook
+  useRegisterHeroPlayer(book.uuid, showPlayer)
   const tAlignment = useTranslation("BookDetailsPage.alignment")
   const c = useCommon()
 
@@ -452,6 +495,7 @@ export function HeroSection({
               wide(`@xl/book:justify-between`, "justify-between"),
             )}
           >
+            {showPlayer && <HeroPlayerControls book={book} />}
             <div
               className={cn(
                 "flex grow flex-wrap justify-center gap-2",
@@ -510,10 +554,21 @@ export function HeroSection({
                     variant="cover"
                     size="sm"
                     className="rounded-xl"
-                    onClick={() => listen(book)}
+                    onClick={() => {
+                      // while it plays the button toggles to pause
+                      if (listenState === "playing")
+                        dispatch(pauseButtonPressed())
+                      else listen(book)
+                    }}
                   >
-                    <icon.Headphones className="mr-1 h-4 w-4" />
-                    Listen
+                    {listenState === "playing" ? (
+                      <SoundBars />
+                    ) : (
+                      <icon.Headphones className="mr-1 h-4 w-4" />
+                    )}
+                    {tMini.plain(
+                      listenState === "playing" ? "listening" : "listen",
+                    )}
                   </Button>
                 )}
 

@@ -58,6 +58,7 @@ import { PipPlayer } from "./PipPlayer"
 import { PlayerControls } from "./PlayerControls"
 import { ProgressRing } from "./ProgressRing"
 import { SpeedMenu } from "./SpeedMenu"
+import { useHeroPlayerShown } from "./heroPlayerPresence"
 
 const CIRCLE_SIZE = CARD_CIRCLE_SIZE
 const RING_THICKNESS = CARD_RING_THICKNESS
@@ -138,6 +139,7 @@ function FloatingMiniPlayer({ book }: { book: BookWithRelations }) {
   const currentTime = useAppSelector(selectCurrentTime)
   const duration = useAppSelector(selectDuration)
   const playing = useAppSelector(selectIsPlaying)
+  const heroShown = useHeroPlayerShown(book.uuid)
 
   const setCollapsed = (value: boolean) =>
     dispatch(
@@ -150,6 +152,9 @@ function FloatingMiniPlayer({ book }: { book: BookWithRelations }) {
 
   const coverScope = useCoverScope(book)
   const t = useTranslation("Reader.miniPlayer")
+
+  // the open book details hero for this book has its own controls
+  if (heroShown) return null
 
   return (
     <FloatingCard
@@ -264,12 +269,13 @@ function ExpandedCard({
   )
 }
 
-function SeekBar() {
+export function SeekBar({ tone = "default" }: { tone?: "default" | "cover" }) {
   const dispatch = useAppDispatch()
   const t = useTranslation("Reader.miniPlayer")
   const currentTime = useAppSelector(selectCurrentTime)
   const duration = useAppSelector(selectDuration)
   const [scrub, setScrub] = useState<number | null>(null)
+  const cover = tone === "cover"
   const shown = scrub ?? currentTime
   const fraction = duration > 0 ? Math.min(Math.max(shown / duration, 0), 1) : 0
 
@@ -282,7 +288,12 @@ function SeekBar() {
   }
 
   return (
-    <div className="text-muted-foreground flex items-center gap-2 text-[0.625rem] tabular-nums">
+    <div
+      className={cn(
+        "flex items-center gap-2 text-[0.625rem] tabular-nums",
+        cover ? "text-tinted" : "text-muted-foreground",
+      )}
+    >
       <span className="shrink-0">{formatTime(shown)}</span>
       <div
         role="slider"
@@ -324,14 +335,25 @@ function SeekBar() {
           )
         }}
       >
-        <div className="bg-muted absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full">
+        <div
+          className={cn(
+            cover ? "bg-cover-accent/25" : "bg-muted",
+            "absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full",
+          )}
+        >
           <div
-            className="bg-primary h-full rounded-full"
+            className={cn(
+              cover ? "bg-cover-accent" : "bg-primary",
+              "h-full rounded-full",
+            )}
             style={{ width: `${fraction * 100}%` }}
           />
         </div>
         <div
-          className="bg-primary absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 shadow-sm transition-opacity group-hover/seek:opacity-100 group-focus-visible/seek:opacity-100"
+          className={cn(
+            cover ? "bg-cover-accent" : "bg-primary",
+            "absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 shadow-sm transition-opacity group-hover/seek:opacity-100 group-focus-visible/seek:opacity-100",
+          )}
           style={{ left: `${fraction * 100}%` }}
         />
       </div>

@@ -13,6 +13,7 @@ import {
   decideListenAction,
   evaluateListenProgress,
 } from "@/store/listenRequest"
+import { preferencesSlice } from "@/store/slices/preferencesSlice"
 import { readingSessionSlice } from "@/store/slices/readingSessionSlice"
 
 const LOAD_TIMEOUT_MS = 60_000
@@ -37,6 +38,18 @@ export function useListenInMiniPlayer() {
         currentTrackUrl: state.audioPlayer.currentTrack?.url ?? null,
         bookUuid: book.uuid,
       })
+
+      // Listen always shows the player expanded; only here, so a later manual
+      // collapse by the user sticks.
+      if (action !== "unavailable") {
+        dispatch(
+          preferencesSlice.actions.updatePreference({
+            key: "minimizedMiniPlayer",
+            value: false,
+            target: "global",
+          }),
+        )
+      }
 
       const fail = (message?: string) => {
         dispatch(readingSessionSlice.actions.clearReaderError())

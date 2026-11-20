@@ -5,6 +5,7 @@ import { describe, it } from "vitest"
 import {
   decideListenAction,
   evaluateListenProgress,
+  listenButtonState,
 } from "@/store/listenRequest"
 import type { UUID } from "@/uuid"
 
@@ -98,6 +99,34 @@ describe("evaluateListenProgress", () => {
     assert.deepEqual(
       evaluateListenProgress(state("internal_error", null, "boom"), A),
       { status: "error", message: "boom" },
+    )
+  })
+})
+
+describe("listenButtonState", () => {
+  const base = {
+    sessionBookUuid: A,
+    sessionMode: "audiobook" as const,
+    hasTrack: true,
+    playing: true,
+    bookUuid: A,
+  }
+  it("is playing when this audiobook plays", () => {
+    assert.strictEqual(listenButtonState(base), "playing")
+  })
+  it("is paused when loaded but not playing", () => {
+    assert.strictEqual(listenButtonState({ ...base, playing: false }), "paused")
+  })
+  it("is idle for another book, another mode or no track", () => {
+    assert.strictEqual(listenButtonState({ ...base, bookUuid: B }), "idle")
+    assert.strictEqual(
+      listenButtonState({ ...base, sessionMode: "epub" }),
+      "idle",
+    )
+    assert.strictEqual(listenButtonState({ ...base, hasTrack: false }), "idle")
+    assert.strictEqual(
+      listenButtonState({ ...base, sessionBookUuid: null }),
+      "idle",
     )
   })
 })

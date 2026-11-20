@@ -46,3 +46,23 @@ export function evaluateListenProgress(
   if (url?.includes(`/api/v2/books/${bookUuid}/`)) return { status: "ready" }
   return { status: "pending" }
 }
+
+export type ListenButtonState = "idle" | "paused" | "playing"
+
+// state of a book's Listen button: "idle" when another book (or none) is in the
+// shared player, "paused" when this audiobook is loaded but not playing, and
+// "playing" while it plays.
+export function listenButtonState(input: {
+  sessionBookUuid: UUID | null
+  sessionMode: ReadingMode
+  hasTrack: boolean
+  playing: boolean
+  bookUuid: UUID
+}): ListenButtonState {
+  const loaded =
+    input.sessionBookUuid === input.bookUuid &&
+    input.sessionMode === "audiobook" &&
+    input.hasTrack
+  if (!loaded) return "idle"
+  return input.playing ? "playing" : "paused"
+}
