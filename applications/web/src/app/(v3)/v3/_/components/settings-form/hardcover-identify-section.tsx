@@ -4,21 +4,17 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@v3/_/components/ui/button"
-import { Field, FieldDescription, FieldLabel } from "@v3/_/components/ui/field"
-import { Input } from "@v3/_/components/ui/input"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { V3Link } from "@v3/_/components/v3-link"
-import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
+import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import {
   useGetHardcoverIdentifyQuery,
-  useGetMetadataProvidersQuery,
   useRunHardcoverIdentifyMutation,
-  useSetHardcoverTokenMutation,
   useStopHardcoverIdentifyMutation,
 } from "@/store/api"
 
-import { SettingsCard, SettingsSection } from "./shared"
+import { SettingsCard, SettingsLink, SettingsSection } from "./shared"
 
 const POLL_MS = 3_000
 // The job waits about 1.4 seconds between books, plus the request itself.
@@ -43,94 +39,24 @@ function Count({
   )
 }
 
-function TokenField() {
+function TokenStatus({ configured }: { configured: boolean }) {
   const t = useTranslation(
     "SettingsPage.tabs.metadata.sections.hardcoverIdentify",
   )
-  const { data: providers } = useGetMetadataProvidersQuery()
-  const [saveToken, { isLoading: isSaving, error: saveError, reset }] =
-    useSetHardcoverTokenMutation()
-  const c = useCommon()
-  const [draft, setDraft] = useState("")
-
-  const status = providers?.hardcover
-  const locked = !!status?.locked
-  const saved = !!status?.tokenSet && !status.unreadable
-  const rejected =
-    saveError !== undefined &&
-    "data" in saveError &&
-    (saveError.data as { code?: string } | undefined)?.code === "unauthorized"
-
-  const save = () => {
-    if (!draft.trim()) return
-    void saveToken(draft.trim())
-      .unwrap()
-      .then(() => {
-        setDraft("")
-      })
-      .catch(() => {
-        toast.error(t.plain("tokenSaveFailed"))
-      })
-  }
 
   return (
-    <Field>
-      <FieldLabel htmlFor="hardcoverIdentifyToken">
-        {t("tokenLabel")}
-      </FieldLabel>
-      <div className="flex items-center gap-2">
-        <Input
-          id="hardcoverIdentifyToken"
-          type="password"
-          autoComplete="off"
-          disabled={locked}
-          value={draft}
-          placeholder={
-            saved
-              ? t.plain("tokenSavedPlaceholder")
-              : t.plain("tokenPlaceholder")
-          }
-          aria-invalid={!!saveError}
-          onChange={(event) => {
-            setDraft(event.target.value)
-            reset()
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter") return
-            event.preventDefault()
-            save()
-          }}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!draft.trim() || isSaving || locked}
-          onClick={save}
-        >
-          {isSaving && <Spinner className="size-3.5" />}
-          {c("actions.save")}
-        </Button>
-        <span
-          className={
-            saved
-              ? "text-xs font-medium text-emerald-600 dark:text-emerald-400"
-              : "text-muted-foreground text-xs"
-          }
-        >
-          {saved
-            ? status?.source === "database"
-              ? t("tokenSaved")
-              : t("tokenFromElsewhere")
-            : t("tokenMissing")}
-        </span>
-      </div>
-      {rejected ? (
-        <p className="text-destructive text-xs">{t("tokenRejected")}</p>
-      ) : (
-        <FieldDescription>{t("tokenTip")}</FieldDescription>
-      )}
-    </Field>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span
+        className={
+          configured
+            ? "text-sm font-medium text-emerald-600 dark:text-emerald-400"
+            : "text-muted-foreground text-sm"
+        }
+      >
+        {configured ? t("tokenSaved") : t("tokenMissing")}
+      </span>
+      <SettingsLink section="metadataProviders">{t("tokenLink")}</SettingsLink>
+    </div>
   )
 }
 
@@ -172,7 +98,7 @@ export function HardcoverIdentifySection() {
   return (
     <SettingsSection id="hardcoverIdentify">
       <SettingsCard title={t("title")} description={t("description")}>
-        <TokenField />
+        {data && <TokenStatus configured={data.configured} />}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button
