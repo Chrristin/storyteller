@@ -966,7 +966,6 @@
             "countSure": "Sure, waiting for you",
             "countCheck": "Check this one",
             "countNone": "Not found",
-            "countAccepted": "Accepted",
             "unchecked": "{count, plural, one {# book has} other {# books have}} not been looked at yet.",
             "failedNote": "{count, plural, one {# book} other {# books}} could not be checked and will be tried again next time.",
             "notFoundNote": "Not found are usually audio dramas, box sets and self published books. They stay loose until you set a series by hand."
@@ -1376,7 +1375,6 @@
             "confirmBody": "The audiobook-only entries will be merged into the ebook entries. Reading status, ratings, shelves and progress are kept. This cannot be undone from the web app, so make a backup first if you can.",
             "confirmJoin": "Join",
             "failed": "Could not join the books. {message}",
-            "resultTitle": "Result",
             "joined": "{count, plural, one {# book joined.} other {# books joined.}}",
             "pairError": "{ebook} + {audiobook}: {error}"
           },
@@ -3165,7 +3163,6 @@
       "replacedToast": "Replaced the file on Google Drive",
       "skippedToast": "Already on Google Drive",
       "failedToast": "Couldn't copy to Google Drive",
-      "noEbook": "This book has no ebook to copy",
       "reauthNeeded": "Google Drive needs to be connected again.",
       "koboFolderMissing": "There is no Rakuten Kobo folder in this Google Drive yet.",
       "koboFolderAmbiguous": "There is more than one Rakuten Kobo folder in this Google Drive.",

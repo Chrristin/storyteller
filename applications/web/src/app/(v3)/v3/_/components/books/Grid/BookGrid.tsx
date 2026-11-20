@@ -40,8 +40,8 @@ import {
 } from "@/app/(v3)/v3/_/hooks/use-virtual-grid"
 import { type BookWithRelations } from "@/database/books"
 import { type GridCardSize } from "@/database/userPreferencesTypes"
+import { type GridSlot, buildGridSlots } from "@/gridSlots"
 import * as icon from "@/icons"
-import { type GridSlot, buildGridSlots } from "@/piles"
 import { type DisplayField, type SortContext } from "@/sort"
 import { useAppSelector } from "@/store/appState"
 import {

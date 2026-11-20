@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto"
 
 import { logger } from "@/logging"
 import { normaliseAuthorName } from "@/nameKey"
-import { type CleanTitleContext, cleanTitle, titleKey } from "@/titleCleanup"
+import {
+  type CleanTitleContext,
+  cleanTitle,
+  bareTitleKey,
+} from "@/titleCleanup"
 import { type UUID } from "@/uuid"
 
 import { getBook, updateBook } from "./books"
@@ -152,11 +156,11 @@ export function planFromRows(rows: CleanupRow[]): TitleCleanupItem[] {
   for (const row of rows) {
     const known = [...row.known]
     if (row.hasEbook !== row.hasAudio) {
-      const key = titleKey(stage(row))
+      const key = bareTitleKey(stage(row))
       const others = row.hasEbook ? audioOnly : ebookOnly
       for (const author of row.authorKeys) {
         for (const other of others.get(author) ?? []) {
-          if (other.uuid !== row.uuid && titleKey(stage(other)) === key) {
+          if (other.uuid !== row.uuid && bareTitleKey(stage(other)) === key) {
             known.push(stage(other), other.title)
           }
         }

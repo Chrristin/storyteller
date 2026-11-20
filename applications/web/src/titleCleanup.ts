@@ -41,7 +41,7 @@ function collapse(title: string) {
 }
 
 /** Lowercase, no punctuation, no leading article. */
-export function titleKey(title: string): string {
+export function bareTitleKey(title: string): string {
   return baseNormalise(title).replace(/^(?:the|a|an) /, "")
 }
 
@@ -90,14 +90,14 @@ export function stripLeadingTrackNumber(
 
 function restoreArticle(title: string, knownTitles: readonly string[]) {
   if (LEADING_ARTICLE.test(title)) return null
-  const key = titleKey(title)
+  const key = bareTitleKey(title)
   if (!key) return null
   for (const known of knownTitles) {
     const candidate = collapse(known)
     if (!LEADING_ARTICLE.test(candidate)) continue
     // Same words, only the article differs. A candidate with brackets or other
     // extra words has a different key and is never used.
-    if (titleKey(candidate) === key) return candidate
+    if (bareTitleKey(candidate) === key) return candidate
   }
   return null
 }

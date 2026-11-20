@@ -2,7 +2,7 @@ import assert from "node:assert"
 
 import { describe, it } from "vitest"
 
-import { buildGridSlots } from "@/piles"
+import { buildGridSlots } from "@/gridSlots"
 
 function book(
   title: string,
