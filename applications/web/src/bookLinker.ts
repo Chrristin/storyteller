@@ -79,6 +79,33 @@ function numberTokens(title: string) {
   return (title.match(/\d+/g) ?? []).sort().join(",")
 }
 
+// A track number at the very start, like "03 Dragon Reborn" or "3. Dragon".
+const LEADING_TRACK_NUMBER = /^\s*\d{1,3}\s*[.):\-]?\s+(?=\S)/
+
+function hasLeadingTrackNumber(title: string) {
+  return LEADING_TRACK_NUMBER.test(title)
+}
+
+/**
+ * The titles to compare for one pair. Audiobook files are often named with a
+ * track number ("03 Dragon Reborn") that the ebook lacks ("The Dragon
+ * Reborn"). The number is dropped only when exactly one of the two titles has
+ * one, so "7 Habits" is never joined to "8 Habits". A leading "The", "A" or
+ * "An" is ignored on both sides. The series position check still applies.
+ */
+export function titlesForLinking(ebookTitle: string, audiobookTitle: string) {
+  const dropTrack =
+    hasLeadingTrackNumber(ebookTitle) !== hasLeadingTrackNumber(audiobookTitle)
+  const clean = (title: string) => {
+    let out = title
+    if (dropTrack && hasLeadingTrackNumber(out)) {
+      out = out.replace(LEADING_TRACK_NUMBER, "")
+    }
+    return out.replace(/^\s*(the|a|an)\s+/i, "")
+  }
+  return { ebook: clean(ebookTitle), audiobook: clean(audiobookTitle) }
+}
+
 function seriesPositionsAgree(
   a: BookWithRelations,
   b: BookWithRelations,
@@ -122,7 +149,8 @@ function judge(
   ebookBook: BookWithRelations,
   audiobookBook: BookWithRelations,
 ): Judgement | null {
-  if (numberTokens(ebookBook.title) !== numberTokens(audiobookBook.title)) {
+  const titles = titlesForLinking(ebookBook.title, audiobookBook.title)
+  if (numberTokens(titles.ebook) !== numberTokens(titles.audiobook)) {
     return null
   }
   if (!seriesPositionsAgree(ebookBook, audiobookBook)) return null
@@ -130,10 +158,14 @@ function judge(
   // Duration and page count are not comparable across formats, so leave them out.
   const subject = {
     ...subjectFromBook(ebookBook),
+    title: titles.ebook,
     durationSeconds: null,
     pageCount: null,
   }
-  const result = scoreMatch(subject, asCandidate(audiobookBook))
+  const result = scoreMatch(subject, {
+    ...asCandidate(audiobookBook),
+    title: titles.audiobook,
+  })
 
   const title = signal(result, "title") ?? 0
   const identifier = signal(result, "identifier")
@@ -159,7 +191,7 @@ function judge(
 
   // Same distinctive title, authors missing or different (often the narrator
   // listed as the author): probable, not certain.
-  const normalized = normalizeTitle(ebookBook.title)
+  const normalized = normalizeTitle(titles.ebook)
   if (
     title >= MIN_TITLE_ONLY &&
     normalized.length >= MIN_TITLE_CHARS &&

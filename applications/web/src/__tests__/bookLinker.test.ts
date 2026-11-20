@@ -2,7 +2,7 @@ import assert from "node:assert"
 
 import { describe, it } from "vitest"
 
-import { findLinkPairs, findLinkPlan } from "@/bookLinker"
+import { findLinkPairs, findLinkPlan, titlesForLinking } from "@/bookLinker"
 import { type BookWithRelations } from "@/database/books"
 
 type Fake = {
@@ -289,5 +289,97 @@ describe("keepUserData", () => {
       .prepare(`SELECT rating FROM user_book_rating WHERE book_uuid = ?`)
       .get(ebook) as { rating: number } | undefined
     assert.strictEqual(rating?.rating, 4)
+  })
+})
+
+describe("track numbers and leading articles", () => {
+  const jordan = ["Robert Jordan"]
+
+  it("pairs 'The Dragon Reborn' with '03 Dragon Reborn'", () => {
+    const pairs = findLinkPairs([
+      book({
+        uuid: "e3",
+        title: "The Dragon Reborn",
+        format: "ebook",
+        authors: jordan,
+        series: [{ name: "The Wheel of Time", position: 3 }],
+      }),
+      book({
+        uuid: "a3",
+        title: "03 Dragon Reborn",
+        format: "audiobook",
+        authors: jordan,
+        series: [{ name: "The Wheel of Time", position: 3 }],
+      }),
+    ])
+    assert.strictEqual(pairs.length, 1)
+    assert.strictEqual(pairs[0]?.ebookBook.uuid, "e3")
+    assert.strictEqual(pairs[0]?.audiobookBook.uuid, "a3")
+  })
+
+  it("pairs each Wheel of Time book with its own audiobook", () => {
+    const names = [
+      ["The Eye of the World", "01 Eye of the World"],
+      ["The Great Hunt", "02 The Great Hunt"],
+      ["The Dragon Reborn", "03 Dragon Reborn"],
+      ["The Shadow Rising", "04 The Shadow Rising"],
+      ["The Fires of Heaven", "05 The Fires of Heaven"],
+    ] as const
+    const books = names.flatMap(([e, a], i) => [
+      book({ uuid: `e${i}`, title: e, format: "ebook", authors: jordan }),
+      book({ uuid: `a${i}`, title: a, format: "audiobook", authors: jordan }),
+    ])
+    const pairs = findLinkPairs(books)
+    assert.strictEqual(pairs.length, names.length)
+    for (const pair of pairs) {
+      assert.strictEqual(
+        pair.ebookBook.uuid.slice(1),
+        pair.audiobookBook.uuid.slice(1),
+      )
+    }
+  })
+
+  it("keeps the number rule when both titles have one", () => {
+    const pairs = findLinkPairs([
+      book({
+        uuid: "e1",
+        title: "7 Habits of Highly Effective People",
+        format: "ebook",
+        authors: ["Stephen Covey"],
+      }),
+      book({
+        uuid: "a1",
+        title: "8 Habits of Highly Effective People",
+        format: "audiobook",
+        authors: ["Stephen Covey"],
+      }),
+    ])
+    assert.strictEqual(pairs.length, 0)
+  })
+
+  it("does not strip a number that is part of the title", () => {
+    const t = titlesForLinking("1984", "1984")
+    assert.strictEqual(t.ebook, "1984")
+    assert.strictEqual(t.audiobook, "1984")
+  })
+
+  it("does not join a track numbered book to a different series position", () => {
+    const pairs = findLinkPairs([
+      book({
+        uuid: "e1",
+        title: "The Dragon Reborn",
+        format: "ebook",
+        authors: jordan,
+        series: [{ name: "The Wheel of Time", position: 3 }],
+      }),
+      book({
+        uuid: "a1",
+        title: "02 Dragon Reborn",
+        format: "audiobook",
+        authors: jordan,
+        series: [{ name: "The Wheel of Time", position: 2 }],
+      }),
+    ])
+    assert.strictEqual(pairs.length, 0)
   })
 })

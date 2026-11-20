@@ -319,3 +319,5 @@ user had marked could not be told apart from one that merely arrived.
   books are now Unread, so it starts empty until you mark some).
 
 - Build 19: Unread status, home headers with All, Now Reading row.
+
+- Linker: a track number on only one title ("03 Dragon Reborn" vs "The Dragon Reborn") and a leading The/A/An are ignored when pairing ebooks and audiobooks.
