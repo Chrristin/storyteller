@@ -8,7 +8,13 @@ import { type DB } from "./schema"
 
 export type Image = Selectable<DB["image"]>
 
-export const COVER_ORIGINS = ["unset", "extracted", "user", "cleared"] as const
+export const COVER_ORIGINS = [
+  "unset",
+  "extracted",
+  "user",
+  "cleared",
+  "generated",
+] as const
 
 export type CoverOrigin = (typeof COVER_ORIGINS)[number]
 

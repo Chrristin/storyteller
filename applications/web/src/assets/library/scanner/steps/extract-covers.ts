@@ -3,6 +3,8 @@ import { defineStep } from "@/assets/library/scanner/step"
 import { type BookWithRelations } from "@/database/books"
 import {
   type CoverFormat,
+  type CoverOrigin,
+  type FormatCover,
   getFormatCover,
   setFormatCover,
 } from "@/database/images"
@@ -14,6 +16,10 @@ import {
   ingestCover,
   shouldExtractCover,
 } from "@/images/covers"
+import {
+  canGenerateCover,
+  generateImageForBook,
+} from "@/images/generatedCovers"
 import { type UUID } from "@/uuid"
 
 import {
@@ -51,6 +57,46 @@ async function attachToSiblings(
   }
 }
 
+type GeneratedCoverFields = {
+  coverImageUuid?: UUID
+  coverExtractedFrom?: string | null
+  coverOrigin?: CoverOrigin
+}
+
+/**
+ * no cover in the file: draw one from the title, but only for a format that has
+ * no cover and no user choice. a generated cover that is already there stays.
+ */
+async function generateTextCover(
+  input: ExtractedEpubMetadata,
+  current: FormatCover | null,
+): Promise<ExtractedEpubMetadata & GeneratedCoverFields> {
+  const row = input.book[input.format]
+  if (!current || !canGenerateCover({ ...current, cover: row?.cover })) {
+    return input
+  }
+
+  const image = await generateImageForBook(input.book)
+  if (!image) return input
+
+  for (const format of ["ebook", "readaloud"] as const) {
+    if (format === input.format) continue
+    if (!canGenerateCover(input.book[format])) continue
+    await setFormatCover(format, input.book.uuid, {
+      imageUuid: image.uuid,
+      origin: "generated",
+      extractedFrom: null,
+    })
+  }
+
+  return {
+    ...input,
+    coverImageUuid: image.uuid,
+    coverExtractedFrom: null,
+    coverOrigin: "generated",
+  }
+}
+
 export const extractTextCoverStep = defineStep(
   "extract-text-cover",
   async (input: ExtractedEpubMetadata, ctx) => {
@@ -85,7 +131,7 @@ export const extractTextCoverStep = defineStep(
         ebook: ebookSource,
         readaloud: readaloudSource,
       })
-      if (!cover) return input
+      if (!cover) return await generateTextCover(input, current)
 
       const image = await ingestCover(cover)
       if (!image) return input

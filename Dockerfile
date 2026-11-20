@@ -103,9 +103,11 @@ FROM runner-base-${TARGETARCH} AS runner
 
 WORKDIR /app
 
+# fonts-dejavu-core (with fontconfig-config) is what draws the title on
+# generated covers, the base image has no fonts at all
 # libvulkan1 and the mesa ICDs back onnxruntime's WebGPU provider on AMD and
 # Intel GPUs, NVIDIA mounts its own ICD through the container toolkit
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu libcurl4 libxml2 libvulkan1 mesa-vulkan-drivers apache2-utils libjemalloc2 \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg gosu libcurl4 libxml2 libvulkan1 mesa-vulkan-drivers apache2-utils libjemalloc2 fontconfig-config fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/* \
     && ln -s "/usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2" /usr/local/lib/libjemalloc.so.2
 

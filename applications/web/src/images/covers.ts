@@ -138,6 +138,9 @@ export function shouldExtractCover(
     return false
   }
 
+  // a drawn placeholder never blocks a real cover, so look again every time
+  if (current.coverOrigin === "generated") return true
+
   if (
     current.coverExtractedFrom !== null &&
     current.coverExtractedFrom === fingerprint

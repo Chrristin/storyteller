@@ -35,7 +35,7 @@ function buildFormatRelation(
     fileSize: input.fileSize,
     ...(input.coverImageUuid && {
       coverImageUuid: input.coverImageUuid,
-      coverOrigin: "extracted" as const,
+      coverOrigin: input.coverOrigin ?? ("extracted" as const),
       coverExtractedFrom: input.coverExtractedFrom ?? null,
     }),
   }

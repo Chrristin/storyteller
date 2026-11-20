@@ -5,6 +5,7 @@ import {
 
 import { getNumericValue } from "@/assets/library/scanner/manifestValue"
 import { defineStep } from "@/assets/library/scanner/step"
+import { type CoverOrigin } from "@/database/images"
 import { createAudiobookManifest } from "@/utils/audioManifest"
 import { type UUID } from "@/uuid"
 
@@ -80,6 +81,7 @@ export type ExtractedEbookManifest = ExtractedEpubMetadata & {
   duration: null
   coverImageUuid?: UUID
   coverExtractedFrom?: string | null
+  coverOrigin?: CoverOrigin
 }
 
 export const extractReadaloudManifestStep = defineStep(
@@ -110,6 +112,7 @@ export type ExtractedReadaloudManifest = ExtractedEpubMetadata & {
   duration: number | null
   coverImageUuid?: UUID
   coverExtractedFrom?: string | null
+  coverOrigin?: CoverOrigin
 }
 
 export const extractAudiobookManifestStep = defineStep(
@@ -147,4 +150,5 @@ export type ExtractedAudiobookManifest = ExtractedAudiobookMetadata & {
   duration: number | null
   coverImageUuid?: UUID
   coverExtractedFrom?: string | null
+  coverOrigin?: CoverOrigin
 }
