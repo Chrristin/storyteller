@@ -431,3 +431,5 @@ title you changed since.
   moment. Accept all still only takes the Sure rows. Not seen running.
 
 - Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
+
+- Build 22: shuffling piles with real covers behind, a flick swaps the book, a tap opens the pile, series of one are hidden.
