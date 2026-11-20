@@ -500,3 +500,5 @@ there.
   `hooks/useArchiveBooks.ts`; the local rows change at once and are undone for a
   server that refuses. Migration `1793300000000_add_book_archived_at`.
 - Pure logic with tests: `lib/archive.ts`, `lib/archiveOrder.ts`.
+
+- Build 23: Archive (shared backroom) and the library hiding archived books.
