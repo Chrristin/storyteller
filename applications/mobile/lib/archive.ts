@@ -11,7 +11,7 @@ export interface ArchivableBook {
 export type ArchivedFilter = "exclude" | "only"
 
 /** An older server sends no `archivedAt` at all, which means not archived. */
-export function archivedAtOf(book: ArchivableBook | null | undefined) {
+function archivedAtOf(book: ArchivableBook | null | undefined) {
   return book?.archivedAt ?? null
 }
 
@@ -25,27 +25,6 @@ export function serverArchivedAt(serverBook: object): string | null {
 
 export function isArchived(book: ArchivableBook | null | undefined) {
   return archivedAtOf(book) !== null
-}
-
-/** The same rule the local database query applies in SQL. */
-export function filterArchived<T extends ArchivableBook>(
-  books: readonly T[],
-  mode: ArchivedFilter,
-): T[] {
-  return books.filter((book) =>
-    mode === "only" ? isArchived(book) : !isArchived(book),
-  )
-}
-
-function archivedTime(book: ArchivableBook) {
-  return new Date(archivedAtOf(book) ?? 0).valueOf() || 0
-}
-
-/** Newest archived first. */
-export function sortNewestArchivedFirst<T extends ArchivableBook>(
-  books: readonly T[],
-) {
-  return [...books].sort((a, b) => archivedTime(b) - archivedTime(a))
 }
 
 export interface ArchiveTarget {

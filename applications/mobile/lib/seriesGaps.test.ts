@@ -8,7 +8,6 @@ function series(positions: (number | null)[], name = "S", uuid = "s1") {
   return {
     uuid,
     name,
-    authors: ["A"],
     books: positions.map((position, i) => ({ uuid: `b${i}`, position })),
   }
 }

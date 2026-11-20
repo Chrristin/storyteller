@@ -89,17 +89,12 @@ describe("sectionView", () => {
   it("renders nothing when empty", () => {
     expect(sectionView([], 6)).toBeNull()
   })
-  it("shows all and hides the button under the limit", () => {
-    expect(sectionView([1, 2, 3], 6)).toEqual({
-      shown: [1, 2, 3],
-      hasMore: false,
-    })
-    expect(sectionView([1, 2, 3, 4, 5, 6], 6)?.hasMore).toBe(false)
+  it("shows all under the limit", () => {
+    expect(sectionView([1, 2, 3], 6)).toEqual({ shown: [1, 2, 3] })
   })
-  it("cuts at the limit and shows the button above it", () => {
+  it("cuts at the limit", () => {
     expect(sectionView([1, 2, 3, 4, 5, 6, 7], 6)).toEqual({
       shown: [1, 2, 3, 4, 5, 6],
-      hasMore: true,
     })
   })
 })

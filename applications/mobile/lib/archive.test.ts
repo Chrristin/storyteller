@@ -5,43 +5,16 @@ import {
   archiveErrorMessage,
   archiveMenuLabel,
   archiveResultMessage,
-  archivedAtOf,
   buildArchiveRequest,
-  filterArchived,
   groupByServer,
   isArchived,
-  sortNewestArchivedFirst,
 } from "./archive"
 
-const books = [
-  { uuid: "a", archivedAt: null },
-  { uuid: "b", archivedAt: "2026-01-02T00:00:00.000Z" },
-  { uuid: "c" },
-  { uuid: "d", archivedAt: "2026-03-01T00:00:00.000Z" },
-]
-
-describe("archived filter", () => {
+describe("archived", () => {
   it("treats a missing archivedAt (old server) as not archived", () => {
-    expect(archivedAtOf({})).toBeNull()
     expect(isArchived({})).toBe(false)
+    expect(isArchived({ archivedAt: null })).toBe(false)
     expect(isArchived({ archivedAt: "2026-01-01T00:00:00.000Z" })).toBe(true)
-  })
-
-  it("excludes archived books", () => {
-    expect(filterArchived(books, "exclude").map((b) => b.uuid)).toEqual([
-      "a",
-      "c",
-    ])
-  })
-
-  it("keeps only archived books", () => {
-    expect(filterArchived(books, "only").map((b) => b.uuid)).toEqual(["b", "d"])
-  })
-
-  it("sorts newest archived first", () => {
-    expect(
-      sortNewestArchivedFirst(filterArchived(books, "only")).map((b) => b.uuid),
-    ).toEqual(["d", "b"])
   })
 })
 

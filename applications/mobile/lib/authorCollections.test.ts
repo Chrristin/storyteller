@@ -124,17 +124,3 @@ test("detail splits series piles and loose books", () => {
   assert.equal(authorCollectionDetail(books, "y"), null)
   assert.equal(authorCollectionDetail(books, "nobody"), null)
 })
-
-test("covers are the newest three books", () => {
-  const books = [
-    book("Old", ["X"], [], "2020-01-01T00:00:00Z"),
-    book("Newest", ["X"], [], "2024-03-01T00:00:00Z"),
-    book("Mid", ["X"], [], "2022-01-01T00:00:00Z"),
-    book("Newer", ["X"], [], "2024-01-01T00:00:00Z"),
-  ]
-  const collection = buildAuthorCollections(books)[0]
-  assert.deepEqual(
-    collection?.covers.map((b) => b.title),
-    ["Newest", "Newer", "Mid"],
-  )
-})

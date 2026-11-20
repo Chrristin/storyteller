@@ -21,10 +21,7 @@ export default function SeriesListScreen() {
   const insets = useSafeAreaInsets()
   const { data: books = EMPTY_BOOKS } = useListBooksQuery()
 
-  const piles = useMemo(
-    () => keepRealSeries(buildPiles(books, "series")),
-    [books],
-  )
+  const piles = useMemo(() => keepRealSeries(buildPiles(books)), [books])
 
   const cellWidth = pileTileWidth(
     dimensions.width - (SIDE + Math.max(insets.left, insets.right)) * 2,
@@ -45,7 +42,7 @@ export default function SeriesListScreen() {
         ) : (
           <View className="-mx-1.5 flex-row flex-wrap">
             {piles.map((pile) => (
-              <View key={`${pile.kind}-${pile.uuid}`} className="mx-1.5 my-1.5">
+              <View key={`series-${pile.uuid}`} className="mx-1.5 my-1.5">
                 <SwipePile
                   books={pile.books}
                   count={pile.count}

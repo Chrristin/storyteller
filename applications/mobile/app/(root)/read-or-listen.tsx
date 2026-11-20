@@ -9,7 +9,8 @@ import {
   useReaderFormSheetBottomInset,
 } from "@/components/toolbarItems/readerFormSheetLayout"
 import { getOpenableFormats, useOpenBook } from "@/hooks/useOpenBook"
-import { formatChoices, pileAutoplay, sheetTitle } from "@/lib/pileOpen"
+import { shouldAutoplay } from "@/lib/openOptions"
+import { formatChoices, sheetTitle } from "@/lib/pileOpen"
 import { useGetBookQuery } from "@/store/localApi"
 import { type UUID } from "@/uuid"
 
@@ -56,7 +57,7 @@ export default function ReadOrListenScreen() {
             onPress={() => {
               if (!book) return
               openFormat(book, choice.format, {
-                autoplay: pileAutoplay(choice.format),
+                autoplay: shouldAutoplay(choice.format),
                 replace: true,
               })
             }}

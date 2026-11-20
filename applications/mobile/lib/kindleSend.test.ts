@@ -4,7 +4,6 @@ import { test } from "vitest"
 
 import {
   describeActionScope,
-  describeKindleStop,
   describeSentAt,
   kindleBatches,
   kindleButtonLabel,
@@ -14,7 +13,6 @@ import {
   selectKindleBooks,
   splitByServers,
   summarizeKindleResults,
-  summarizeKindleSend,
 } from "./kindleSend"
 
 test("kindleBatches groups into at most 25", () => {
@@ -53,29 +51,6 @@ test("kindleErrorMessage falls back to the server message", () => {
   assert.equal(
     kindleErrorMessage(null),
     "Something went wrong while sending to your Kindle",
-  )
-})
-
-test("summarizeKindleSend uses plain English", () => {
-  assert.equal(summarizeKindleSend(5, 0), "5 books sent to your Kindle")
-  assert.equal(summarizeKindleSend(1, 0), "1 book sent to your Kindle")
-  assert.equal(
-    summarizeKindleSend(2, 1),
-    "2 books sent to your Kindle, 1 book skipped because it has no ebook",
-  )
-  assert.equal(summarizeKindleSend(0, 0), "Nothing was sent")
-})
-
-test("describeKindleStop reports what was sent before the error", () => {
-  assert.equal(
-    describeKindleStop(25, 0, {
-      data: { code: "send-failed", message: "Boom" },
-    }),
-    "25 books sent to your Kindle before it stopped. Boom",
-  )
-  assert.equal(
-    describeKindleStop(0, 0, { data: { code: "too-large" } }),
-    "These books are too big to send in one email. Select fewer.",
   )
 })
 

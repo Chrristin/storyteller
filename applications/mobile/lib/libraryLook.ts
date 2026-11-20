@@ -31,11 +31,11 @@ AsyncStorage.getItem(STORAGE_KEY)
   })
   .catch(() => {})
 
-export function getLibraryLook() {
+function getLibraryLook() {
   return look
 }
 
-export function setLibraryLook(patch: Partial<LibraryLook>) {
+function setLibraryLook(patch: Partial<LibraryLook>) {
   changedBeforeLoad = true
   look = { ...look, ...patch }
   emit()

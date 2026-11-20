@@ -25,7 +25,7 @@ import { isWholePosition } from "./seriesGaps"
 export type TargetKind = "collection" | "series" | "genre" | "author"
 export type TargetFilter = "all" | TargetKind
 
-export const TARGET_KINDS: readonly TargetKind[] = [
+const TARGET_KINDS: readonly TargetKind[] = [
   "collection",
   "series",
   "genre",
@@ -37,13 +37,6 @@ export const KIND_LABEL: Record<TargetKind, string> = {
   series: "Series",
   genre: "Genre",
   author: "Author",
-}
-
-export const KIND_PLURAL_LABEL: Record<TargetKind, string> = {
-  collection: "Collections",
-  series: "Series",
-  genre: "Genres",
-  author: "Authors",
 }
 
 export const KIND_HELP: Record<TargetKind, string> = {

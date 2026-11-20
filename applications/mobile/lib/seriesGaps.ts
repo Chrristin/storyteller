@@ -14,14 +14,12 @@
 export interface GapSeries {
   uuid: string
   name: string
-  authors: string[]
   books: { uuid: string; position: number | null | undefined }[]
 }
 
 export interface SeriesGap {
   uuid: string
   name: string
-  authors: string[]
   /** The distinct whole positions owned, ascending. */
   owned: number[]
   /** The whole positions missing between the lowest and highest owned. */
@@ -66,7 +64,6 @@ export function findSeriesGaps(series: GapSeries[]): SeriesGap[] {
     result.push({
       uuid: s.uuid,
       name: s.name,
-      authors: s.authors,
       owned: gaps.owned,
       missing: gaps.missing,
       upTo: gaps.upTo,

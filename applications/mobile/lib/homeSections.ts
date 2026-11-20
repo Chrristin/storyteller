@@ -88,8 +88,6 @@ export function filterRecentlyCompleted<T extends SectionBook>(
 
 export interface SectionView<T> {
   shown: T[]
-  /** True when there are more books than the grid shows. */
-  hasMore: boolean
 }
 
 /** What a section shows. An empty section renders nothing at all. */
@@ -98,7 +96,7 @@ export function sectionView<T>(
   limit: number,
 ): SectionView<T> | null {
   if (books.length === 0) return null
-  return { shown: books.slice(0, limit), hasMore: books.length > limit }
+  return { shown: books.slice(0, limit) }
 }
 
 export type ToReadAction = "add" | "remove" | null

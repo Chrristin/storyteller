@@ -41,30 +41,6 @@ export function kindleErrorMessage(error: unknown): string {
   return "Something went wrong while sending to your Kindle"
 }
 
-export function summarizeKindleSend(sent: number, skipped: number) {
-  const noun = (count: number) => (count === 1 ? "book" : "books")
-  const parts: string[] = []
-  if (sent) parts.push(`${sent} ${noun(sent)} sent to your Kindle`)
-  if (skipped) {
-    parts.push(
-      `${skipped} ${noun(skipped)} skipped because ${skipped === 1 ? "it has" : "they have"} no ebook`,
-    )
-  }
-  return parts.length ? parts.join(", ") : "Nothing was sent"
-}
-
-/** What was already sent, then why it stopped. */
-export function describeKindleStop(
-  sent: number,
-  skipped: number,
-  error: unknown,
-) {
-  const done = sent
-    ? `${summarizeKindleSend(sent, skipped)} before it stopped. `
-    : ""
-  return `${done}${kindleErrorMessage(error)}`
-}
-
 export interface ActionSplit<T> {
   /** Books on servers where the action is available. */
   included: T[]

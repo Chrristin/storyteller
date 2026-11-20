@@ -11,13 +11,7 @@ import {
   normaliseAuthorName,
   normaliseSeriesName,
 } from "./nameKey"
-import {
-  type Pile,
-  type PileBook,
-  authorCovers,
-  buildPiles,
-  keepRealSeries,
-} from "./piles"
+import { type Pile, type PileBook, buildPiles, keepRealSeries } from "./piles"
 
 /** An author collection needs at least this many books. */
 export const MIN_AUTHOR_COLLECTION_BOOKS = 2
@@ -31,8 +25,6 @@ export interface AuthorCollection<B extends PileBook = PileBook> {
   books: B[]
   /** How many different series (spellings merged) the books are in. */
   seriesCount: number
-  /** Up to three books to show as covers (the newest added). */
-  covers: B[]
 }
 
 function time(date: string | Date) {
@@ -105,7 +97,6 @@ export function buildAuthorCollections<B extends PileBook>(
       name: display.name,
       books: authorBooks,
       seriesCount: distinctSeriesCount(authorBooks),
-      covers: authorCovers(authorBooks),
     })
   }
   return collections.sort(
@@ -142,7 +133,7 @@ export function authorCollectionDetail<B extends PileBook>(
   if (!collection) return null
   // A series with one book and nothing known to be missing is not shown as a
   // series: its book is listed with the loose books instead.
-  const series = keepRealSeries(buildPiles(collection.books, "series"))
+  const series = keepRealSeries(buildPiles(collection.books))
   const inShownSeries = new Set(
     series.flatMap((pile) => pile.books.map((b) => b.uuid)),
   )

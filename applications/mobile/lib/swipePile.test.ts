@@ -3,7 +3,6 @@ import assert from "node:assert/strict"
 import { test } from "vitest"
 
 import {
-  PILE_BOOK_CAP,
   capPileBooks,
   dotWindow,
   nextIndex,
@@ -77,7 +76,6 @@ test("peek indexes wrap and never include the front book", () => {
 
 test("a pile carries at most 30 books", () => {
   const many = Array.from({ length: 45 }, (_, i) => i)
-  assert.equal(PILE_BOOK_CAP, 30)
   assert.equal(capPileBooks(many).length, 30)
   assert.equal(capPileBooks(many)[0], 0)
   assert.equal(capPileBooks([1, 2]).length, 2)

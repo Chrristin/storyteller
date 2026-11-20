@@ -1,4 +1,5 @@
 import { type BookFormat } from "./bookPrefs"
+import { shouldAutoplay } from "./openOptions"
 
 /**
  * Pure rules for opening a book from a pile (components/SwipePile.tsx).
@@ -20,11 +21,6 @@ export const FORMAT_CHOICE_LABEL: Record<BookFormat, string> = {
   ebook: "Read",
   readaloud: "Read along",
   audiobook: "Listen",
-}
-
-/** Only formats with narration start playing by themselves from a pile. */
-export function pileAutoplay(format: BookFormat) {
-  return format === "audiobook" || format === "readaloud"
 }
 
 /** The choice buttons for the openable formats (Read, Read along, Listen). */
@@ -65,7 +61,7 @@ export function decidePileOpen(
   const open = (format: BookFormat): PileOpenDecision => ({
     kind: "open",
     format,
-    autoplay: pileAutoplay(format),
+    autoplay: shouldAutoplay(format),
   })
   if (openable.length === 1) return open(openable[0]!)
   if (forceAsk) return { kind: "ask", choices: formatChoices(openable) }

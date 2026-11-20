@@ -5,22 +5,22 @@
  */
 
 /** A pile never carries more than this many books (cheap to hold, cheap to swipe). */
-export const PILE_BOOK_CAP = 30
+const PILE_BOOK_CAP = 30
 
 /** Most dots shown under a pile. */
-export const MAX_DOTS = 5
+const MAX_DOTS = 5
 
 /**
  * A drag past this share of the tile width is a swipe. It is small on purpose:
  * a short flick is enough, the cover is never dragged across the tile.
  */
-export const SWIPE_DISTANCE_RATIO = 0.12
+const SWIPE_DISTANCE_RATIO = 0.12
 
 /** A faster fling (px per second) is a swipe even for a short drag. */
-export const SWIPE_VELOCITY = 400
+const SWIPE_VELOCITY = 400
 
 /** A fling must also have moved this far (px), so a twitch is not a swipe. */
-export const SWIPE_MIN_FLING_DISTANCE = 6
+const SWIPE_MIN_FLING_DISTANCE = 6
 
 /** How far the front cover follows a finger, at most, as a share of the width. */
 export const MAX_FOLLOW_RATIO = 0.25
