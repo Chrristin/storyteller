@@ -10,6 +10,7 @@ import {
   peekIndexes,
   previousIndex,
   stepIndex,
+  followOffset,
   swipeDecision,
 } from "./swipePile"
 
@@ -23,18 +24,27 @@ test("next and previous wrap around", () => {
   assert.equal(stepIndex(1, 4, 6), 3)
 })
 
-test("a drag past a quarter of the width is a swipe, left goes next", () => {
+test("a short flick past an eighth of the width is a swipe, left goes next", () => {
   assert.equal(swipeDecision(-30, 0, 100, 5), 1)
   assert.equal(swipeDecision(30, 0, 100, 5), -1)
-  assert.equal(swipeDecision(-24, 0, 100, 5), 0)
-  assert.equal(swipeDecision(24, 100, 100, 5), 0)
+  assert.equal(swipeDecision(-14, 0, 100, 5), 1)
+  assert.equal(swipeDecision(-10, 0, 100, 5), 0)
+  assert.equal(swipeDecision(10, 100, 100, 5), 0)
 })
 
 test("a fast fling swipes even a short drag, a flick back or twitch does not", () => {
-  assert.equal(swipeDecision(-15, -900, 100, 5), 1)
-  assert.equal(swipeDecision(15, 900, 100, 5), -1)
-  assert.equal(swipeDecision(-5, -900, 100, 5), 0)
-  assert.equal(swipeDecision(-15, 900, 100, 5), 0)
+  assert.equal(swipeDecision(-8, -900, 100, 5), 1)
+  assert.equal(swipeDecision(8, 900, 100, 5), -1)
+  assert.equal(swipeDecision(-4, -900, 100, 5), 0)
+  assert.equal(swipeDecision(-8, 900, 100, 5), 0)
+})
+
+test("the front cover follows the finger a little and stops early", () => {
+  assert.equal(followOffset(0, 100), 0)
+  assert.equal(followOffset(-20, 100), -8)
+  assert.equal(followOffset(20, 100), 8)
+  assert.equal(followOffset(-300, 100), -25)
+  assert.equal(followOffset(300, 100), 25)
 })
 
 test("one book or none never swipes", () => {

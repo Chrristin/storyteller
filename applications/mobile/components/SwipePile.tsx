@@ -20,8 +20,10 @@ import { scheduleOnRN } from "react-native-worklets"
 import { type BookWithRelations } from "@/database/books"
 import { useOpenBook } from "@/hooks/useOpenBook"
 import {
+  FLICK_OUT_RATIO,
   capPileBooks,
   dotWindow,
+  followOffset,
   peekIndexes,
   stepIndex,
   swipeDecision,
@@ -128,7 +130,7 @@ export function SwipePile({
       "worklet"
 
       if (total < 2) return
-      translateX.value = event.translationX
+      translateX.value = followOffset(event.translationX, width)
     })
     .onEnd((event) => {
       "worklet"
@@ -145,8 +147,8 @@ export function SwipePile({
       }
       // Dragging left (negative) goes to the next book (+1).
       translateX.value = withTiming(
-        step > 0 ? -width * 1.3 : width * 1.3,
-        { duration: 160 },
+        step > 0 ? -width * FLICK_OUT_RATIO : width * FLICK_OUT_RATIO,
+        { duration: 110 },
         (finished) => {
           if (finished) scheduleOnRN(go, step)
         },
@@ -179,8 +181,12 @@ export function SwipePile({
 
   const gesture = Gesture.Race(pan, longPress, tap)
 
+  // The cover fades as it is pushed aside, so a flick reads as "this one is
+  // done, here is the next".
   const frontStyle = useAnimatedStyle(() => ({
-    opacity: appear.value,
+    opacity:
+      appear.value *
+      (1 - Math.min(Math.abs(translateX.value) / (width * FLICK_OUT_RATIO), 1)),
     transform: [
       { translateX: translateX.value },
       { rotate: `${(translateX.value / width) * 10}deg` },
