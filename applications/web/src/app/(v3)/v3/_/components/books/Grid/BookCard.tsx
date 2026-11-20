@@ -352,6 +352,64 @@ export function CreatorsLine({
   )
 }
 
+function formatChipLabel(
+  ebook: boolean,
+  audiobook: boolean,
+  readaloud: boolean,
+) {
+  const parts = [
+    ebook ? "Ebook" : null,
+    audiobook ? "audiobook" : null,
+    readaloud ? "read-aloud" : null,
+  ].filter((part): part is string => part !== null)
+  if (parts.length <= 1) return parts[0] ?? ""
+  return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`
+}
+
+const CHIP_CLASS =
+  "flex size-6 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm"
+
+/**
+ * Small round chips at the top right of a cover: which formats the book has.
+ * Display only, so they never take clicks. Above the cover and the link
+ * overlay, below the selection checkbox (top left).
+ */
+function FormatChips({
+  ebook,
+  audiobook,
+  readaloud,
+}: {
+  ebook: boolean
+  audiobook: boolean
+  readaloud: boolean
+}) {
+  const label = formatChipLabel(ebook, audiobook, readaloud)
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      title={label}
+      className="pointer-events-none absolute top-2 right-2 z-20 flex gap-1.5"
+    >
+      {ebook && (
+        <span className={CHIP_CLASS}>
+          <icon.BookAlt className="size-3.5" />
+        </span>
+      )}
+      {audiobook && (
+        <span className={CHIP_CLASS}>
+          <icon.Headphones className="size-3.5" />
+        </span>
+      )}
+      {readaloud && (
+        <span className={CHIP_CLASS}>
+          <IconReadaloud className="size-4" />
+        </span>
+      )}
+    </div>
+  )
+}
+
 function isCreatorField(field: DisplayField): field is CreatorDisplayField {
   return isCreatorDisplayField(field)
 }
@@ -396,8 +454,11 @@ export const BookCard = memo(function BookCard({
     book.title,
     book.authors.map((a) => a.name),
   )
-  const fillCover = gridCoverDisplay !== "auto"
   const hasDualFormat = isDual(book)
+  // One cover per book. A book with both formats (or a synced read-aloud)
+  // shows just its tall ebook cover, not the pile of two covers; the format
+  // chips at the top right say what the book has.
+  const fillCover = gridCoverDisplay !== "auto" || hasDualFormat
   const audioImage = book.audiobook?.cover
   const showsAudiobookOnly =
     gridCoverDisplay === "audiobook" ||
@@ -424,6 +485,8 @@ export const BookCard = memo(function BookCard({
   )
 
   const isSmallestCover = gridCardSize === "smallest"
+  const hasEbookFormat = book.ebook !== null || book.readaloud !== null
+  const hasAudioFormat = book.audiobook !== null
 
   const cardContent = (
     <>
@@ -502,12 +565,12 @@ export const BookCard = memo(function BookCard({
           />
         )}
 
-        {isSynced && !isMobile && (
-          <div className="absolute top-[7%] right-[6%] aspect-square w-[12%]">
-            <div className="bg-cover-header flex size-full items-center justify-center rounded-full shadow-md">
-              <IconReadaloud className="size-[110%] text-white" />
-            </div>
-          </div>
+        {!isSmallestCover && (hasEbookFormat || hasAudioFormat) && (
+          <FormatChips
+            ebook={hasEbookFormat}
+            audiobook={hasAudioFormat}
+            readaloud={isSynced && !isMobile}
+          />
         )}
 
         {!isQueued && !isProcessing && isMissing && (

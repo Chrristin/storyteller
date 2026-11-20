@@ -360,3 +360,16 @@ user had marked could not be told apart from one that merely arrived.
 - Linker: a track number on only one title ("03 Dragon Reborn" vs "The Dragon Reborn") and a leading The/A/An are ignored when pairing ebooks and audiobooks.
 
 - Build 20: swipeable piles on Home, Series and the author page.
+
+## Web book card: one cover and format chips
+
+On the web grid, a book with both formats (or a synced read-aloud) now shows one
+tall ebook cover, not the pile of two covers. Small round chips at the top right
+of the cover show what the book has: an open book for an ebook, headphones for
+an audiobook, both for a joined book, and a third read-aloud chip when the book
+is a synced read-aloud (still hidden on a phone-width screen, as the old badge
+was). The chips are display only (no clicks), sit under the selection checkbox
+and are hidden at the smallest card size. Audiobook-only cards keep their wave
+cover. The list view and the book page (which still use the two-cover pile) are
+unchanged. Code: `FormatChips` in
+`app/(v3)/v3/_/components/books/Grid/BookCard.tsx`. Not seen running.
