@@ -21,6 +21,7 @@ import { SendToKindleButton } from "@v3/_/components/books/SendToKindle"
 import { SeriesEditor } from "@v3/_/components/books/SeriesEditor"
 import { Button } from "@v3/_/components/ui/button"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useListenInMiniPlayer } from "@v3/_/hooks/use-listen-in-mini-player"
 import { useCommon, useTranslation } from "@v3/_/hooks/use-translation"
 import { bookDuration, bookPageCount } from "@v3/_/lib/bookMetrics"
 
@@ -89,6 +90,7 @@ export function HeroSection({
     canEdit,
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
+  const listen = useListenInMiniPlayer()
   const tAlignment = useTranslation("BookDetailsPage.alignment")
   const c = useCommon()
 
@@ -507,15 +509,12 @@ export function HeroSection({
                   <Button
                     variant="cover"
                     size="sm"
-                    nativeButton={false}
                     className="rounded-xl"
-                    render={
-                      <V3Link href={`/books/${book.uuid}/read?mode=audiobook`}>
-                        <icon.Headphones className="mr-1 h-4 w-4" />
-                        Listen
-                      </V3Link>
-                    }
-                  />
+                    onClick={() => listen(book)}
+                  >
+                    <icon.Headphones className="mr-1 h-4 w-4" />
+                    Listen
+                  </Button>
                 )}
 
                 <SyncToDriveButton book={book} />

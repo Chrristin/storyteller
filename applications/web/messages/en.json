@@ -3068,6 +3068,8 @@
       "collapseAria": "Collapse the player",
       "backToBook": "Back to the book",
       "stopListening": "Stop listening",
+      "listenFailed": "Could not start the audiobook",
+      "noAudiobook": "This book has no audiobook",
       "positionInTrack": "Position in this track",
       "backToApp": "Back to the app",
       "playbackError": "Playback error",

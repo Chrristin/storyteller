@@ -2507,6 +2507,8 @@
       "collapseAria": "De speler inklappen",
       "backToBook": "Terug naar het boek",
       "stopListening": "Stoppen met luisteren",
+      "listenFailed": "Het luisterboek kon niet worden gestart",
+      "noAudiobook": "Dit boek heeft geen luisterboek",
       "positionInTrack": "Positie in deze track",
       "backToApp": "Terug naar de app",
       "playbackError": "Fout bij het afspelen",

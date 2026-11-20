@@ -6,6 +6,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { Skeleton } from "@v3/_/components/ui/skeleton"
 import { useUserPreferences } from "@v3/_/components/user-preferences-provider"
 import { V3Link } from "@v3/_/components/v3-link"
+import { useListenInMiniPlayer } from "@v3/_/hooks/use-listen-in-mini-player"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
 import { type BookWithRelations } from "@/database/books"
@@ -19,6 +20,8 @@ import {
 
 type ReadLink = {
   href: string
+  // listen links play in the mini player instead of opening the reader page
+  listen?: boolean
   labelKey: "readAlong" | "read" | "listen"
   icon: typeof icon.BookAlt
 }
@@ -40,6 +43,7 @@ function getReadLink(book: BookWithRelations): ReadLink {
   }
   return {
     href: `/books/${book.uuid}/read?mode=audiobook`,
+    listen: true,
     labelKey: "listen",
     icon: icon.Headphones,
   }
@@ -105,6 +109,7 @@ function HeroSkeleton() {
 
 function Hero({ book }: { book: BookWithRelations }) {
   const t = useTranslation("HomePage")
+  const listen = useListenInMiniPlayer()
   const { bookDetail3dView, bookDetail3dViewAudio } = useUserPreferences()
   const scope = useCoverScope(book)
 
@@ -173,17 +178,28 @@ function Hero({ book }: { book: BookWithRelations }) {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                variant="cover"
-                nativeButton={false}
-                className="rounded-lg"
-                render={
-                  <V3Link href={read.href}>
-                    <ReadIcon className="mr-1 size-3.5" />
-                    {t(`hero.${read.labelKey}`)}
-                  </V3Link>
-                }
-              />
+              {read.listen ? (
+                <Button
+                  variant="cover"
+                  className="rounded-lg"
+                  onClick={() => listen(book)}
+                >
+                  <ReadIcon className="mr-1 size-3.5" />
+                  {t(`hero.${read.labelKey}`)}
+                </Button>
+              ) : (
+                <Button
+                  variant="cover"
+                  nativeButton={false}
+                  className="rounded-lg"
+                  render={
+                    <V3Link href={read.href}>
+                      <ReadIcon className="mr-1 size-3.5" />
+                      {t(`hero.${read.labelKey}`)}
+                    </V3Link>
+                  }
+                />
+              )}
               <Button
                 variant="ghost"
                 nativeButton={false}

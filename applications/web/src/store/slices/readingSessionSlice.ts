@@ -76,6 +76,8 @@ export const readingSessionSlice = createSlice({
         book: BookWithRelations
         requestedMode?: ReadingMode | undefined
         startHref?: string | undefined
+        // start playing as soon as the audio is loaded (Listen buttons)
+        autoplay?: boolean | undefined
       }>,
     ) => {
       state.currentbook = action.payload.book

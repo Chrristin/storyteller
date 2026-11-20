@@ -502,3 +502,22 @@ there.
 - Pure logic with tests: `lib/archive.ts`, `lib/archiveOrder.ts`.
 
 - Build 23: Archive (shared backroom) and the library hiding archived books.
+
+## Web: Listen plays in the mini player
+
+On the web, the Listen buttons for an audiobook (book detail page hero, Home
+hero for audiobook-only books) no longer open `/books/<uuid>/read?mode=audiobook`.
+They call `useListenInMiniPlayer()` (`src/app/(v3)/v3/_/hooks/use-listen-in-mini-player.ts`),
+which dispatches `readingSession.startBook({ book, requestedMode: "audiobook",
+autoplay: true })`. Loading, resuming from the saved position and progress
+syncing already live in the `startBook` listener
+(`src/store/listeners/bookOpeningListeners.ts`), not in the read page, and the
+`<audio>` element is the root-layout singleton, so the floating mini player
+appears on whatever page the user is on, in its card or circle state per
+`minimizedMiniPlayer`. `autoplay` makes the listener call `play()` after the
+playlist is loaded. If the same audiobook is already loaded, Listen only
+resumes. Failures (no audiobook, no tracks, load error) show a toast and
+nothing navigates. The "Back to the book" arrow in the expanded mini player
+still opens the full reader page. Read buttons and direct URLs are unchanged.
+Pure decision logic: `src/store/listenRequest.ts` (tests in
+`src/store/__tests__/listenRequest.test.ts`).

@@ -453,6 +453,7 @@ startAppListening({
     clearRegistry()
 
     const { book } = action.payload
+    const autoplay = action.payload.autoplay === true
     const mode = selectReadingMode(listenerApi.getState())
 
     try {
@@ -518,6 +519,12 @@ startAppListening({
 
         if (tracks.length === 0) {
           console.error("No audio tracks found")
+          listenerApi.dispatch(
+            readingSessionSlice.actions.setReaderError({
+              error: "resource_not_found",
+              message: "No audio tracks found",
+            }),
+          )
           return
         }
 
@@ -548,6 +555,7 @@ startAppListening({
               startPosition: 0,
               playbackSpeed,
               volume,
+              autoplay,
             })
             return
           }
@@ -575,6 +583,7 @@ startAppListening({
             startPosition: !Number.isNaN(position) ? position : 0,
             playbackSpeed,
             volume,
+            autoplay,
           })
         }
         // readaloud or epub
@@ -733,14 +742,24 @@ async function initializeAudioPlayer({
   startPosition,
   playbackSpeed,
   volume,
+  autoplay = false,
 }: {
   tracks: AudioTrack[]
   startTrackIndex: number
   startPosition: number
   playbackSpeed: number
   volume: number
+  autoplay?: boolean
 }) {
   await readerPlayer().replacePlaylist(tracks, startTrackIndex, startPosition)
   readerPlayer().setPlaybackRate(playbackSpeed)
   readerPlayer().setVolume(volume)
+  if (autoplay) {
+    try {
+      await readerPlayer().play()
+    } catch (error) {
+      // the browser may block autoplay; the loaded player waits for a click
+      console.warn("Autoplay was blocked:", error)
+    }
+  }
 }
