@@ -1,3 +1,5 @@
+import { errorMessage } from "./serverBatch"
+
 /**
  * Pure helpers for "Sync to Google Drive": splitting a selection into batches
  * the server accepts and turning the results into text for the user.
@@ -59,18 +61,10 @@ export function summarizeDriveResults(results: readonly DriveResult[]) {
 
 /** Reads the server's `{ message }` out of a failed request, if there is one. */
 export function driveErrorMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null) {
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "object" && data !== null) {
-      const message = (data as { message?: unknown }).message
-      if (typeof message === "string" && message) return message
-    }
-    const message = (error as { message?: unknown }).message
-    if (typeof message === "string" && message) return message
-    const status = (error as { status?: unknown }).status
-    if (status === "FETCH_ERROR") return "Could not reach the server"
-  }
-  return "Something went wrong while copying to Drive"
+  return errorMessage(error, {
+    fallback: "Something went wrong while copying to Drive",
+    fetchError: "Could not reach the server",
+  })
 }
 
 /** "just now", "5 minutes ago", "3 days ago". Null when the date is unusable. */

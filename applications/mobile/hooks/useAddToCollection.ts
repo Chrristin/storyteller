@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react"
 
+import { postJson, refetchServerBooks } from "@/hooks/serverCalls"
 import {
   type AddRequest,
   type SelectedRef,
@@ -18,8 +19,6 @@ import {
   useListBooksQuery,
   useListCollectionsQuery,
 } from "@/store/localApi"
-import { serverApi } from "@/store/serverApi"
-import { type UUID } from "@/uuid"
 
 /** Everything the selected books can be added to, from the local library. */
 export function useAddTargets() {
@@ -54,13 +53,7 @@ export function useAddToCollection() {
       const plan = planAdd({ ...input, books: books ?? [] })
       const name = target?.name ?? input.name.trim()
       const post = (serverUuid: string, request: AddRequest) =>
-        dispatch(
-          serverApi.endpoints.postServerJson.initiate({
-            serverUuid: serverUuid as UUID,
-            url: request.url,
-            body: request.body,
-          }),
-        ).unwrap()
+        postJson(dispatch, serverUuid, request.url, request.body)
 
       let added = 0
       let alreadyIn = 0
@@ -111,23 +104,7 @@ export function useAddToCollection() {
       async function refresh(serverUuids: string[]) {
         // Re-reading the books makes the sync listener update the local
         // tables, which the library screens watch.
-        await Promise.all(
-          serverUuids.map(async (serverUuid) => {
-            const request = dispatch(
-              serverApi.endpoints.listBooks.initiate(
-                { serverUuid: serverUuid as UUID },
-                { forceRefetch: true },
-              ),
-            )
-            try {
-              await request.unwrap()
-            } catch {
-              // The change is saved on the server; the next sync shows it.
-            } finally {
-              request.unsubscribe()
-            }
-          }),
-        )
+        await refetchServerBooks(dispatch, serverUuids)
         dispatch(
           localApi.util.invalidateTags([
             "Books",

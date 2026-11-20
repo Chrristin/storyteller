@@ -1,3 +1,5 @@
+import { errorMessage, groupBy } from "./serverBatch"
+
 /**
  * Pure rules for the Archive (the "backroom"). An archived book stays in the
  * library with all its data but is hidden everywhere except the Archive
@@ -42,27 +44,23 @@ export interface ArchiveGroups {
 
 /** Splits books by the server they live on. Each book is listed once. */
 export function groupByServer(books: readonly ArchiveTarget[]): ArchiveGroups {
-  const servers = new Map<string, string[]>()
-  const local: string[] = []
   const seen = new Set<string>()
-  for (const book of books) {
-    if (seen.has(book.uuid)) continue
+  const unique = books.filter((book) => {
+    if (seen.has(book.uuid)) return false
     seen.add(book.uuid)
-    if (book.serverUuid === null) {
-      local.push(book.uuid)
-      continue
-    }
-    servers.set(book.serverUuid, [
-      ...(servers.get(book.serverUuid) ?? []),
-      book.uuid,
-    ])
-  }
+    return true
+  })
+  const onServers = unique.filter((book) => book.serverUuid !== null)
   return {
-    servers: [...servers].map(([serverUuid, bookUuids]) => ({
-      serverUuid,
-      bookUuids,
-    })),
-    local,
+    servers: [...groupBy(onServers, (book) => book.serverUuid as string)].map(
+      ([serverUuid, group]) => ({
+        serverUuid,
+        bookUuids: group.map((book) => book.uuid),
+      }),
+    ),
+    local: unique
+      .filter((book) => book.serverUuid === null)
+      .map((book) => book.uuid),
   }
 }
 
@@ -103,17 +101,10 @@ export function archiveResultMessage(count: number, archived: boolean) {
 
 /** Plain English for a failed archive request. */
 export function archiveErrorMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null) {
-    const status = (error as { status?: unknown }).status
-    if (status === 403) {
-      return "You do not have permission to change the library."
-    }
-    if (status === "FETCH_ERROR") return "Could not reach the server."
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "object" && data !== null) {
-      const message = (data as { message?: unknown }).message
-      if (typeof message === "string" && message) return message
-    }
-  }
-  return "Something went wrong. Try again."
+  return errorMessage(error, {
+    fallback: "Something went wrong. Try again.",
+    byStatus: { 403: "You do not have permission to change the library." },
+    fetchError: "Could not reach the server.",
+    useMessage: false,
+  })
 }

@@ -4,6 +4,7 @@
  */
 
 import { chunkBooks, relativeAge } from "./driveSync"
+import { errorMessage } from "./serverBatch"
 
 /** The server rejects more books than this in one email. */
 export const KINDLE_BATCH_SIZE = 25
@@ -22,23 +23,11 @@ const KINDLE_ERROR_MESSAGES: Record<string, string> = {
 
 /** Plain English for a failed Send to Kindle request. */
 export function kindleErrorMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null) {
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "object" && data !== null) {
-      const code = (data as { code?: unknown }).code
-      if (typeof code === "string" && KINDLE_ERROR_MESSAGES[code]) {
-        return KINDLE_ERROR_MESSAGES[code]
-      }
-      const message = (data as { message?: unknown }).message
-      if (typeof message === "string" && message) return message
-    }
-    const message = (error as { message?: unknown }).message
-    if (typeof message === "string" && message) return message
-    if ((error as { status?: unknown }).status === "FETCH_ERROR") {
-      return "Could not reach the server"
-    }
-  }
-  return "Something went wrong while sending to your Kindle"
+  return errorMessage(error, {
+    fallback: "Something went wrong while sending to your Kindle",
+    byCode: KINDLE_ERROR_MESSAGES,
+    fetchError: "Could not reach the server",
+  })
 }
 
 export interface ActionSplit<T> {

@@ -21,6 +21,7 @@ import {
   normaliseSeriesName,
 } from "./nameKey"
 import { isWholePosition } from "./seriesGaps"
+import { errorMessage, groupBy } from "./serverBatch"
 
 export type TargetKind = "collection" | "series" | "genre" | "author"
 export type TargetFilter = "all" | TargetKind
@@ -253,19 +254,13 @@ export interface SelectedRef {
 export function groupSelectedByServer<T extends SelectedRef>(
   selected: readonly T[],
 ) {
-  const servers = new Map<string, T[]>()
-  const skipped: T[] = []
-  for (const book of selected) {
-    if (!book.serverUuid) {
-      skipped.push(book)
-      continue
-    }
-    servers.set(book.serverUuid, [
-      ...(servers.get(book.serverUuid) ?? []),
-      book,
-    ])
+  return {
+    servers: groupBy(
+      selected.filter((book) => book.serverUuid),
+      (book) => book.serverUuid as string,
+    ),
+    skipped: selected.filter((book) => !book.serverUuid),
   }
-  return { servers, skipped }
 }
 
 export interface SeriesRelation {
@@ -493,24 +488,15 @@ export function addErrorMessage(
   kind: TargetKind,
   name = "",
 ): string {
-  if (typeof error === "object" && error !== null) {
-    const status = (error as { status?: unknown }).status
-    if (status === 403) {
-      return kind === "collection"
-        ? "You do not have permission to change collections on this server."
-        : "You do not have permission to edit books on this server."
-    }
-    if (status === 409) {
-      return `A ${KIND_LABEL[kind].toLowerCase()} named "${name}" already exists.`
-    }
-    if (status === "FETCH_ERROR") return "Could not reach the server."
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "object" && data !== null) {
-      const message = (data as { message?: unknown }).message
-      if (typeof message === "string" && message) return message
-    }
-    const message = (error as { message?: unknown }).message
-    if (typeof message === "string" && message) return message
-  }
-  return "Something went wrong. Try again."
+  return errorMessage(error, {
+    fallback: "Something went wrong. Try again.",
+    byStatus: {
+      403:
+        kind === "collection"
+          ? "You do not have permission to change collections on this server."
+          : "You do not have permission to edit books on this server.",
+      409: `A ${KIND_LABEL[kind].toLowerCase()} named "${name}" already exists.`,
+    },
+    fetchError: "Could not reach the server.",
+  })
 }

@@ -14,6 +14,7 @@ import {
   kindleErrorMessage,
   summarizeKindleResults,
 } from "@/lib/kindleSend"
+import { groupBy } from "@/lib/serverBatch"
 import { useAppDispatch, useAppSelector } from "@/store/appState"
 import { useListServersQuery } from "@/store/localApi"
 import { serverApi } from "@/store/serverApi"
@@ -202,18 +203,10 @@ export function useSyncToDrive() {
       overwrite: boolean,
       onProgress?: (done: number) => void,
     ) => {
-      const byServer = new Map<UUID, UUID[]>()
-      for (const book of books) {
-        byServer.set(book.serverUuid, [
-          ...(byServer.get(book.serverUuid) ?? []),
-          book.uuid,
-        ])
-      }
-
       const results: DriveResult[] = []
       try {
-        for (const [serverUuid, uuids] of byServer) {
-          for (const batch of chunkBooks(uuids)) {
+        for (const [serverUuid, group] of groupBy(books, (b) => b.serverUuid)) {
+          for (const batch of chunkBooks(group.map((b) => b.uuid))) {
             const response = await dispatch(
               serverApi.endpoints.syncBooksToDrive.initiate({
                 serverUuid,
@@ -252,22 +245,14 @@ export function useSendToKindle() {
       books: readonly SelectedBook[],
       onProgress?: (done: number) => void,
     ) => {
-      const byServer = new Map<UUID, UUID[]>()
-      const titles = new Map<string, string>()
-      for (const book of books) {
-        titles.set(book.uuid, book.title)
-        byServer.set(book.serverUuid, [
-          ...(byServer.get(book.serverUuid) ?? []),
-          book.uuid,
-        ])
-      }
+      const titles = new Map(books.map((book) => [book.uuid, book.title]))
 
       const results: KindleResult[] = []
       const legacy = { sent: 0, skipped: 0 }
       let done = 0
       try {
-        for (const [serverUuid, uuids] of byServer) {
-          for (const batch of kindleBatches(uuids)) {
+        for (const [serverUuid, group] of groupBy(books, (b) => b.serverUuid)) {
+          for (const batch of kindleBatches(group.map((b) => b.uuid))) {
             const response = await dispatch(
               serverApi.endpoints.sendBooksToKindle.initiate({
                 serverUuid,
@@ -316,15 +301,15 @@ export function useKindleSentSet(books: readonly SelectedBook[]) {
   )
 
   const requests = useMemo(() => {
-    const byServer = new Map<UUID, UUID[]>()
-    for (const entry of JSON.parse(key) as string[]) {
-      const [serverUuid, uuid] = entry.split("|") as [UUID, UUID]
-      byServer.set(serverUuid, [...(byServer.get(serverUuid) ?? []), uuid])
-    }
-    return [...byServer].map(([serverUuid, uuids]) => ({
-      serverUuid,
-      books: uuids,
-    }))
+    const pairs = (JSON.parse(key) as string[]).map(
+      (entry) => entry.split("|") as [UUID, UUID],
+    )
+    return [...groupBy(pairs, ([serverUuid]) => serverUuid)].map(
+      ([serverUuid, group]) => ({
+        serverUuid,
+        books: group.map(([, uuid]) => uuid),
+      }),
+    )
   }, [key])
 
   useEffect(() => {

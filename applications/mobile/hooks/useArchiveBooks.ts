@@ -1,6 +1,7 @@
 import { useCallback } from "react"
 
 import { setBooksArchivedAt } from "@/database/books"
+import { postJson, refetchServerBooks } from "@/hooks/serverCalls"
 import {
   type ArchiveTarget,
   archiveErrorMessage,
@@ -10,7 +11,6 @@ import {
 } from "@/lib/archive"
 import { useAppDispatch } from "@/store/appState"
 import { localApi } from "@/store/localApi"
-import { serverApi } from "@/store/serverApi"
 import { type UUID } from "@/uuid"
 
 export type ArchiveOutcome = { ok: boolean; message: string }
@@ -61,13 +61,7 @@ export function useArchiveBooks() {
       for (const { serverUuid, bookUuids } of groups.servers) {
         const request = buildArchiveRequest(bookUuids, archived)
         try {
-          await dispatch(
-            serverApi.endpoints.postServerJson.initiate({
-              serverUuid: serverUuid as UUID,
-              url: request.url,
-              body: request.body,
-            }),
-          ).unwrap()
+          await postJson(dispatch, serverUuid, request.url, request.body)
           done += bookUuids.length
           changed.push(serverUuid)
         } catch (error) {
@@ -76,7 +70,7 @@ export function useArchiveBooks() {
         }
       }
 
-      if (changed.length) await refresh(changed)
+      if (changed.length) await refetchServerBooks(dispatch, changed)
       dispatch(localApi.util.invalidateTags(["Books"]))
 
       if (failure) {
@@ -87,26 +81,6 @@ export function useArchiveBooks() {
         }
       }
       return { ok: true, message: archiveResultMessage(done, archived) }
-
-      async function refresh(serverUuids: string[]) {
-        await Promise.all(
-          serverUuids.map(async (serverUuid) => {
-            const request = dispatch(
-              serverApi.endpoints.listBooks.initiate(
-                { serverUuid: serverUuid as UUID },
-                { forceRefetch: true },
-              ),
-            )
-            try {
-              await request.unwrap()
-            } catch {
-              // Saved on the server; the next sync shows it.
-            } finally {
-              request.unsubscribe()
-            }
-          }),
-        )
-      }
     },
     [dispatch],
   )
