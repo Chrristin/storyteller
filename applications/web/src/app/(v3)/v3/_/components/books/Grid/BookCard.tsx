@@ -532,11 +532,12 @@ export const BookCard = memo(function BookCard({
           <div
             className={cn(
               "absolute inset-0 flex items-center justify-center",
+              // No overflow-hidden here: the tilting element must not be
+              // clipped by a box that does not tilt with it. The Tile rounds
+              // and clips its own image.
               fillCover
-                ? cn("rounded-card overflow-hidden", hoverLift)
-                : hasDualFormat
-                  ? "overflow-visible p-2"
-                  : "rounded-card overflow-hidden",
+                ? cn("rounded-card", hoverLift)
+                : hasDualFormat && "p-2",
             )}
           >
             <Cover
@@ -727,7 +728,7 @@ export const BookCard = memo(function BookCard({
         "aria-selected": active,
       })}
       className={cn(
-        "group relative flex h-full min-h-0 flex-col rounded-card transition-opacity duration-200",
+        "group rounded-card relative flex h-full min-h-0 flex-col transition-opacity duration-200 hover:z-10",
         muted && "opacity-50",
         selected &&
           !isBookSelected &&
