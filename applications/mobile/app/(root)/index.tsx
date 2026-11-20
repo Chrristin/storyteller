@@ -173,6 +173,11 @@ export default function Home() {
                 onPress: () => router.push("/series-list"),
               },
               {
+                id: "archive",
+                title: "Archive",
+                onPress: () => router.push("/archive"),
+              },
+              {
                 id: "settings",
                 title: "Settings",
                 onPress: () => router.push("/settings"),

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router"
-import { Check, CloudUpload, Plus, Send, X } from "lucide-react-native"
+import { Archive, Check, CloudUpload, Plus, Send, X } from "lucide-react-native"
 import { useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, View } from "react-native"
 
@@ -12,8 +12,10 @@ import {
   useSendToKindle,
   useSyncToDrive,
 } from "@/hooks/useDrive"
+import { useArchiveBooks } from "@/hooks/useArchiveBooks"
 import { useIsFocused } from "@/hooks/useIsFocused"
 import { useToReadActions } from "@/hooks/useToRead"
+import { archiveBarLabel, archiveBusyLabel } from "@/lib/archive"
 import {
   canAddToRead,
   selectionToReadAction,
@@ -78,10 +80,16 @@ function CheckRow({
 interface Props {
   /** The books on this screen, used by "Select all". */
   books: readonly BookWithRelations[]
+  /**
+   * "archive" is the Archive screen: the bar only offers "Move back to
+   * library". In the library it offers "Move to Archive" under the other
+   * buttons.
+   */
+  mode?: "library" | "archive"
 }
 
 /** Top and bottom bars shown while books are selected for Google Drive. */
-export function DriveSelectionBars({ books }: Props) {
+export function DriveSelectionBars({ books, mode = "library" }: Props) {
   const selection = useDriveSelection()
   const isFocused = useIsFocused()
   const router = useRouter()
@@ -89,6 +97,7 @@ export function DriveSelectionBars({ books }: Props) {
   const sendToKindle = useSendToKindle()
   const delivery = useDelivery()
   const toRead = useToReadActions()
+  const archiveBooks = useArchiveBooks()
   const [overwrite, setOverwrite] = useState(false)
   const [resendChoice, setResendChoice] = useState<boolean | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -161,6 +170,19 @@ export function DriveSelectionBars({ books }: Props) {
       } finally {
         setBusy(null)
       }
+    })()
+  }
+
+  const inArchive = mode === "archive"
+
+  function runArchive() {
+    const archived = !inArchive
+    void (async () => {
+      setBusy("Archive")
+      const outcome = await archiveBooks(selected, archived)
+      setBusy(null)
+      if (outcome.ok) driveSelection.clear()
+      Alert.alert(outcome.ok ? "Archive" : "Could not move", outcome.message)
     })()
   }
 
@@ -251,79 +273,123 @@ export function DriveSelectionBars({ books }: Props) {
         </View>
       </View>
       <View className="bg-background border-border pb-safe px-safe-or-4 absolute right-0 bottom-0 left-0 z-50 gap-3 border-t pt-3">
-        {drive.included.length > 0 && (
-          <CheckRow
-            checked={overwrite}
-            label="Replace files already in Drive"
-            disabled={copying}
-            onToggle={() => setOverwrite(!overwrite)}
-          />
-        )}
-        {kindle.included.length > 0 && resendState.showCheckbox && (
-          <CheckRow
-            checked={resend}
-            label="Also resend books already sent"
-            disabled={copying}
-            onToggle={() => setResendChoice(!resend)}
-          />
-        )}
-        {toReadAction && (
+        {inArchive ? (
           <Button
             size="lg"
             className="rounded-full"
-            accessibilityLabel={selectionToReadLabel(toReadAction, toReadCount)}
+            accessibilityLabel={archiveBarLabel(true, count)}
             disabled={copying}
-            onPress={runToRead}
+            onPress={runArchive}
           >
             <Text className="text-primary-foreground">
-              {busy === "To Read"
-                ? toReadProgressLabel(toReadAction, progress, selected.length)
-                : selectionToReadLabel(toReadAction, toReadCount)}
+              {busy === "Archive"
+                ? archiveBusyLabel(true)
+                : archiveBarLabel(true, count)}
             </Text>
           </Button>
-        )}
-        {caption && (
-          <Text className="text-muted-foreground text-xs">{caption}</Text>
-        )}
-        <View className="flex-row items-center gap-2.5">
-          {drive.included.length > 0 && (
-            <Button
-              size="lg"
-              className="w-[52px] rounded-full px-0"
-              accessibilityLabel="Send to Google Drive"
-              disabled={copying}
-              onPress={runDrive}
-            >
-              <Icon
-                as={CloudUpload}
-                size={20}
-                className="text-primary-foreground"
+        ) : (
+          <>
+            {drive.included.length > 0 && (
+              <CheckRow
+                checked={overwrite}
+                label="Replace files already in Drive"
+                disabled={copying}
+                onToggle={() => setOverwrite(!overwrite)}
               />
-            </Button>
-          )}
-          {kindle.included.length > 0 && (
+            )}
+            {kindle.included.length > 0 && resendState.showCheckbox && (
+              <CheckRow
+                checked={resend}
+                label="Also resend books already sent"
+                disabled={copying}
+                onToggle={() => setResendChoice(!resend)}
+              />
+            )}
+            {toReadAction && (
+              <Button
+                size="lg"
+                className="rounded-full"
+                accessibilityLabel={selectionToReadLabel(
+                  toReadAction,
+                  toReadCount,
+                )}
+                disabled={copying}
+                onPress={runToRead}
+              >
+                <Text className="text-primary-foreground">
+                  {busy === "To Read"
+                    ? toReadProgressLabel(
+                        toReadAction,
+                        progress,
+                        selected.length,
+                      )
+                    : selectionToReadLabel(toReadAction, toReadCount)}
+                </Text>
+              </Button>
+            )}
+            {caption && (
+              <Text className="text-muted-foreground text-xs">{caption}</Text>
+            )}
+            <View className="flex-row items-center gap-2.5">
+              {drive.included.length > 0 && (
+                <Button
+                  size="lg"
+                  className="w-[52px] rounded-full px-0"
+                  accessibilityLabel="Send to Google Drive"
+                  disabled={copying}
+                  onPress={runDrive}
+                >
+                  <Icon
+                    as={CloudUpload}
+                    size={20}
+                    className="text-primary-foreground"
+                  />
+                </Button>
+              )}
+              {kindle.included.length > 0 && (
+                <Button
+                  size="lg"
+                  className="w-[52px] rounded-full px-0"
+                  accessibilityLabel="Send to Kindle"
+                  disabled={copying || kindleBooks.length === 0}
+                  onPress={runKindle}
+                >
+                  <Icon
+                    as={Send}
+                    size={20}
+                    className="text-primary-foreground"
+                  />
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="lg"
+                className="flex-1 rounded-full"
+                accessibilityLabel="Add to collection"
+                disabled={copying}
+                onPress={() => router.push("/add-to-collection")}
+              >
+                <Icon as={Plus} size={18} />
+                <Text>Add to collection</Text>
+              </Button>
+            </View>
             <Button
+              variant="outline"
               size="lg"
-              className="w-[52px] rounded-full px-0"
-              accessibilityLabel="Send to Kindle"
-              disabled={copying || kindleBooks.length === 0}
-              onPress={runKindle}
+              className="rounded-full"
+              accessibilityLabel={archiveBarLabel(false, count)}
+              disabled={copying}
+              onPress={runArchive}
             >
-              <Icon as={Send} size={20} className="text-primary-foreground" />
+              <Icon as={Archive} size={18} />
+              <Text>
+                {busy === "Archive"
+                  ? archiveBusyLabel(false)
+                  : archiveBarLabel(false, count)}
+              </Text>
             </Button>
-          )}
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex-1 rounded-full"
-            accessibilityLabel="Add to collection"
-            disabled={copying}
-            onPress={() => router.push("/add-to-collection")}
-          >
-            <Icon as={Plus} size={18} />
-            <Text>Add to collection</Text>
-          </Button>
-        </View>
+          </>
+        )}
       </View>
     </>
   )

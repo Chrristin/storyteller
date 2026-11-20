@@ -399,8 +399,7 @@ title you changed since.
   "2001: A Space Odyssey" are never touched.
 - **Server** (`src/database/titleCleanup.ts`, routes under
   `/api/v2/library/title-cleanup`, GET preview, POST apply, POST undo, all need
-  the book update permission). Old titles go to `title_cleanup_log` (migration
-  136) before each batch of 25.
+  the book update permission). Old titles go to `title_cleanup_log` (migration 136) before each batch of 25.
 - **Files on disk.** A title is saved with `updateBook`, the same as the book
   edit form. That renames the book's internal asset folder (and the epub inside
   it, when the epub lives there). The apply then queues `queueWritesToFiles`,
@@ -469,3 +468,35 @@ title you changed since.
 - Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
 
 - Build 22: shuffling piles with real covers behind, a flick swaps the book, a tap opens the pile, series of one are hidden.
+
+## Archive (the backroom)
+
+An archived book stays in the library with all its data (downloads, progress,
+bookmarks) but is hidden everywhere except the Archive screen. The Archive is
+common to all users: it is stored on the server (`archivedAt` on the book), so
+**the server must be the new build**. Against an older server nothing breaks
+(no `archivedAt` counts as not archived), but archiving does nothing useful
+there.
+
+- **Hidden in one place.** The local book list query (`getBooks`,
+  `bookQuery({ archived })` in `database/books.ts`) excludes archived books by
+  default, so Home, grids, Series, authors, collections, piles, shelves,
+  search, To Read, Now Reading and the Add to collection targets never see
+  them. `listArchivedBooks` (RTK Query) returns only archived ones. `getBook`
+  (book page, reader, player) is unfiltered, so an archived book opened from the
+  Archive still works.
+- **Entry points.** Library menu, Archive (after Series). Selection bar:
+  an outlined full-width "Move to Archive" button under the Drive, Kindle and
+  Add to collection row. In the Archive screen the bar is a single "Move back to
+  library" button. The book long-press menu (tiles that are not selectable, such
+  as piles) has "Move to Archive" or "Move back to library".
+- **Archive screen** (`app/(root)/archive.tsx`): the library grid, ordered by
+  first author (normalised, so spelling variants sit together), then series and
+  position, then title; books with no author last (`lib/archiveOrder.ts`).
+  Empty: "Nothing in the Archive."
+- **Sync.** The phone lists books with `GET /books?archived=all` so archived
+  books are not mistaken for deleted ones. `POST /api/v2/books/archive`
+  `{ books, archived }` (permission book update) is sent per server by
+  `hooks/useArchiveBooks.ts`; the local rows change at once and are undone for a
+  server that refuses. Migration `1793300000000_add_book_archived_at`.
+- Pure logic with tests: `lib/archive.ts`, `lib/archiveOrder.ts`.

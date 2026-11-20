@@ -120,6 +120,8 @@ export interface SelectedBook {
   sendable: boolean
   /** The reading status name when selected, used for the To Read action. */
   statusName: string | null
+  /** When it was moved to the Archive, null for a book in the library. */
+  archivedAt: string | null
 }
 
 let selection = new Map<UUID, SelectedBook>()
@@ -139,6 +141,7 @@ function toSelected(book: BookWithRelations): SelectedBook | null {
     serverUuid: book.serverUuid,
     sendable: canSyncToDrive(book),
     statusName: book.status?.name ?? null,
+    archivedAt: book.archivedAt ?? null,
   }
 }
 

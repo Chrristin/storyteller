@@ -69,9 +69,83 @@ import {
   type ReadiumClip,
   type ReadiumLocator,
 } from "@/modules/readium/src/Readium.types"
+import { type ArchivedFilter } from "@/lib/archive"
 import { type UUID } from "@/uuid"
 
 import { deleteLocalBookFiles } from "./persistence/files"
+
+/**
+ * Keeps a book list in step with the database: when any table the list reads
+ * changes, the same query runs again and the cached list is replaced (keeping
+ * the old object for books that did not change).
+ */
+function watchBooks(archived: ArchivedFilter) {
+  return async (
+    _: void,
+    {
+      updateCachedData,
+      cacheDataLoaded,
+      cacheEntryRemoved,
+    }: {
+      updateCachedData: (
+        update: (draft: BookWithRelations[]) => BookWithRelations[] | void,
+      ) => unknown
+      cacheDataLoaded: Promise<unknown>
+      cacheEntryRemoved: Promise<unknown>
+    },
+  ) => {
+    try {
+      await cacheDataLoaded
+    } catch {
+      // no-op in case `cacheEntryRemoved` resolves before `cacheDataLoaded`,
+      // in which case `cacheDataLoaded` will throw
+    }
+
+    const query = bookQuery({ archived }).compile()
+    const unsubscribe = rawDb.reactiveExecute({
+      query: query.sql,
+      arguments: query.parameters as unknown[],
+      fireOn: [
+        { table: "book" },
+        { table: "creator" },
+        { table: "series" },
+        { table: "collection" },
+        { table: "status" },
+        { table: "ebook" },
+        { table: "audiobook" },
+        { table: "readaloud" },
+      ],
+      callback(reactiveResult) {
+        updateCachedData((draft) => {
+          const updated: BookWithRelations[] = camelCaseRows(
+            parseArray(reactiveResult.rows),
+          )
+          const currentMap = new Map(
+            current(draft).map((book) => [book.uuid, book]),
+          )
+          const result: BookWithRelations[] = []
+          for (const book of updated) {
+            const currentBook = currentMap.get(book.uuid)
+            if (!currentBook) {
+              result.push(book)
+              continue
+            }
+            if (deepEquals(currentBook, book)) {
+              result.push(currentBook)
+              continue
+            }
+            result.push(book)
+          }
+          return result
+        })
+      },
+    })
+
+    await cacheEntryRemoved
+
+    unsubscribe()
+  }
+}
 
 export const localApi = createApi({
   reducerPath: "localApi",
@@ -104,80 +178,19 @@ export const localApi = createApi({
     }),
     listBooks: build.query<BookWithRelations[], void>({
       async queryFn() {
-        return { data: await getBooks() }
+        // Archived books are hidden from every library screen. Only
+        // listArchivedBooks (the Archive screen) returns them.
+        return { data: await getBooks("exclude") }
       },
       providesTags: ["Books"],
-      onCacheEntryAdded: async (
-        _,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved },
-      ) => {
-        try {
-          await cacheDataLoaded
-        } catch {
-          // no-op in case `cacheEntryRemoved` resolves before `cacheDataLoaded`,
-          // in which case `cacheDataLoaded` will throw
-        }
-
-        const query = bookQuery().compile()
-        const unsubscribe = rawDb.reactiveExecute({
-          query: query.sql,
-          arguments: query.parameters as unknown[],
-          fireOn: [
-            {
-              table: "book",
-            },
-            {
-              table: "creator",
-            },
-            {
-              table: "series",
-            },
-            {
-              table: "collection",
-            },
-            {
-              table: "status",
-            },
-            {
-              table: "ebook",
-            },
-            {
-              table: "audiobook",
-            },
-            {
-              table: "readaloud",
-            },
-          ],
-          callback(reactiveResult) {
-            updateCachedData((draft) => {
-              const updated: BookWithRelations[] = camelCaseRows(
-                parseArray(reactiveResult.rows),
-              )
-              const currentMap = new Map(
-                current(draft).map((book) => [book.uuid, book]),
-              )
-              const result: BookWithRelations[] = []
-              for (const book of updated) {
-                const currentBook = currentMap.get(book.uuid)
-                if (!currentBook) {
-                  result.push(book)
-                  continue
-                }
-                if (deepEquals(currentBook, book)) {
-                  result.push(currentBook)
-                  continue
-                }
-                result.push(book)
-              }
-              return result
-            })
-          },
-        })
-
-        await cacheEntryRemoved
-
-        unsubscribe()
+      onCacheEntryAdded: watchBooks("exclude"),
+    }),
+    listArchivedBooks: build.query<BookWithRelations[], void>({
+      async queryFn() {
+        return { data: await getBooks("only") }
       },
+      providesTags: ["Books"],
+      onCacheEntryAdded: watchBooks("only"),
     }),
     getBook: build.query<BookWithRelations | null, { uuid: UUID }>({
       async queryFn({ uuid }) {
@@ -623,6 +636,7 @@ export const {
   useGetServerQuery,
   useGetSeriesQuery,
   useGetTagQuery,
+  useListArchivedBooksQuery,
   useListBooksQuery,
   useListCollectionsQuery,
   useListStatusesQuery,

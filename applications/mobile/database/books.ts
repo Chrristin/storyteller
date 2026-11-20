@@ -4,6 +4,7 @@ import { type Insertable, type Transaction, type Updateable, sql } from "kysely"
 import { jsonArrayFrom, jsonObjectFrom } from "kysely/helpers/sqlite"
 
 import { getCoverUrl } from "@/store/serverApi"
+import { type ArchivedFilter } from "@/lib/archive"
 import { type UUID, randomUUID } from "@/uuid"
 
 import { type NewCreator } from "./creators"
@@ -197,9 +198,24 @@ export async function createBook(
   return await getBook(book.uuid)
 }
 
-export function bookQuery(options?: { withManifests?: boolean }) {
+export function bookQuery(options?: {
+  withManifests?: boolean
+  /**
+   * "exclude" hides archived books, "only" lists just those (newest archived
+   * first). Leave it out to include everything, as getBook does.
+   */
+  archived?: ArchivedFilter
+}) {
   return db
     .selectFrom("book")
+    .$if(options?.archived === "exclude", (qb) =>
+      qb.where("book.archivedAt", "is", null),
+    )
+    .$if(options?.archived === "only", (qb) =>
+      qb
+        .where("book.archivedAt", "is not", null)
+        .orderBy("book.archivedAt", "desc"),
+    )
     .select([
       "book.alignedAt",
       "book.alignedByStorytellerVersion",
@@ -220,6 +236,7 @@ export function bookQuery(options?: { withManifests?: boolean }) {
       "book.audioCoverSha256",
       "book.textCoverColor",
       "book.audioCoverColor",
+      "book.archivedAt",
       "book.serverUpdatedAt",
       "book.uuid",
     ])
@@ -387,8 +404,9 @@ export function bookQuery(options?: { withManifests?: boolean }) {
     ])
 }
 
-export async function getBooks() {
-  return await bookQuery().execute()
+/** The library: archived books are left out unless asked for. */
+export async function getBooks(archived: ArchivedFilter = "exclude") {
+  return await bookQuery({ archived }).execute()
 }
 
 export async function getBooksWithAnnotations() {
@@ -703,5 +721,21 @@ export async function removeBookDownloads(
 export async function updateBook(uuid: UUID, update: BookUpdate) {
   await db.transaction().execute(async (tr) => {
     await tr.updateTable("book").set(update).where("uuid", "=", uuid).execute()
+  })
+}
+
+/** Sets `archivedAt` on the phone's copies, one value per book. */
+export async function setBooksArchivedAt(
+  entries: readonly { uuid: UUID; archivedAt: string | null }[],
+) {
+  if (entries.length === 0) return
+  await db.transaction().execute(async (tr) => {
+    for (const { uuid, archivedAt } of entries) {
+      await tr
+        .updateTable("book")
+        .set({ archivedAt })
+        .where("uuid", "=", uuid)
+        .execute()
+    }
   })
 }

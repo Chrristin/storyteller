@@ -31,9 +31,20 @@ interface Props {
   books: BookWithRelations[]
   header?: ReactNode
   refreshable?: boolean
+  /** "archive" gives the selection bar its Archive screen actions. */
+  selectionMode?: "library" | "archive"
+  /** Shown instead of the grid when there are no books. */
+  emptyText?: string
 }
 
-export function BookGrid({ title, books, header, refreshable = true }: Props) {
+export function BookGrid({
+  title,
+  books,
+  header,
+  refreshable = true,
+  selectionMode = "library",
+  emptyText,
+}: Props) {
   const dimensions = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const [{ showTitles }] = useLibraryLook()
@@ -124,11 +135,18 @@ export function BookGrid({ title, books, header, refreshable = true }: Props) {
                 <BookThumbnail book={book} selectable width={thumbnailWidth} />
               </View>
             )}
+            ListEmptyComponent={
+              emptyText ? (
+                <Text className="text-muted-foreground px-safe-or-3 py-6">
+                  {emptyText}
+                </Text>
+              ) : undefined
+            }
             ListFooterComponent={<View className="h-40 w-full" />}
           />
         </KeyboardGestureArea>
         <MiniPlayerWidget />
-        <DriveSelectionBars books={books} />
+        <DriveSelectionBars books={books} mode={selectionMode} />
       </Stack>
     </>
   )

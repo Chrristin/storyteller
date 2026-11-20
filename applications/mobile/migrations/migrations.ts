@@ -61,6 +61,10 @@ import {
   down as addUnreadStatusDown,
   up as addUnreadStatusUp,
 } from "./1793200000000_add_unread_status"
+import {
+  down as addBookArchivedAtDown,
+  up as addBookArchivedAtUp,
+} from "./1793300000000_add_book_archived_at"
 
 export const migrations = {
   "1757893743063_init": {
@@ -128,5 +132,9 @@ export const migrations = {
   "1793200000000_add_unread_status": {
     up: addUnreadStatusUp,
     down: addUnreadStatusDown,
+  },
+  "1793300000000_add_book_archived_at": {
+    up: addBookArchivedAtUp,
+    down: addBookArchivedAtDown,
   },
 }

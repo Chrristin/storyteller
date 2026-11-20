@@ -54,6 +54,7 @@ export interface Book {
   audioCoverSha256: string | null
   textCoverColor: string | null
   audioCoverColor: string | null
+  archivedAt: string | null
   serverUpdatedAt: string | null
   updatedAt: Generated<string>
   uuid: UUID

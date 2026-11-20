@@ -2,10 +2,12 @@ import { Check } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
+import { useArchiveBooks } from "@/hooks/useArchiveBooks"
 import { useAvailableFormats } from "@/hooks/useAvailableFormats"
 import { useDownloadedFormats } from "@/hooks/useDownloadedFormats"
 import { driveSelection, useDriveSelection } from "@/hooks/useDrive"
 import { useOpenBook } from "@/hooks/useOpenBook"
+import { archiveMenuLabel, isArchived } from "@/lib/archive"
 import { useLibraryLook } from "@/lib/libraryLook"
 import { tiltStyle } from "@/lib/tilt"
 import {
@@ -60,6 +62,8 @@ export function BookThumbnail({
   const { data: statuses } = useListStatusesQuery()
 
   const [updateStatus] = useUpdateStatusMutation()
+  const archiveBooks = useArchiveBooks()
+  const archived = isArchived(book)
   function openBookDetails() {
     openDetails(book)
   }
@@ -161,6 +165,13 @@ export function BookThumbnail({
           },
         ]
       : []),
+    {
+      id: "archive",
+      title: archiveMenuLabel(archived),
+      onPress: () => {
+        void archiveBooks([book], !archived)
+      },
+    },
   ]
 
   const downloadingFormat = [book.readaloud, book.ebook, book.audiobook].find(

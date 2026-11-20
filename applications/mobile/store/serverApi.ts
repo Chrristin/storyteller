@@ -118,7 +118,13 @@ export const serverApi = createApi({
   },
   endpoints: (build) => ({
     listBooks: build.query<BookWithRelations[], { serverUuid: UUID }>({
-      query: ({ serverUuid }) => ({ url: "/books", serverUuid }),
+      // "all" also returns archived books, so the phone keeps their local
+      // copies and downloads. Without it an archived book would look deleted.
+      query: ({ serverUuid }) => ({
+        url: "/books",
+        params: { archived: "all" },
+        serverUuid,
+      }),
     }),
     getBook: build.query<
       BookWithRelations,
