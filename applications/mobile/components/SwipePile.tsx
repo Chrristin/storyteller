@@ -37,8 +37,6 @@ const COVER_RATIO = 0.8
 /** Edge offsets as a share of the tile width: right, and up. */
 const EDGE_DX_RATIO = 0.06
 const EDGE_DY_RATIO = 0.03
-/** How much black is laid over the covers behind the front one. */
-const EDGE_SHADE = [0.3, 0.5]
 /** Only clearly horizontal drags belong to the pile, vertical ones scroll. */
 const ACTIVE_OFFSET_X = 10
 const FAIL_OFFSET_Y = 10
@@ -68,13 +66,12 @@ interface Props {
 }
 
 /**
- * A pile of books as one front cover with the edges of the next two peeking
- * out behind it, a count badge and position dots. A horizontal drag on the
- * tile moves through the books (wrapping round); a tap on the front cover opens that book, a long press on it asks Read or
- * Listen, and a tap on the text under the pile opens the pile.
- *
- * The covers behind the front one are the real covers of the next two books,
- * dimmed, so a pile looks like a stack of the actual books.
+ * A pile of books as one front cover with the real covers of the next two
+ * books peeking out behind it, a count badge and position dots. A short flick
+ * on the pile shuffles it like a deck of cards: the front book slides out a
+ * little, goes under the pile, and the next book comes on top. A tap anywhere
+ * on the pile (cover, name or count) opens the pile; a long press on the cover
+ * opens that one book (asking Read or Listen).
  */
 export function SwipePile({
   books,
@@ -99,19 +96,44 @@ export function SwipePile({
   const topPad = dy * 2
 
   const translateX = useSharedValue(0)
-  const appear = useSharedValue(1)
+  const pop = useSharedValue(1)
+  // The book that has just left the top: it slides back under the pile.
+  const leaveX = useSharedValue(0)
+  const leaveY = useSharedValue(0)
+  const [leaving, setLeaving] = useState<{
+    book: BookWithRelations
+    key: number
+  } | null>(null)
+  const leaveKey = useRef(0)
+  const frontRef = useRef(front)
+  frontRef.current = front
+
+  const clearLeaving = useCallback(() => setLeaving(null), [])
 
   const go = useCallback(
     (step: number) => {
       if (total < 2) return
+      const old = frontRef.current
+      if (old) {
+        const out = width * FLICK_OUT_RATIO * (step > 0 ? -1 : 1)
+        leaveKey.current += 1
+        leaveX.value = out
+        leaveY.value = 0
+        setLeaving({ book: old, key: leaveKey.current })
+        // Slide back under the pile, to where the farthest edge sits.
+        leaveX.value = withTiming(dx * 2, { duration: 170 }, (finished) => {
+          if (finished) scheduleOnRN(clearLeaving)
+        })
+        leaveY.value = withTiming(-dy * 2, { duration: 170 })
+      }
       setIndex((i) => stepIndex(Math.min(i, total - 1), total, step))
       lightHaptic()
     },
-    [total],
+    [total, width, dx, dy, leaveX, leaveY, clearLeaving],
   )
 
-  // The new front cover starts under the old one's last position, so reset the
-  // drag and fade the new cover in once React has swapped the book.
+  // The new front book comes on top with a small pop, once React has swapped
+  // the book.
   const first = useRef(true)
   useLayoutEffect(() => {
     if (first.current) {
@@ -119,9 +141,9 @@ export function SwipePile({
       return
     }
     translateX.value = 0
-    appear.value = 0
-    appear.value = withTiming(1, { duration: 140 })
-  }, [current, translateX, appear])
+    pop.value = 0.94
+    pop.value = withTiming(1, { duration: 140 })
+  }, [current, translateX, pop])
 
   const pan = Gesture.Pan()
     .activeOffsetX([-ACTIVE_OFFSET_X, ACTIVE_OFFSET_X])
@@ -148,7 +170,7 @@ export function SwipePile({
       // Dragging left (negative) goes to the next book (+1).
       translateX.value = withTiming(
         step > 0 ? -width * FLICK_OUT_RATIO : width * FLICK_OUT_RATIO,
-        { duration: 110 },
+        { duration: 100 },
         (finished) => {
           if (finished) scheduleOnRN(go, step)
         },
@@ -164,10 +186,10 @@ export function SwipePile({
   const tap = Gesture.Tap()
     .runOnJS(true)
     .maxDistance(ACTIVE_OFFSET_X)
-    .onEnd((event, success) => {
+    .onEnd((_event, success) => {
       if (!success || !front) return
-      if (event.y <= coverBottom) openFromPile(front)
-      else onOpen()
+      // Cover, name or count: all open the pile.
+      onOpen()
     })
   const longPress = Gesture.LongPress()
     .runOnJS(true)
@@ -181,15 +203,18 @@ export function SwipePile({
 
   const gesture = Gesture.Race(pan, longPress, tap)
 
-  // The cover fades as it is pushed aside, so a flick reads as "this one is
-  // done, here is the next".
   const frontStyle = useAnimatedStyle(() => ({
-    opacity:
-      appear.value *
-      (1 - Math.min(Math.abs(translateX.value) / (width * FLICK_OUT_RATIO), 1)),
     transform: [
       { translateX: translateX.value },
-      { rotate: `${(translateX.value / width) * 10}deg` },
+      { rotate: `${(translateX.value / width) * 12}deg` },
+      { scale: pop.value },
+    ],
+  }))
+  const leaveStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: leaveX.value },
+      { translateY: leaveY.value },
+      { rotate: `${(leaveX.value / width) * 12}deg` },
     ],
   }))
 
@@ -235,6 +260,26 @@ export function SwipePile({
         style={{ width }}
       >
         <View style={{ height: coverHeight + topPad, width }}>
+          {/* The book that just left the top slides back under everything. */}
+          {leaving && (
+            <Animated.View
+              key={leaving.key}
+              pointerEvents="none"
+              style={[
+                { left: 0, position: "absolute", top: topPad },
+                leaveStyle,
+              ]}
+            >
+              <BookCover
+                book={leaving.book}
+                badge={false}
+                progressLine={false}
+                showTitleOverlay={false}
+                width={coverWidth}
+                height={coverHeight}
+              />
+            </Animated.View>
+          )}
           {/* Farthest edge first so the nearer one draws over it. */}
           {[...peeks].reverse().map((peekIndex) => {
             const depth = peeks.indexOf(peekIndex) + 1
@@ -260,17 +305,6 @@ export function SwipePile({
                   showTitleOverlay={false}
                   width={coverWidth}
                   height={coverHeight}
-                />
-                {/* Darker the further back, so the front cover stands out. */}
-                <View
-                  style={{
-                    backgroundColor: `rgba(0,0,0,${EDGE_SHADE[depth - 1]})`,
-                    bottom: 0,
-                    left: 0,
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                  }}
                 />
               </View>
             )

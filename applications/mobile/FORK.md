@@ -227,16 +227,18 @@ tiles per row, with the same width maths as the Home book grids
   `AuthorCollection.books`) and is capped at 30 (`PILE_BOOK_CAP`), so only the
   first 30 can be swiped to; the badge and count line show the real total.
 - **Swipe.** A horizontal pan on the tile (active after 10 px sideways, fails
-  after 10 px vertical so the ScrollView still scrolls). The front cover follows
-  the finger and tilts; past 25% of the tile width, or a fling over 600 px/s
-  that moved at least 12 px, it slides off and the next book (drag left) or
-  previous (drag right) becomes the front, wrapping at the ends. Otherwise it
-  springs back. Light haptic on each change. A tap (race against the pan, max
-  10 px movement) never fires after a swipe.
-- **Tap.** A tap on the front cover opens that book; a tap on the name and count
-  text under the pile opens the author collection or series. One gesture
-  detector on the tile decides by where the touch lands.
-- **Read or listen.** Opening a book from a pile that has both an audio format
+  after 10 px vertical so the ScrollView still scrolls). A short flick (an
+  eighth of the tile width, or a fling over 400 px/s that moved at least 6 px)
+  shuffles the pile like cards: the front book slides out a little, then goes
+  under the pile while the next book (flick left) or the previous (flick right)
+  comes on top with a small pop. The front cover only follows the finger a short
+  way, it cannot be dragged across the tile. The covers behind the front one are
+  the real covers of the next two books at full colour. Light haptic on each
+  change. A tap never fires after a swipe.
+- **Tap.** A tap anywhere on the pile (cover, name or count) opens the pile, that
+  is the author collection or the series. A long press on the front cover opens
+  that one book directly (see below).
+- **Read or listen.** Opening a book from a pile (long press on the cover) that has both an audio format
   (audiobook or read-aloud) and an ebook downloaded, with no remembered choice,
   shows a small sheet (`app/(root)/read-or-listen.tsx`) with Read, Read along
   (only if the read-aloud is downloaded), Listen and Cancel. The pick is
