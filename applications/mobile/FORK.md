@@ -422,3 +422,5 @@ title you changed since.
   applies those books exactly like Accept all (add to the suggested series, add
   genres as tags, mark accepted), only for rows that are Check or Sure at that
   moment. Accept all still only takes the Sure rows. Not seen running.
+
+- Build 21: tap a pile cover opens the book (Read or Listen sheet), swipeable piles.
