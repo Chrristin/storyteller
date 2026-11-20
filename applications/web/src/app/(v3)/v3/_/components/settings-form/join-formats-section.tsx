@@ -1,13 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
 
 import { Button } from "@v3/_/components/ui/button"
-import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
-import { apiErrorMessage } from "@v3/_/lib/api-error"
 
 import { type LinkRunResult } from "@/bookLinker"
 import {
@@ -16,6 +13,7 @@ import {
   useRunBookLinksMutation,
 } from "@/store/api"
 
+import { ConfirmButton, runWithToast } from "./maintenance-helpers"
 import { SettingsCard, SettingsSection } from "./shared"
 
 /**
@@ -29,27 +27,24 @@ export function JoinFormatsSection() {
   const [run, { isLoading: isRunning }] = useRunBookLinksMutation()
   const [plan, setPlan] = useState<LinkRunResult | null>(null)
   const [result, setResult] = useState<LinkRunResult | null>(null)
-  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const runPreview = async () => {
     setResult(null)
-    try {
-      setPlan(await preview().unwrap())
-    } catch (error) {
-      setPlan(null)
-      toast.error(
-        t.plain("previewFailed", { message: apiErrorMessage(error) ?? "" }),
-      )
-    }
+    const found = await runWithToast(
+      () => preview().unwrap(),
+      (message) => t.plain("previewFailed", { message }),
+    )
+    setPlan(found ?? null)
   }
 
   const runJoin = async () => {
-    try {
-      setResult(await run().unwrap())
-      setPlan(null)
-    } catch (error) {
-      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
-    }
+    const joinedResult = await runWithToast(
+      () => run().unwrap(),
+      (message) => t.plain("failed", { message }),
+    )
+    if (!joinedResult) return
+    setResult(joinedResult)
+    setPlan(null)
   }
 
   const pairCount = plan?.pairs.length ?? 0
@@ -72,18 +67,17 @@ export function JoinFormatsSection() {
             {plan ? t("refresh") : t("preview")}
           </Button>
           {plan && pairCount > 0 && (
-            <Button
-              type="button"
+            <ConfirmButton
               variant="outline"
-              className="rounded-full"
+              label={t.plain("join", { count: pairCount })}
+              isLoading={isRunning}
               disabled={isRunning || isPreviewing}
-              onClick={() => {
-                setConfirmOpen(true)
-              }}
-            >
-              {isRunning && <Spinner className="size-3.5" />}
-              {t.plain("join", { count: pairCount })}
-            </Button>
+              title={t.plain("confirmTitle", { count: pairCount })}
+              description={t.plain("confirmBody")}
+              confirmLabel={t.plain("confirmJoin")}
+              confirmVariant="destructive"
+              onConfirm={runJoin}
+            />
           )}
         </div>
 
@@ -171,17 +165,6 @@ export function JoinFormatsSection() {
           </div>
         )}
       </SettingsCard>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={t.plain("confirmTitle", { count: pairCount })}
-        description={t.plain("confirmBody")}
-        confirmLabel={t.plain("confirmJoin")}
-        variant="destructive"
-        isLoading={isRunning}
-        onConfirm={runJoin}
-      />
     </SettingsSection>
   )
 }
@@ -190,52 +173,39 @@ export function JoinFormatsSection() {
 export function DrawCoversSection() {
   const t = useTranslation("SettingsPage.tabs.maintenance.sections.drawCovers")
   const [generate, { isLoading }] = useGenerateMissingCoversMutation()
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [outcome, setOutcome] = useState<{
     generated: number
     skipped: number
   } | null>(null)
 
   const runDraw = async () => {
-    try {
-      const { generated, skipped } = await generate().unwrap()
-      setOutcome({ generated, skipped })
-    } catch (error) {
-      setOutcome(null)
-      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
-    }
+    const drawn = await runWithToast(
+      () => generate().unwrap(),
+      (message) => t.plain("failed", { message }),
+    )
+    setOutcome(
+      drawn ? { generated: drawn.generated, skipped: drawn.skipped } : null,
+    )
   }
 
   return (
     <SettingsSection id="drawCovers">
       <SettingsCard title={t("title")} description={t("description")}>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            className="rounded-full"
+          <ConfirmButton
+            label={t("draw")}
+            isLoading={isLoading}
             disabled={isLoading}
-            onClick={() => {
-              setConfirmOpen(true)
-            }}
-          >
-            {isLoading && <Spinner className="size-3.5" />}
-            {t("draw")}
-          </Button>
+            title={t.plain("confirmTitle")}
+            description={t.plain("confirmBody")}
+            confirmLabel={t.plain("confirmDraw")}
+            onConfirm={runDraw}
+          />
         </div>
         {outcome && (
           <p className="text-sm font-medium">{t.plain("result", outcome)}</p>
         )}
       </SettingsCard>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={t.plain("confirmTitle")}
-        description={t.plain("confirmBody")}
-        confirmLabel={t.plain("confirmDraw")}
-        isLoading={isLoading}
-        onConfirm={runDraw}
-      />
     </SettingsSection>
   )
 }

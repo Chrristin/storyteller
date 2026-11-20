@@ -4,7 +4,6 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@v3/_/components/ui/button"
-import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
 
@@ -14,6 +13,7 @@ import {
   useUndoTitleCleanupMutation,
 } from "@/store/api"
 
+import { ConfirmButton } from "./maintenance-helpers"
 import { SettingsCard, SettingsSection } from "./shared"
 
 const PAGE_SIZE = 50
@@ -26,7 +26,6 @@ export function TitleCleanupSection() {
   const t = useTranslation("SettingsPage.tabs.metadata.sections.titleCleanup")
   const [previewing, setPreviewing] = useState(false)
   const [offset, setOffset] = useState(0)
-  const [confirmOpen, setConfirmOpen] = useState(false)
 
   // Before Preview, limit 0 only asks for the last clean-up (for the Undo
   // button) and does not scan the library.
@@ -132,17 +131,15 @@ export function TitleCleanupSection() {
                   <p className="text-sm font-medium">
                     {t.plain("total", { count: total })}
                   </p>
-                  <Button
-                    type="button"
-                    className="rounded-full"
+                  <ConfirmButton
+                    label={t.plain("applyAll", { count: total })}
+                    isLoading={isApplying}
                     disabled={isApplying}
-                    onClick={() => {
-                      setConfirmOpen(true)
-                    }}
-                  >
-                    {isApplying && <Spinner className="size-3.5" />}
-                    {t.plain("applyAll", { count: total })}
-                  </Button>
+                    title={t.plain("confirmTitle", { count: total })}
+                    description={t.plain("confirmBody")}
+                    confirmLabel={t.plain("confirmApply")}
+                    onConfirm={runApply}
+                  />
                 </div>
 
                 <ul className="divide-y rounded-lg border text-sm">
@@ -196,16 +193,6 @@ export function TitleCleanupSection() {
           </div>
         )}
       </SettingsCard>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={t.plain("confirmTitle", { count: total })}
-        description={t.plain("confirmBody")}
-        confirmLabel={t.plain("confirmApply")}
-        isLoading={isApplying}
-        onConfirm={runApply}
-      />
     </SettingsSection>
   )
 }

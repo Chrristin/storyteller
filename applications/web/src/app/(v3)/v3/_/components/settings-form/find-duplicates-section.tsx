@@ -1,13 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { toast } from "sonner"
 
 import { Button } from "@v3/_/components/ui/button"
-import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
-import { apiErrorMessage } from "@v3/_/lib/api-error"
 
 import { cn } from "@/cn"
 import { type DuplicateBook, type DuplicatePreview } from "@/duplicates"
@@ -17,6 +14,7 @@ import {
 } from "@/store/api"
 import { formatBytes } from "@/strings"
 
+import { ConfirmButton, runWithToast } from "./maintenance-helpers"
 import { SettingsCard, SettingsSection } from "./shared"
 
 function bookDetail(book: DuplicateBook, format: "ebook" | "audiobook") {
@@ -37,22 +35,20 @@ export function FindDuplicatesSection() {
   const [preview, setPreview] = useState<DuplicatePreview | null>(null)
   const [keepers, setKeepers] = useState<Record<string, string>>({})
   const [skipped, setSkipped] = useState<Set<string>>(new Set())
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [archived, setArchived] = useState<number | null>(null)
 
   const runFind = async () => {
     setArchived(null)
-    try {
-      const found = await find().unwrap()
-      setPreview(found)
-      setKeepers(
-        Object.fromEntries(found.groups.map((g) => [g.key, g.keeperUuid])),
-      )
-      setSkipped(new Set())
-    } catch (error) {
-      setPreview(null)
-      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
-    }
+    const found = await runWithToast(
+      () => find().unwrap(),
+      (message) => t.plain("failed", { message }),
+    )
+    setPreview(found ?? null)
+    if (!found) return
+    setKeepers(
+      Object.fromEntries(found.groups.map((g) => [g.key, g.keeperUuid])),
+    )
+    setSkipped(new Set())
   }
 
   const chosen = useMemo(() => {
@@ -71,15 +67,13 @@ export function FindDuplicatesSection() {
   }, [preview, keepers, skipped])
 
   const runArchive = async () => {
-    try {
-      const result = await archive({ groups: chosen.requests }).unwrap()
-      setArchived(result.archived)
-      setPreview(null)
-    } catch (error) {
-      toast.error(
-        t.plain("archiveFailed", { message: apiErrorMessage(error) ?? "" }),
-      )
-    }
+    const result = await runWithToast(
+      () => archive({ groups: chosen.requests }).unwrap(),
+      (message) => t.plain("archiveFailed", { message }),
+    )
+    if (!result) return
+    setArchived(result.archived)
+    setPreview(null)
   }
 
   return (
@@ -203,17 +197,15 @@ export function FindDuplicatesSection() {
               )
             })}
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                className="rounded-full"
+              <ConfirmButton
+                label={t.plain("archiveButton", { count: chosen.count })}
+                isLoading={isArchiving}
                 disabled={chosen.count === 0 || isArchiving}
-                onClick={() => {
-                  setConfirmOpen(true)
-                }}
-              >
-                {isArchiving && <Spinner className="size-3.5" />}
-                {t.plain("archiveButton", { count: chosen.count })}
-              </Button>
+                title={t.plain("confirmTitle", { count: chosen.count })}
+                description={t.plain("confirmBody")}
+                confirmLabel={t.plain("confirmArchive")}
+                onConfirm={runArchive}
+              />
             </div>
             <p className="text-muted-foreground text-xs">{t("hint")}</p>
           </div>
@@ -225,16 +217,6 @@ export function FindDuplicatesSection() {
           </p>
         )}
       </SettingsCard>
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title={t.plain("confirmTitle", { count: chosen.count })}
-        description={t.plain("confirmBody")}
-        confirmLabel={t.plain("confirmArchive")}
-        isLoading={isArchiving}
-        onConfirm={runArchive}
-      />
     </SettingsSection>
   )
 }
