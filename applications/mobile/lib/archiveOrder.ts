@@ -1,9 +1,7 @@
 /**
- * Order of the Archive screen: by first author (spelling variants together),
+ * Order of the Archive screen: by first author's name (ignoring case and accents),
  * then series name and position, then title. Books without an author last.
  */
-
-import { normaliseAuthorName, normaliseSeriesName } from "./nameKey"
 
 export interface ArchiveOrderBook {
   title: string
@@ -19,11 +17,6 @@ function compareText(a: string, b: string) {
   return a.localeCompare(b, undefined, { sensitivity: "base", numeric: true })
 }
 
-function authorKey(book: ArchiveOrderBook) {
-  const name = book.authors[0]?.name
-  return name ? normaliseAuthorName(name) : ""
-}
-
 function seriesOf(book: ArchiveOrderBook) {
   const entry =
     book.series.find((s) => s.featured === true || s.featured === "true") ??
@@ -31,7 +24,7 @@ function seriesOf(book: ArchiveOrderBook) {
   if (!entry) return null
   const position = Number(entry.position)
   return {
-    key: normaliseSeriesName(entry.name),
+    name: entry.name,
     position:
       Number.isFinite(position) &&
       entry.position !== null &&
@@ -42,18 +35,18 @@ function seriesOf(book: ArchiveOrderBook) {
 }
 
 export function compareArchiveBooks(a: ArchiveOrderBook, b: ArchiveOrderBook) {
-  const authorA = authorKey(a)
-  const authorB = authorKey(b)
-  if (authorA !== authorB) {
-    if (!authorA) return 1
-    if (!authorB) return -1
-    return compareText(authorA, authorB)
+  const authorA = a.authors[0]?.name
+  const authorB = b.authors[0]?.name
+  if (!authorA !== !authorB) return authorA ? -1 : 1
+  if (authorA && authorB) {
+    const byAuthor = compareText(authorA, authorB)
+    if (byAuthor !== 0) return byAuthor
   }
   const seriesA = seriesOf(a)
   const seriesB = seriesOf(b)
   if (seriesA && seriesB) {
-    if (seriesA.key !== seriesB.key)
-      return compareText(seriesA.key, seriesB.key)
+    const byName = compareText(seriesA.name, seriesB.name)
+    if (byName !== 0) return byName
     if (seriesA.position !== seriesB.position) {
       return seriesA.position < seriesB.position ? -1 : 1
     }
