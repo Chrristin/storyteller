@@ -50,6 +50,7 @@ export default function SeriesListScreen() {
                   label={`${pile.name}, ${pile.count} ${pile.count === 1 ? "book" : "books"}${
                     pile.missing > 0 ? `, ${pile.missing} missing` : ""
                   }`}
+                  openLabel={pile.name}
                   onOpen={() =>
                     router.push({
                       pathname: "/series/[uuid]",

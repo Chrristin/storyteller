@@ -51,6 +51,7 @@ export default function AuthorCollectionScreen() {
                 count={pile.count}
                 width={pileWidth}
                 label={`${pile.name}, ${pile.count} ${pile.count === 1 ? "book" : "books"}`}
+                openLabel={pile.name}
                 onOpen={() =>
                   router.push({
                     pathname: "/series/[uuid]",

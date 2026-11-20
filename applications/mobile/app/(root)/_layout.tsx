@@ -81,6 +81,15 @@ export default function ModalLayout() {
         }}
       />
       <Stack.Screen
+        name="read-or-listen"
+        options={{
+          presentation: "formSheet",
+          sheetAllowedDetents: "fitToContents",
+          sheetGrabberVisible: false,
+          sheetLargestUndimmedDetentIndex: "none",
+        }}
+      />
+      <Stack.Screen
         name="footnote"
         options={{
           presentation: "formSheet",

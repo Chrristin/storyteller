@@ -26,6 +26,7 @@ export function AuthorCollectionTile({
       count={collection.books.length}
       width={width}
       label={`${collection.name}, ${label}`}
+      openLabel={collection.name}
       onOpen={() =>
         router.push({
           pathname: "/author-collection/[author]",

@@ -227,11 +227,22 @@ tiles per row, with the same width maths as the Home book grids
   that moved at least 12 px, it slides off and the next book (drag left) or
   previous (drag right) becomes the front, wrapping at the ends. Otherwise it
   springs back. Light haptic on each change. A tap (race against the pan, max
-  10 px movement) opens the pile, so a swipe never also opens it.
+  10 px movement) never fires after a swipe.
+- **Tap.** A tap on the front cover opens that book; a tap on the name and count
+  text under the pile opens the author collection or series. One gesture
+  detector on the tile decides by where the touch lands.
+- **Read or listen.** Opening a book from a pile that has both an audio format
+  (audiobook or read-aloud) and an ebook downloaded, with no remembered choice,
+  shows a small sheet (`app/(root)/read-or-listen.tsx`) with Read, Read along
+  (only if the read-aloud is downloaded), Listen and Cancel. The pick is
+  remembered per book (`lastFormat`) and used next time without asking. Long
+  press the front cover to see the sheet again and change it. One format: opens
+  directly. Nothing downloaded: the book page. Grids and lists are unchanged.
+  Logic with tests: `lib/pileOpen.ts`.
 - **Dots.** Up to 5 books: one dot each. More: always 5 dots, each a fifth of the
   books, and the active (wider, accent) dot is the bucket the current book is in.
 - **Screen readers.** The tile is a button labelled "<name>, N books, book i of
-  n" with actions Next book / Previous book (increment/decrement).
+  n" with actions Open book, Open <name>, Next book / Previous book (increment/decrement).
 - Logic with tests: `lib/swipePile.ts`.
 
 ## Series and missing books

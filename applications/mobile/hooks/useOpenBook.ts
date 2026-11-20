@@ -4,6 +4,7 @@ import { useCallback } from "react"
 import { type BookWithRelations } from "@/database/books"
 import { type BookFormat, getBookPrefs, setBookPrefs } from "@/lib/bookPrefs"
 import { autoplayParam } from "@/lib/openOptions"
+import { decidePileOpen } from "@/lib/pileOpen"
 
 /** Formats that can be opened right now, in the order they are offered. */
 export function getOpenableFormats(book: BookWithRelations): BookFormat[] {
@@ -36,10 +37,13 @@ export function useOpenBook() {
     (
       book: BookWithRelations,
       format: BookFormat,
-      options?: { autoplay?: boolean },
+      options?: { autoplay?: boolean; replace?: boolean },
     ) => {
       setBookPrefs(book.uuid, { lastFormat: format, closed: false })
-      router.push({
+      // `replace` is for the Read or listen sheet, so the sheet is not left
+      // underneath the reader.
+      const navigate = options?.replace ? router.replace : router.push
+      navigate({
         pathname: format === "audiobook" ? "/listen/[uuid]" : "/read/[uuid]",
         params: {
           uuid: book.uuid,
@@ -74,5 +78,29 @@ export function useOpenBook() {
     [openDetails, openFormat],
   )
 
-  return { openBook, openFormat, openDetails }
+  /**
+   * Opening a book from a pile (rules in lib/pileOpen.ts). Asks Read or Listen
+   * when the book has audio and text and no remembered choice, or always with
+   * `forceAsk` (long press). The choice is remembered by openFormat.
+   */
+  const openFromPile = useCallback(
+    (book: BookWithRelations, forceAsk = false) => {
+      const decision = decidePileOpen(
+        getOpenableFormats(book),
+        getBookPrefs(book.uuid).lastFormat,
+        forceAsk,
+      )
+      if (decision.kind === "details") openDetails(book)
+      else if (decision.kind === "open")
+        openFormat(book, decision.format, { autoplay: decision.autoplay })
+      else
+        router.push({
+          pathname: "/read-or-listen",
+          params: { uuid: book.uuid },
+        })
+    },
+    [openDetails, openFormat, router],
+  )
+
+  return { openBook, openFormat, openDetails, openFromPile }
 }

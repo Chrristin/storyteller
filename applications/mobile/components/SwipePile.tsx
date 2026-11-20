@@ -18,6 +18,7 @@ import Animated, {
 import { scheduleOnRN } from "react-native-worklets"
 
 import { type BookWithRelations } from "@/database/books"
+import { useOpenBook } from "@/hooks/useOpenBook"
 import {
   capPileBooks,
   dotWindow,
@@ -63,8 +64,10 @@ interface Props {
   width: number
   /** Screen reader label, for example "Andy Weir, 10 books". */
   label: string
-  /** What a tap opens. */
+  /** What a tap on the name text opens (the author collection or series). */
   onOpen: () => void
+  /** Name used in the "Open <name>" accessibility action. */
+  openLabel: string
   /** The text lines under the cover. */
   children?: ReactNode
 }
@@ -72,7 +75,8 @@ interface Props {
 /**
  * A pile of books as one front cover with the edges of the next two peeking
  * out behind it, a count badge and position dots. A horizontal drag on the
- * tile moves through the books (wrapping round); a tap opens the pile.
+ * tile moves through the books (wrapping round); a tap on the front cover opens that book, a long press on it asks Read or
+ * Listen, and a tap on the text under the pile opens the pile.
  *
  * Only the front cover is a real BookCover. The edges are plain rounded
  * rectangles in the books' cover colours, so nothing else is loaded.
@@ -83,8 +87,10 @@ export function SwipePile({
   width,
   label,
   onOpen,
+  openLabel,
   children,
 }: Props) {
+  const { openFromPile } = useOpenBook()
   const list = useMemo(() => capPileBooks(books), [books])
   const total = list.length
   const [index, setIndex] = useState(0)
@@ -154,17 +160,31 @@ export function SwipePile({
       )
     })
 
-  // A tap is a touch that does not move: the pan only activates after 10px
-  // sideways, and Race lets whichever recognises first win, so a swipe never
-  // also opens the pile.
+  // One detector on the whole tile arbitrates everything. The pan only
+  // activates after 10px sideways and Race lets whichever recognises first
+  // win, so a swipe never also taps. A tap (max 10px movement) or long press
+  // (500ms, max 10px movement) is routed by where it lands: on the cover area
+  // it concerns the front book, below it (name text) it opens the pile.
+  const coverBottom = topPad + coverHeight
   const tap = Gesture.Tap()
     .runOnJS(true)
     .maxDistance(ACTIVE_OFFSET_X)
-    .onEnd((_event, success) => {
-      if (success) onOpen()
+    .onEnd((event, success) => {
+      if (!success || !front) return
+      if (event.y <= coverBottom) openFromPile(front)
+      else onOpen()
+    })
+  const longPress = Gesture.LongPress()
+    .runOnJS(true)
+    .minDuration(500)
+    .maxDistance(ACTIVE_OFFSET_X)
+    .onStart((event) => {
+      if (!front || event.y > coverBottom) return
+      lightHaptic()
+      openFromPile(front, true)
     })
 
-  const gesture = Gesture.Race(pan, tap)
+  const gesture = Gesture.Race(pan, longPress, tap)
 
   const frontStyle = useAnimatedStyle(() => ({
     opacity: appear.value,
@@ -177,7 +197,11 @@ export function SwipePile({
   function onAccessibilityAction(event: AccessibilityActionEvent) {
     switch (event.nativeEvent.actionName) {
       case "activate":
+      case "openPile":
         onOpen()
+        break
+      case "openBook":
+        if (front) openFromPile(front)
         break
       case "increment":
         go(1)
@@ -202,6 +226,8 @@ export function SwipePile({
         accessibilityLabel={`${label}${position}`}
         accessibilityActions={[
           { name: "activate" },
+          { name: "openBook", label: "Open book" },
+          { name: "openPile", label: `Open ${openLabel}` },
           { name: "increment", label: "Next book" },
           { name: "decrement", label: "Previous book" },
         ]}
