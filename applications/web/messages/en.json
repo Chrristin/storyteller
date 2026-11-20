@@ -1338,6 +1338,43 @@
             "scanRunning": "Scan in progress ({source})",
             "scheduleLink": "Change the scan schedule"
           },
+          "joinFormats": {
+            "title": "Join ebooks and audiobooks",
+            "description": "Joins an ebook-only book and an audiobook-only book that are the same title into one book with both formats. It only joins when it is very sure. The other cases are listed as unclear and left alone. The nightly run at 03:30 does this too, unless it is turned off.",
+            "preview": "Preview",
+            "previewing": "Looking at your library",
+            "refresh": "Preview again",
+            "previewFailed": "Could not preview. {message}",
+            "summary": "{considered, plural, one {# book checked} other {# books checked}}. {pairs, plural, one {# pair} other {# pairs}} would be joined, {unclear, plural, one {# match is} other {# matches are}} unclear.",
+            "nothing": "Nothing to join.",
+            "pairsTitle": "Would be joined",
+            "unclearTitle": "Unclear, left alone",
+            "pair": "{ebook} + {audiobook}",
+            "reason": {
+              "identifier": "Shared identifier",
+              "title-and-author": "Same title and author",
+              "title-only": "Same title only"
+            },
+            "unclear": "{title}: matches several books ({candidates})",
+            "join": "Join {count, plural, one {# book} other {# books}}",
+            "confirmTitle": "Join {count, plural, one {# book} other {# books}}?",
+            "confirmBody": "The audiobook-only entries will be merged into the ebook entries. Reading status, ratings, shelves and progress are kept. This cannot be undone from the web app, so make a backup first if you can.",
+            "confirmJoin": "Join",
+            "failed": "Could not join the books. {message}",
+            "resultTitle": "Result",
+            "joined": "{count, plural, one {# book joined.} other {# books joined.}}",
+            "pairError": "{ebook} + {audiobook}: {error}"
+          },
+          "drawCovers": {
+            "title": "Draw covers for books without one",
+            "description": "Draws a cover from the title for ebooks and read-alouds that have none. Audiobooks and books that already have a cover are not touched. A real cover added later replaces the drawn one.",
+            "draw": "Draw covers",
+            "confirmTitle": "Draw covers?",
+            "confirmBody": "This draws a cover for every ebook and read-aloud that has none. You can replace a drawn cover with a real one at any time.",
+            "confirmDraw": "Draw covers",
+            "result": "{generated, plural, one {# cover drawn} other {# covers drawn}}, {skipped, plural, one {# book skipped} other {# books skipped}}.",
+            "failed": "Could not draw covers. {message}"
+          },
           "caches": {
             "title": "Caches",
             "description": "Cached files. Can be removed without losing data to save space, but may make some operations to take longer.",

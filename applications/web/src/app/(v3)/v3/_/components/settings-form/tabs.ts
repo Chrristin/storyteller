@@ -72,6 +72,18 @@ export const SETTINGS_SECTIONS = [
     key: "scan",
     permission: "bookProcess",
   },
+  {
+    id: "joinFormats",
+    page: "maintenance",
+    key: "joinFormats",
+    permission: "bookCreate",
+  },
+  {
+    id: "drawCovers",
+    page: "maintenance",
+    key: "drawCovers",
+    permission: "bookUpdate",
+  },
   { id: "caches", page: "maintenance", key: "caches" },
   { id: "leftovers", page: "maintenance", key: "leftovers" },
   { id: "logFiles", page: "maintenance", key: "logs" },

@@ -23,7 +23,11 @@ export const GET = withHasPermission("bookCreate")(async (request) => {
  * Add ?dryRun=true to see what it would link without changing anything.
  */
 export const POST = withHasPermission("bookCreate")(async (request) => {
-  const dryRun = new URL(request.url).searchParams.get("dryRun") === "true"
-  const result = await runBookLinker({ dryRun })
+  const params = new URL(request.url).searchParams
+  const dryRun = params.get("dryRun") === "true"
+  // ?level=probable also joins same-title matches without a matching author,
+  // as the preview in Settings shows.
+  const level = params.get("level") === "probable" ? "probable" : undefined
+  const result = await runBookLinker({ dryRun, ...(level ? { level } : {}) })
   return Response.json(result)
 })

@@ -39,6 +39,7 @@ import {
 } from "@/store/api"
 import { formatBytes } from "@/strings"
 
+import { DrawCoversSection, JoinFormatsSection } from "./join-formats-section"
 import { SettingsCard, SettingsLink, SettingsSection } from "./shared"
 
 function LibraryScanSection() {
@@ -748,9 +749,12 @@ function PathRewriteSection() {
 }
 
 export function MaintenanceTab() {
+  const permissions = usePermissions()
   return (
     <div className="space-y-6">
       <LibraryScanSection />
+      {permissions?.bookCreate && <JoinFormatsSection />}
+      {permissions?.bookUpdate && <DrawCoversSection />}
       <CachesSection />
       <LeftoversSection />
       <LogsSection />

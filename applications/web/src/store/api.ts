@@ -117,6 +117,8 @@ import {
   type TitleCleanupPage,
   type TitleCleanupUndoResult,
 } from "@/database/titleCleanup"
+import { type LinkRunResult } from "@/bookLinker"
+import { type GenerateMissingCoversResult } from "@/images/generatedCovers"
 import { type ApplyResult } from "@/hardcover/apply"
 import { type HardcoverIdentifyStatus } from "@/hardcover/status"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
@@ -2844,6 +2846,28 @@ export const api = createApi({
       }),
       invalidatesTags: ["TitleCleanup", "Books"],
     }),
+    previewBookLinks: build.mutation<LinkRunResult, void>({
+      query: () => ({ url: "/books/auto-link", params: { level: "probable" } }),
+    }),
+    runBookLinks: build.mutation<LinkRunResult, void>({
+      query: () => ({
+        url: "/books/auto-link",
+        method: "POST",
+        params: { level: "probable" },
+      }),
+      invalidatesTags: [
+        "Books",
+        "HomeSections",
+        "HomeStats",
+        "Series",
+        "Tags",
+        "UserShelves",
+      ],
+    }),
+    generateMissingCovers: build.mutation<GenerateMissingCoversResult, void>({
+      query: () => ({ url: "/books/covers/generate-missing", method: "POST" }),
+      invalidatesTags: ["Books", "HomeSections"],
+    }),
     getDriveStatus: build.query<DriveStatus, void>({
       query: () => "/drive",
       providesTags: ["GoogleDrive"],
@@ -3177,6 +3201,9 @@ export const {
   useAcceptAllHardcoverMutation,
   useAcceptSelectedHardcoverMutation,
   useGetTitleCleanupPreviewQuery,
+  usePreviewBookLinksMutation,
+  useRunBookLinksMutation,
+  useGenerateMissingCoversMutation,
   useApplyTitleCleanupMutation,
   useUndoTitleCleanupMutation,
   useGetDriveStatusQuery,

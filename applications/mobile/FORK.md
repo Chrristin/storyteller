@@ -146,9 +146,14 @@ formats. It runs every night at 03:30 server time.
   are kept.
 - `STORYTELLER_AUTO_LINK=false` turns it off. `STORYTELLER_AUTO_LINK_CRON`
   changes the schedule.
-- To run it now: `POST /api/v2/books/auto-link?dryRun=true` shows what it
-  would link; without `dryRun` it links. Needs a login with book-create
-  permission.
+- To run it now, use Settings, Maintenance, "Join ebooks and audiobooks":
+  Preview lists what would be joined (and the unclear matches), then
+  "Join N books" runs it after a confirm. It uses the probable level, so it
+  also joins same-title matches without a matching author. Needs book-create
+  permission. The API is the same as before: `GET /api/v2/books/auto-link?level=probable`
+  is the dry run, `POST /api/v2/books/auto-link?level=probable` joins.
+- Settings, Maintenance, "Draw covers for books without one" calls
+  `POST /api/v2/books/covers/generate-missing` (needs book-update permission).
 
 ## Rating and favourites sync
 
