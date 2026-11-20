@@ -99,6 +99,21 @@ export function BookCover({
   if (hasTextCover) {
     return (
       <View className={frame} style={{ height, width }}>
+        {/* Shows only while the image is missing (no server yet, offline, or
+            the server has no text cover); the image draws over it. */}
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          className="absolute inset-0 justify-end p-2"
+        >
+          <Text
+            className="text-muted-foreground text-[11px] font-semibold"
+            numberOfLines={4}
+          >
+            {book.title}
+          </Text>
+        </View>
         <EbookCover book={book} />
         {overlays}
       </View>

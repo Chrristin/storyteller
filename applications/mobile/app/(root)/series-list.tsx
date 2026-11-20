@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router"
 import { useMemo } from "react"
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native"
+import { ScrollView, View, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { MiniPlayerWidget } from "@/components/MiniPlayerWidget"
-import { PileStack } from "@/components/PileStack"
+import { SwipePile } from "@/components/SwipePile"
+import { pileTileWidth } from "@/components/bookGridLayout"
 import { ScreenHeader } from "@/components/ScreenHeader"
 import { Text } from "@/components/ui/text"
 import { type BookWithRelations } from "@/database/books"
@@ -12,7 +13,6 @@ import { buildPiles } from "@/lib/piles"
 import { useListBooksQuery } from "@/store/localApi"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
-const GAP = 12
 const SIDE = 20
 
 export default function SeriesListScreen() {
@@ -23,8 +23,8 @@ export default function SeriesListScreen() {
 
   const piles = useMemo(() => buildPiles(books, "series"), [books])
 
-  const cellWidth = Math.floor(
-    (dimensions.width - insets.left - insets.right - SIDE * 2 - GAP) / 2,
+  const cellWidth = pileTileWidth(
+    dimensions.width - (SIDE + Math.max(insets.left, insets.right)) * 2,
   )
 
   return (
@@ -40,41 +40,41 @@ export default function SeriesListScreen() {
             None of your books are in a series yet.
           </Text>
         ) : (
-          <View className="flex-row flex-wrap" style={{ columnGap: GAP }}>
+          <View className="-mx-1.5 flex-row flex-wrap">
             {piles.map((pile) => (
-              <Pressable
-                key={`${pile.kind}-${pile.uuid}`}
-                accessibilityRole="button"
-                accessibilityLabel={`${pile.name}, ${pile.count} books${
-                  pile.missing > 0 ? `, ${pile.missing} missing` : ""
-                }`}
-                className="pt-2 pb-4"
-                style={{ width: cellWidth }}
-                onPress={() =>
-                  router.push({
-                    pathname: "/series/[uuid]",
-                    params: { uuid: pile.uuid },
-                  })
-                }
-              >
-                <PileStack covers={pile.covers} width={cellWidth} />
-                <Text className="mt-3 text-sm font-semibold" numberOfLines={1}>
-                  {pile.name}
-                </Text>
-                <View className="mt-0.5 flex-row items-center gap-1.5">
-                  <Text className="text-muted-foreground text-xs">
-                    {pile.count} {pile.count === 1 ? "book" : "books"}
+              <View key={`${pile.kind}-${pile.uuid}`} className="mx-1.5 my-1.5">
+                <SwipePile
+                  books={pile.books}
+                  count={pile.count}
+                  width={cellWidth}
+                  label={`${pile.name}, ${pile.count} ${pile.count === 1 ? "book" : "books"}${
+                    pile.missing > 0 ? `, ${pile.missing} missing` : ""
+                  }`}
+                  onOpen={() =>
+                    router.push({
+                      pathname: "/series/[uuid]",
+                      params: { uuid: pile.uuid },
+                    })
+                  }
+                >
+                  <Text className="text-sm font-semibold" numberOfLines={1}>
+                    {pile.name}
                   </Text>
-                  {pile.missing > 0 && (
-                    <>
-                      <View className="bg-missing size-1.5 rounded-full" />
-                      <Text className="text-missing text-xs">
-                        {pile.missing} missing
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </Pressable>
+                  <View className="mt-0.5 flex-row items-center gap-1.5">
+                    <Text className="text-muted-foreground text-xs">
+                      {pile.count} {pile.count === 1 ? "book" : "books"}
+                    </Text>
+                    {pile.missing > 0 && (
+                      <>
+                        <View className="bg-missing size-1.5 rounded-full" />
+                        <Text className="text-missing text-xs">
+                          {pile.missing} missing
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                </SwipePile>
+              </View>
             ))}
           </View>
         )}

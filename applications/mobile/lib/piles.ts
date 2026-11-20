@@ -32,6 +32,8 @@ export interface Pile<B extends PileBook = PileBook> {
   count: number
   /** Up to three books to show as covers. */
   covers: B[]
+  /** Every book in the pile in swipe order (series: position then title; authors: newest added first). */
+  books: B[]
   /** How many numbers are missing from a series (always 0 for authors). */
   missing: number
 }
@@ -55,28 +57,37 @@ function sortKey(position: number | null | undefined) {
   return isWholePosition(position) ? position : Number.POSITIVE_INFINITY
 }
 
-/** The first three books by series position (unpositioned last), then title. */
-export function seriesCovers<B extends PileBook>(
-  books: B[],
+/** Every book by series position (unpositioned last), then title. */
+export function orderSeriesBooks<B extends PileBook>(
+  books: readonly B[],
   seriesName: string,
 ): B[] {
   const key = groupKey("series", seriesName)
   const positionOf = (book: B) =>
     book.series.find((s) => groupKey("series", s.name) === key)?.position
-  return [...books]
-    .sort(
-      (a, b) =>
-        sortKey(positionOf(a)) - sortKey(positionOf(b)) ||
-        a.title.localeCompare(b.title),
-    )
-    .slice(0, 3)
+  return [...books].sort(
+    (a, b) =>
+      sortKey(positionOf(a)) - sortKey(positionOf(b)) ||
+      a.title.localeCompare(b.title),
+  )
+}
+
+/** The first three books by series position (unpositioned last), then title. */
+export function seriesCovers<B extends PileBook>(
+  books: B[],
+  seriesName: string,
+): B[] {
+  return orderSeriesBooks(books, seriesName).slice(0, 3)
+}
+
+/** Every book, newest added first. */
+export function orderAuthorBooks<B extends PileBook>(books: readonly B[]): B[] {
+  return [...books].sort((a, b) => time(b.createdAt) - time(a.createdAt))
 }
 
 /** The three books added most recently. */
 export function authorCovers<B extends PileBook>(books: B[]): B[] {
-  return [...books]
-    .sort((a, b) => time(b.createdAt) - time(a.createdAt))
-    .slice(0, 3)
+  return orderAuthorBooks(books).slice(0, 3)
 }
 
 interface Entry {
@@ -222,14 +233,18 @@ export function buildPiles<B extends PileBook>(
       ),
     )
     const all = [...unique.values()]
+    const ordered =
+      kind === "series"
+        ? orderSeriesBooks(all, display.name)
+        : orderAuthorBooks(all)
     piles.push({
       kind,
       uuid: main.uuid,
       name:
         kind === "series" ? cleanSeriesDisplayName(display.name) : display.name,
       count: all.length,
-      covers:
-        kind === "series" ? seriesCovers(all, display.name) : authorCovers(all),
+      covers: ordered.slice(0, 3),
+      books: ordered,
       missing: missingByName.get(key) ?? 0,
     })
   }

@@ -1,16 +1,16 @@
 import { useLocalSearchParams, useRouter } from "expo-router"
 import { useMemo } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { ScrollView, View, useWindowDimensions } from "react-native"
 
 import { BookGrid } from "@/components/BookGrid"
-import { PileStack } from "@/components/PileStack"
+import { SwipePile } from "@/components/SwipePile"
+import { calculateBookGridLayout } from "@/components/bookGridLayout"
 import { Text } from "@/components/ui/text"
 import { type BookWithRelations } from "@/database/books"
 import { authorCollectionDetail } from "@/lib/authorCollections"
 import { useListBooksQuery } from "@/store/localApi"
 
 const EMPTY_BOOKS: BookWithRelations[] = []
-const PILE_WIDTH = 150
 
 /**
  * An automatic author collection: the author's series as piles, then the
@@ -19,6 +19,9 @@ const PILE_WIDTH = 150
 export default function AuthorCollectionScreen() {
   const { author } = useLocalSearchParams() as { author: string }
   const router = useRouter()
+  const dimensions = useWindowDimensions()
+  // The same tile width as the book grids, so series piles match them.
+  const pileWidth = calculateBookGridLayout(dimensions.width).thumbnailWidth
   const { data: books = EMPTY_BOOKS } = useListBooksQuery()
 
   const detail = useMemo(
@@ -42,27 +45,26 @@ export default function AuthorCollectionScreen() {
             contentContainerClassName="gap-3"
           >
             {detail.series.map((pile) => (
-              <Pressable
+              <SwipePile
                 key={pile.uuid}
-                accessibilityRole="button"
-                accessibilityLabel={`${pile.name}, ${pile.count} ${pile.count === 1 ? "book" : "books"}`}
-                className="pt-1 pb-2"
-                style={{ width: PILE_WIDTH }}
-                onPress={() =>
+                books={pile.books}
+                count={pile.count}
+                width={pileWidth}
+                label={`${pile.name}, ${pile.count} ${pile.count === 1 ? "book" : "books"}`}
+                onOpen={() =>
                   router.push({
                     pathname: "/series/[uuid]",
                     params: { uuid: pile.uuid },
                   })
                 }
               >
-                <PileStack covers={pile.covers} width={PILE_WIDTH} />
-                <Text className="mt-3 text-sm font-semibold" numberOfLines={1}>
+                <Text className="text-sm font-semibold" numberOfLines={1}>
                   {pile.name}
                 </Text>
                 <Text className="text-muted-foreground text-xs">
                   {pile.count} {pile.count === 1 ? "book" : "books"}
                 </Text>
-              </Pressable>
+              </SwipePile>
             ))}
           </ScrollView>
         </View>

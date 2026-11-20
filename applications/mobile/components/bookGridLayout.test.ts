@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 
 import { test } from "vitest"
 
-import { calculateBookGridLayout } from "./bookGridLayout"
+import { calculateBookGridLayout, pileTileWidth } from "./bookGridLayout"
 
 const thumbnailHorizontalMargin = 12
 const gridContainerPadding = 24
@@ -41,4 +41,12 @@ test("always returns whole columns that fit the width left by the safe area", ()
       `width ${width} laid out ${numColumns} columns of ${thumbnailWidth}`,
     )
   }
+})
+
+test("pile tiles use the same width as the Home book grid thumbnails", () => {
+  assert.equal(
+    pileTileWidth(350),
+    calculateBookGridLayout(350 + 36).thumbnailWidth,
+  )
+  assert.equal(pileTileWidth(350), 108)
 })

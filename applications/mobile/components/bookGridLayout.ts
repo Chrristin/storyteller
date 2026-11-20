@@ -25,3 +25,13 @@ export function calculateBookGridLayout(widthOutsideSafeArea: number) {
 
   return { numColumns, thumbnailWidth }
 }
+
+/**
+ * Width of one pile tile so that three tiles line up with the book grids.
+ * `contentWidth` is the screen width minus the side padding of the screen; the
+ * tiles sit in a row with 6px margins on each side, like the Home book grids.
+ */
+export function pileTileWidth(contentWidth: number) {
+  return calculateBookGridLayout(contentWidth + horizontalPadding)
+    .thumbnailWidth
+}

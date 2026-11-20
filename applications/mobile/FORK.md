@@ -207,13 +207,39 @@ name that you already have is left as it is. Pure white on pure black is the
 maximum contrast (21:1); these sit at about 10:1 to 13:1, which most people find
 easier on the eyes for long reading.
 
+## Swipeable piles
+
+Author and series piles (Home Authors, the Authors and Series screens, the series
+strip on an author page) are `components/SwipePile.tsx`: one front cover (a plain
+`BookCover` without title text, badge or progress line), the edges of the next
+two books peeking out behind it as plain rounded rectangles in their cover
+colours, a count badge bottom right, and position dots under the cover. Three
+tiles per row, with the same width maths as the Home book grids
+(`pileTileWidth` in `components/bookGridLayout.ts`). Home shows 6 authors.
+
+- **Order.** Authors: newest added first. Series: series position (unpositioned
+  last), then title. The pile carries every book (`Pile.books`,
+  `AuthorCollection.books`) and is capped at 30 (`PILE_BOOK_CAP`), so only the
+  first 30 can be swiped to; the badge and count line show the real total.
+- **Swipe.** A horizontal pan on the tile (active after 10 px sideways, fails
+  after 10 px vertical so the ScrollView still scrolls). The front cover follows
+  the finger and tilts; past 25% of the tile width, or a fling over 600 px/s
+  that moved at least 12 px, it slides off and the next book (drag left) or
+  previous (drag right) becomes the front, wrapping at the ends. Otherwise it
+  springs back. Light haptic on each change. A tap (race against the pan, max
+  10 px movement) opens the pile, so a swipe never also opens it.
+- **Dots.** Up to 5 books: one dot each. More: always 5 dots, each a fifth of the
+  books, and the active (wider, accent) dot is the bucket the current book is in.
+- **Screen readers.** The tile is a button labelled "<name>, N books, book i of
+  n" with actions Next book / Previous book (increment/decrement).
+- Logic with tests: `lib/swipePile.ts`.
+
 ## Series and missing books
 
 The Library menu (the three dots) has a "Series" item (`app/(root)/series-list.tsx`,
-route `/series-list`). It shows your series as tiles of three covers with the
+route `/series-list`). It shows your series as swipeable piles (see below) with the
 name, the number of books and, when there are gaps, "M missing" in amber. Tap a
-tile to open the series page. Series tiles show the first three books by series
-position. If the same series name comes from two servers it is one tile. The old
+pile to open the series page. If the same series name comes from two servers it is one pile. The old
 Piles screen, its Authors tab and the Missing books list are gone: authors are
 covered by the automatic Author collections on Home.
 

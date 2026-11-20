@@ -47,6 +47,10 @@ test("series piles use the first three books by position", () => {
   )
   assert.equal(pile?.count, 5)
   assert.equal(pile?.missing, 0)
+  assert.deepEqual(
+    pile?.books.map((b) => b.uuid),
+    ["b1", "b2", "b3", "b4", "loose"],
+  )
 })
 
 test("author piles use the newest added books and the first author", () => {
@@ -70,6 +74,10 @@ test("author piles use the newest added books and the first author", () => {
   assert.deepEqual(
     piles[0]?.covers.map((b) => b.uuid),
     ["new", "mid", "old"],
+  )
+  assert.deepEqual(
+    piles[0]?.books.map((b) => b.uuid),
+    ["new", "mid", "old", "older"],
   )
   assert.equal(piles[1]?.count, 1)
 })

@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router"
-import { Pressable } from "react-native"
 
 import { type BookWithRelations } from "@/database/books"
 import {
@@ -7,10 +6,10 @@ import {
   authorCollectionLabel,
 } from "@/lib/authorCollections"
 
-import { PileStack } from "./PileStack"
+import { SwipePile } from "./SwipePile"
 import { Text } from "./ui/text"
 
-/** An automatic author collection as a stack of covers with its label. */
+/** An automatic author collection as a swipeable pile with its label. */
 export function AuthorCollectionTile({
   collection,
   width,
@@ -22,25 +21,24 @@ export function AuthorCollectionTile({
   const label = authorCollectionLabel(collection)
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${collection.name}, ${label}`}
-      className="pt-2 pb-4"
-      style={{ width }}
-      onPress={() =>
+    <SwipePile
+      books={collection.books}
+      count={collection.books.length}
+      width={width}
+      label={`${collection.name}, ${label}`}
+      onOpen={() =>
         router.push({
           pathname: "/author-collection/[author]",
           params: { author: collection.key },
         })
       }
     >
-      <PileStack covers={collection.covers} width={width} />
-      <Text className="mt-3 text-sm font-semibold" numberOfLines={1}>
+      <Text className="text-sm font-semibold" numberOfLines={1}>
         {collection.name}
       </Text>
       <Text className="text-muted-foreground text-xs" numberOfLines={1}>
         {label}
       </Text>
-    </Pressable>
+    </SwipePile>
   )
 }
