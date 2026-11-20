@@ -152,7 +152,7 @@ export function CoverImportPanel({
             setCompact(event.currentTarget.scrollTop > 16)
           }}
         >
-          <div className="bg-background sticky top-0 z-10 grid auto-cols-fr grid-flow-col gap-4 border-b px-4 py-3">
+          <div className="bg-background sticky top-0 z-10 grid auto-cols-[minmax(0,1fr)] grid-flow-col gap-4 border-b px-4 py-3">
             {sides.map((side) => (
               <CoverSlot
                 key={side}
@@ -169,8 +169,8 @@ export function CoverImportPanel({
 
           <div
             className={cn(
-              "grid gap-x-6 gap-y-8 p-4",
-              sides.length === 2 && "md:grid-cols-2",
+              "grid grid-cols-[minmax(0,1fr)] gap-x-6 gap-y-8 p-4",
+              sides.length === 2 && "lg:grid-cols-[repeat(2,minmax(0,1fr))]",
             )}
           >
             {sides.map((side) => (

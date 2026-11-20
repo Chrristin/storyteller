@@ -223,7 +223,7 @@ export function ImportDialogShell({
   children: ReactNode
 }) {
   return (
-    <DialogContent className="flex h-[min(52rem,92vh)] flex-col gap-0 p-0 sm:max-w-[min(90rem,calc(100vw-2rem))]">
+    <DialogContent className="flex h-[min(52rem,92vh)] min-w-0 flex-col gap-0 p-0 sm:max-w-[min(90rem,calc(100vw-2rem))] md:left-1/2">
       <DialogHeader className="gap-1.5 border-b px-6 py-3">
         <div className="mr-8 flex min-h-8 flex-wrap items-center gap-x-3 gap-y-2 md:mr-16">
           <DialogTitle
