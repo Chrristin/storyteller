@@ -7,6 +7,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { apiErrorMessage } from "@v3/_/lib/api-error"
 
 import { type LinkRunResult } from "@/bookLinker"
 import {
@@ -16,26 +17,6 @@ import {
 } from "@/store/api"
 
 import { SettingsCard, SettingsSection } from "./shared"
-
-function serverMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null && "data" in error) {
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "string") return data
-    if (typeof data === "object" && data !== null) {
-      const { error: e, message } = data as {
-        error?: unknown
-        message?: unknown
-      }
-      if (typeof e === "string") return e
-      if (typeof message === "string") return message
-    }
-  }
-  if (typeof error === "object" && error !== null && "error" in error) {
-    const e = (error as { error?: unknown }).error
-    if (typeof e === "string") return e
-  }
-  return ""
-}
 
 /**
  * Preview and run for joining ebook-only and audiobook-only books. Nothing
@@ -56,7 +37,9 @@ export function JoinFormatsSection() {
       setPlan(await preview().unwrap())
     } catch (error) {
       setPlan(null)
-      toast.error(t.plain("previewFailed", { message: serverMessage(error) }))
+      toast.error(
+        t.plain("previewFailed", { message: apiErrorMessage(error) ?? "" }),
+      )
     }
   }
 
@@ -65,7 +48,7 @@ export function JoinFormatsSection() {
       setResult(await run().unwrap())
       setPlan(null)
     } catch (error) {
-      toast.error(t.plain("failed", { message: serverMessage(error) }))
+      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
     }
   }
 
@@ -219,7 +202,7 @@ export function DrawCoversSection() {
       setOutcome({ generated, skipped })
     } catch (error) {
       setOutcome(null)
-      toast.error(t.plain("failed", { message: serverMessage(error) }))
+      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
     }
   }
 

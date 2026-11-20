@@ -7,6 +7,7 @@ import { Button } from "@v3/_/components/ui/button"
 import { ConfirmDialog } from "@v3/_/components/ui/confirm-dialog"
 import { Spinner } from "@v3/_/components/ui/spinner"
 import { useTranslation } from "@v3/_/hooks/use-translation"
+import { apiErrorMessage } from "@v3/_/lib/api-error"
 
 import { cn } from "@/cn"
 import { type DuplicateBook, type DuplicatePreview } from "@/duplicates"
@@ -17,17 +18,6 @@ import {
 import { formatBytes } from "@/strings"
 
 import { SettingsCard, SettingsSection } from "./shared"
-
-function serverMessage(error: unknown): string {
-  if (typeof error === "object" && error !== null && "data" in error) {
-    const data = (error as { data?: unknown }).data
-    if (typeof data === "object" && data !== null) {
-      const { message } = data as { message?: unknown }
-      if (typeof message === "string") return message
-    }
-  }
-  return ""
-}
 
 function bookDetail(book: DuplicateBook, format: "ebook" | "audiobook") {
   const size = format === "ebook" ? book.ebookSize : book.audiobookSize
@@ -61,7 +51,7 @@ export function FindDuplicatesSection() {
       setSkipped(new Set())
     } catch (error) {
       setPreview(null)
-      toast.error(t.plain("failed", { message: serverMessage(error) }))
+      toast.error(t.plain("failed", { message: apiErrorMessage(error) ?? "" }))
     }
   }
 
@@ -86,7 +76,9 @@ export function FindDuplicatesSection() {
       setArchived(result.archived)
       setPreview(null)
     } catch (error) {
-      toast.error(t.plain("archiveFailed", { message: serverMessage(error) }))
+      toast.error(
+        t.plain("archiveFailed", { message: apiErrorMessage(error) ?? "" }),
+      )
     }
   }
 
