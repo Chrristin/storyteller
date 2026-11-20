@@ -429,9 +429,9 @@ export const BookCard = memo(function BookCard({
     <>
       <div className="relative flex aspect-2/3 shrink-0 flex-col items-center justify-center transition-shadow">
         <div
+          // No coloured panel behind the cover: it only holds the progress bar.
           className={cn(
-            "from-cover-well to-cover-wash dark:to-cover-header",
-            "rounded-card absolute inset-0 flex flex-col-reverse overflow-hidden bg-linear-to-t",
+            "rounded-card absolute inset-0 flex flex-col-reverse overflow-hidden",
           )}
         >
           {progress !== null && progress > 0 && (

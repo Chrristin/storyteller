@@ -163,7 +163,7 @@ export const BookListItem = memo(function BookListItem(
     >
       {/* cover */}
       {showThumbnail && (
-        <div className="bg-cover-well relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
+        <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-md">
           <div className="relative flex h-12 w-10 items-center justify-center">
             <Cover book={book} width={50} interactive={false} />
           </div>
