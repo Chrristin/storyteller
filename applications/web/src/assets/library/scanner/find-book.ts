@@ -29,7 +29,8 @@ export async function findExistingBook(
     if (book) return book
   }
 
-  const allBooks = books ?? (await getBooks())
+  const allBooks =
+    books ?? (await getBooks(null, undefined, { archived: "all" }))
 
   const exact = allBooks.find((book) =>
     bookReferencesPath(book, candidate.format, candidate.filepath),

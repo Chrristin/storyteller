@@ -131,7 +131,9 @@ async function materializeCandidates(
     return all
   }
 
-  const books = await getBooks()
+  // the scanner sees archived books too, so it never re-imports one or
+  // treats its file as missing
+  const books = await getBooks(null, undefined, { archived: "all" })
   if (ctx.signal.aborted) return []
 
   if (request.kind === "folders") {

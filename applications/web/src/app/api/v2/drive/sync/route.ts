@@ -41,7 +41,10 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
   }
 
   // Only books this user can see, like every other book route.
-  const books = await getBooks(uuids, request.auth.user.id)
+  // archived books are never synced
+  const books = await getBooks(uuids, request.auth.user.id, {
+    archived: "exclude",
+  })
 
   try {
     const userId = request.auth.user.id

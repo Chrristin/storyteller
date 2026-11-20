@@ -414,7 +414,8 @@ export async function runBookLinker(
   options: { dryRun?: boolean; level?: LinkLevel } = {},
 ): Promise<LinkRunResult> {
   const level = options.level ?? getLinkLevel()
-  const books = await getBooks()
+  // archived books are left out of the pairing
+  const books = await getBooks(null, undefined, { archived: "exclude" })
   const { pairs, ambiguous } = findLinkPlan(books)
   const result: LinkRunResult = {
     considered: books.length,

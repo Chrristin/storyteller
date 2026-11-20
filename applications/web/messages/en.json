@@ -495,6 +495,11 @@
     "cancelSelection": "Stop selecting"
   },
   "BookActions": {
+    "moveToArchive": "Move to Archive",
+    "moveBackToLibrary": "Move back to library",
+    "archivedToast": "{count, plural, one {# book moved to the Archive} other {# books moved to the Archive}}",
+    "unarchivedToast": "{count, plural, one {# book moved back to the library} other {# books moved back to the library}}",
+    "archiveFailed": "Could not change the Archive",
     "bulkCoverColors": {
       "title": "Set cover colors",
       "description": "Give all {count, plural, one {# selected book} other {# selected books}} the same pair of cover colors.",
@@ -1379,6 +1384,26 @@
             "result": "{generated, plural, one {# cover drawn} other {# covers drawn}}, {skipped, plural, one {# book skipped} other {# books skipped}}.",
             "failed": "Could not draw covers. {message}"
           },
+          "duplicates": {
+            "title": "Find duplicates",
+            "description": "Groups books with the same title and author in the same format. One is kept, the others go to the Archive. Nothing is deleted and no file is touched.",
+            "find": "Find duplicates",
+            "summary": "{groups, plural, one {# group} other {# groups}}, {books, plural, one {# book} other {# books}} would be archived",
+            "nothing": "No duplicates found.",
+            "partial": "Showing the first {shown} groups. Archive these, then find duplicates again for the rest.",
+            "skip": "Skip",
+            "unskip": "Include",
+            "keep": "Keep",
+            "archive": "Archive",
+            "archiveButton": "Archive {count, plural, one {# book} other {# books}}",
+            "hint": "Tap a row to choose the one to keep. Default: the largest file, then the newest.",
+            "confirmTitle": "Archive {count, plural, one {# book} other {# books}}?",
+            "confirmBody": "The books you did not choose to keep move to the Archive. They stay in your library with all their files and you can move them back at any time.",
+            "confirmArchive": "Archive",
+            "result": "{count, plural, one {# book moved to the Archive.} other {# books moved to the Archive.}}",
+            "failed": "Could not look for duplicates. {message}",
+            "archiveFailed": "Could not archive the books. {message}"
+          },
           "caches": {
             "title": "Caches",
             "description": "Cached files. Can be removed without losing data to save space, but may make some operations to take longer.",
@@ -1942,6 +1967,7 @@
     "home": "Home",
     "books": "Books",
     "alignmentQuality": "Book Reports",
+    "archive": "Archive",
     "allBooks": "All books",
     "collections": "Collections",
     "allCollections": "All collections",

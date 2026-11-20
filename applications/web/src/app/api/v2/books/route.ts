@@ -27,6 +27,10 @@ export const dynamic = "force-dynamic"
  * @summary List all books in the library
  * @desc Use the `alignedOnly` param to limit results to books that
  *       have been aligned by Storyteller successfully.
+ *
+ *       Archived books are left out by default. `archived=only` lists only
+ *       the archived books and `archived=all` lists both. Every book has an
+ *       `archivedAt` timestamp (null when not archived).
  */
 export const GET = withHasPermission("bookList")(async (request) => {
   const parsed = parseGetBooksOptions(request.nextUrl.searchParams)

@@ -40,6 +40,7 @@ export async function getHomeStats(userId: UUID): Promise<HomeStats> {
 
   const inLibraryRow = await db
     .selectFrom("book")
+    .where("book.archivedAt", "is", null)
     .select((eb) => eb.fn.countAll<number>().as("count"))
     .executeTakeFirst()
 

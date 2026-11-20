@@ -9,7 +9,7 @@ import {
 
 export type SidebarGroup = SidebarBuiltinGroup
 
-type AppSidebarLabelKey = "home" | "books" | "alignmentQuality"
+type AppSidebarLabelKey = "home" | "books" | "alignmentQuality" | "archive"
 type LibraryLabelKey =
   | "Series.plain"
   | "Authors.plain"
@@ -127,6 +127,14 @@ const BUILTIN_META = {
     countKey: "identifiers",
     labelNs: "LibraryPage",
     labelKey: "Identifier.plain",
+  },
+  archive: {
+    icon: icon.Archive,
+    href: "/archive",
+    countKey: "archive",
+    permission: "bookUpdate",
+    labelNs: "AppSidebar",
+    labelKey: "archive",
   },
 } as const satisfies Record<SidebarBuiltinKey, BuiltinMeta>
 

@@ -260,6 +260,13 @@ export async function cleanShelfFiltersForDeletedEntity(
   }
 }
 
+/**
+ * Which books a listing shows with respect to the Archive. User-facing
+ * listings default to "exclude"; internal work (scanner, linker, tidy, merge)
+ * does not go through these helpers and always sees every book.
+ */
+export type ArchivedMode = "exclude" | "only" | "all"
+
 export function bookVisibleTo(
   eb: ExpressionBuilder<DB, keyof DB>,
   bookUuidRef: ReferenceExpression<
@@ -267,13 +274,21 @@ export function bookVisibleTo(
     "book" | "bookToCreator" | "bookToSeries" | "bookToTag" | "bookToStatus"
   >,
   userId: UUID,
+  archived: ArchivedMode = "exclude",
 ): FilterExpression {
   return eb.exists(
     eb
       .selectFrom("bookAccess")
+      .innerJoin("book as accessBook", "accessBook.uuid", "bookAccess.bookUuid")
       .select(sql.lit(1).as("one"))
       .whereRef("bookAccess.bookUuid", "=", bookUuidRef)
-      .where("bookAccess.userId", "=", userId),
+      .where("bookAccess.userId", "=", userId)
+      .$if(archived === "exclude", (qb) =>
+        qb.where("accessBook.archivedAt", "is", null),
+      )
+      .$if(archived === "only", (qb) =>
+        qb.where("accessBook.archivedAt", "is not", null),
+      ),
   )
 }
 

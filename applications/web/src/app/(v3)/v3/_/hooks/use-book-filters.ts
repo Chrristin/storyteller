@@ -39,6 +39,8 @@ type UseBookFiltersOptions = {
   seed?: ShelfFilterNode | null
   seriesContext?: UUID
   collectionContext?: UUID
+  /** list only the archived books (the Archive page) */
+  archived?: "only"
   defaultSort?: BookSort[number]
 }
 
@@ -252,6 +254,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     if (effectiveFilter) arg.filter = effectiveFilter
     if (options.seriesContext) arg.series = options.seriesContext
     if (options.collectionContext) arg.collection = options.collectionContext
+    if (options.archived) arg.archived = options.archived
     return arg
   }, [
     sort,
@@ -259,6 +262,7 @@ export function useBookFilters(options: UseBookFiltersOptions = {}) {
     effectiveFilter,
     options.seriesContext,
     options.collectionContext,
+    options.archived,
   ])
 
   const activeFilterCount = isAdvanced

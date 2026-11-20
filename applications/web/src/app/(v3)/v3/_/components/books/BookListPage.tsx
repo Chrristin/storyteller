@@ -100,6 +100,8 @@ export type BookListSource =
       seed?: ShelfFilterNode | null
       seriesContext?: UUID
       collectionContext?: UUID
+      /** the Archive page lists only archived books */
+      archived?: "only"
       limit?: number
     }
   | {
@@ -219,6 +221,7 @@ function BookListPageInner({
     ...(isBooksSource && source.collectionContext
       ? { collectionContext: source.collectionContext }
       : {}),
+    ...(isBooksSource && source.archived ? { archived: source.archived } : {}),
     defaultSort: forceDisplayMode
       ? {
           field: forceDisplayMode.sortMode,
@@ -295,6 +298,7 @@ function BookListPageInner({
     if (source.seed) arg.filter = source.seed
     if (source.seriesContext) arg.series = source.seriesContext
     if (source.collectionContext) arg.collection = source.collectionContext
+    if (source.archived) arg.archived = source.archived
     return arg
   }, [isBooksSource, source])
 

@@ -65,7 +65,10 @@ export const POST = withHasPermission("bookDownload")(async (request) => {
     )
   }
 
-  const books = await getBooks(uuids, request.auth.user.id)
+  // archived books are never sent (they show up as skipped)
+  const books = await getBooks(uuids, request.auth.user.id, {
+    archived: "exclude",
+  })
 
   if (kindleBooks(books).length === 0) {
     return Response.json(

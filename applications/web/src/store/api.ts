@@ -34,6 +34,7 @@ import {
 } from "@/apiModels"
 import { type UpgradeResult } from "@/app/api/v2/books/[bookId]/upgrade-epub/route"
 import { type BackupInfo } from "@/backups"
+import { type LinkRunResult } from "@/bookLinker"
 import { type ChapterAudio } from "@/chapterAudio"
 import { type ApiTokenCreate } from "@/database/apiTokenTypes"
 import { type ApiTokenSummary } from "@/database/apiTokens"
@@ -98,6 +99,12 @@ import {
 import { type Status } from "@/database/statuses"
 import { type AddTagInput, type Tag } from "@/database/tags"
 import {
+  type TitleCleanupApplyResult,
+  type TitleCleanupBatch,
+  type TitleCleanupPage,
+  type TitleCleanupUndoResult,
+} from "@/database/titleCleanup"
+import {
   type PreferenceDefaults,
   type PreferenceDefaultsUpdate,
   type UserPreferences,
@@ -111,17 +118,11 @@ import {
   type DriveStatus,
   type DriveSyncResponse,
 } from "@/driveSync"
-import {
-  type TitleCleanupApplyResult,
-  type TitleCleanupBatch,
-  type TitleCleanupPage,
-  type TitleCleanupUndoResult,
-} from "@/database/titleCleanup"
-import { type LinkRunResult } from "@/bookLinker"
-import { type GenerateMissingCoversResult } from "@/images/generatedCovers"
+import { type DuplicatePreview } from "@/duplicates"
 import { type ApplyResult } from "@/hardcover/apply"
 import { type HardcoverIdentifyStatus } from "@/hardcover/status"
 import { type SeriesWithBooks } from "@/hooks/useFilterSortedSeries"
+import { type GenerateMissingCoversResult } from "@/images/generatedCovers"
 import {
   type JobListFilter,
   type JobListPatch,
@@ -841,6 +842,7 @@ export const api = createApi({
         if (queryArg.series) params.set("series", queryArg.series)
         if (queryArg.filter)
           params.set("filter", JSON.stringify(queryArg.filter))
+        if (queryArg.archived) params.set("archived", queryArg.archived)
         return `/books?${params.toString()}`
       },
       providesTags: ["Books"],
@@ -1309,6 +1311,7 @@ export const api = createApi({
         if (queryArg.series) params.set("series", queryArg.series)
         if (queryArg.filter)
           params.set("filter", JSON.stringify(queryArg.filter))
+        if (queryArg.archived) params.set("archived", queryArg.archived)
         return `/books/count?${params.toString()}`
       },
       transformResponse: (response: { count: number }) => response.count,
@@ -2846,6 +2849,53 @@ export const api = createApi({
       }),
       invalidatesTags: ["TitleCleanup", "Books"],
     }),
+    archiveBooks: build.mutation<void, { books: UUID[]; archived: boolean }>({
+      query: ({ books, archived }) => ({
+        url: "/books/archive",
+        method: "POST",
+        body: { books, archived },
+      }),
+      invalidatesTags: (_result, _error, { books }) => [
+        "Books",
+        ...books.map((uuid) => ({ type: "Books" as const, id: uuid })),
+        "HomeSections",
+        "HomeStats",
+        "Series",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Tags",
+        "Collections",
+        "UserShelves",
+        "Sidebar",
+      ],
+    }),
+    findDuplicates: build.mutation<DuplicatePreview, void>({
+      query: () => ({ url: "/library/duplicates", params: { limit: 500 } }),
+    }),
+    archiveDuplicates: build.mutation<
+      { archived: number; groups: number },
+      { groups: { keeperUuid: string; archiveUuids: string[] }[] }
+    >({
+      query: (body) => ({
+        url: "/library/duplicates/archive",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "Books",
+        "HomeSections",
+        "HomeStats",
+        "Series",
+        "Authors",
+        "Narrators",
+        "Translators",
+        "Tags",
+        "Collections",
+        "UserShelves",
+        "Sidebar",
+      ],
+    }),
     previewBookLinks: build.mutation<LinkRunResult, void>({
       query: () => ({ url: "/books/auto-link", params: { level: "probable" } }),
     }),
@@ -3201,6 +3251,9 @@ export const {
   useAcceptAllHardcoverMutation,
   useAcceptSelectedHardcoverMutation,
   useGetTitleCleanupPreviewQuery,
+  useArchiveBooksMutation,
+  useFindDuplicatesMutation,
+  useArchiveDuplicatesMutation,
   usePreviewBookLinksMutation,
   useRunBookLinksMutation,
   useGenerateMissingCoversMutation,
@@ -3236,6 +3289,7 @@ export type ListBooksQueryArg = {
   collection?: string | undefined
   series?: string | undefined
   filter?: ShelfFilter | undefined
+  archived?: "only" | undefined
 }
 
 export type ListShelfBooksQueryArg = {

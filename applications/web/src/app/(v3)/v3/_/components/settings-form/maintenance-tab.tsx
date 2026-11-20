@@ -39,6 +39,7 @@ import {
 } from "@/store/api"
 import { formatBytes } from "@/strings"
 
+import { FindDuplicatesSection } from "./find-duplicates-section"
 import { DrawCoversSection, JoinFormatsSection } from "./join-formats-section"
 import { SettingsCard, SettingsLink, SettingsSection } from "./shared"
 
@@ -755,6 +756,7 @@ export function MaintenanceTab() {
       <LibraryScanSection />
       {permissions?.bookCreate && <JoinFormatsSection />}
       {permissions?.bookUpdate && <DrawCoversSection />}
+      {permissions?.bookUpdate && <FindDuplicatesSection />}
       <CachesSection />
       <LeftoversSection />
       <LogsSection />

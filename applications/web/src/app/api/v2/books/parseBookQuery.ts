@@ -63,6 +63,13 @@ export function parseGetBooksOptions(
     opts.mediaFilter = mediaFilterParam as "ebook" | "audiobook" | "synced"
   }
 
+  const archivedParam = searchParams.get("archived")
+  if (archivedParam === "only" || archivedParam === "all") {
+    opts.archived = archivedParam
+  } else if (archivedParam && archivedParam !== "exclude") {
+    return { ok: false, error: "Invalid archived" }
+  }
+
   const statusParam = searchParams.get("status")
   if (statusParam) opts.status = statusParam as UUID
 

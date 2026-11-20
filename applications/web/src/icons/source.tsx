@@ -5,6 +5,7 @@ import {
   IconAlertOctagon,
   IconAlertTriangle,
   IconAlignLeft,
+  IconArchive,
   IconArrowAutofitDown,
   IconArrowAutofitWidth,
   IconArrowBack,
@@ -309,6 +310,7 @@ export const Bug = /*#__PURE__*/ styled(IconBug)
 export const ChartBar = /*#__PURE__*/ styled(IconChartBar)
 export const ChartRadar = /*#__PURE__*/ styled(IconChartRadar)
 export const ReportAnalytics = /*#__PURE__*/ styled(IconReportAnalytics)
+export const Archive = /*#__PURE__*/ styled(IconArchive)
 export const Certificate = /*#__PURE__*/ styled(IconCertificate)
 
 export const ArrowsSort = /*#__PURE__*/ styled(IconArrowsSort)

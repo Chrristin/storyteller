@@ -84,6 +84,12 @@ export const SETTINGS_SECTIONS = [
     key: "drawCovers",
     permission: "bookUpdate",
   },
+  {
+    id: "findDuplicates",
+    page: "maintenance",
+    key: "duplicates",
+    permission: "bookUpdate",
+  },
   { id: "caches", page: "maintenance", key: "caches" },
   { id: "leftovers", page: "maintenance", key: "leftovers" },
   { id: "logFiles", page: "maintenance", key: "logs" },

@@ -104,6 +104,7 @@ export interface Audiobook {
 }
 
 export interface Book {
+  archivedAt: string | null
   alignedAt: string | null
   alignedByStorytellerVersion: string | null
   alignedWith: string | null

@@ -182,6 +182,7 @@ export function seedBooks(
     ebook?: string
     audiobook?: string
     readaloud?: string
+    archived?: boolean
   }[],
 ) {
   const insertBook = ctx.sqlite.prepare(
@@ -200,6 +201,10 @@ export function seedBooks(
     `INSERT INTO readaloud (book_uuid, filepath, status, current_stage) VALUES (?, ?, 'ALIGNED', 'SPLIT_TRACKS')`,
   )
 
+  const markArchived = ctx.sqlite.prepare(
+    `UPDATE book SET archived_at = CURRENT_TIMESTAMP WHERE uuid = ?`,
+  )
+
   const run = ctx.sqlite.transaction(
     (
       items: {
@@ -207,6 +212,7 @@ export function seedBooks(
         ebook?: string
         audiobook?: string
         readaloud?: string
+        archived?: boolean
       }[],
     ) => {
       const uuids: string[] = []
@@ -216,6 +222,7 @@ export function seedBooks(
         const row = insertBook.get(item.title, assetDir) as { uuid: string }
         uuids.push(row.uuid)
 
+        if (item.archived) markArchived.run(row.uuid)
         if (item.ebook) insertEbook.run(row.uuid, item.ebook)
         if (item.audiobook) insertAudiobook.run(row.uuid, item.audiobook)
         if (item.readaloud) insertReadaloud.run(row.uuid, item.readaloud)

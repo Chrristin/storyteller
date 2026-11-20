@@ -16,6 +16,7 @@ import type {
   ProcessingTaskStatus,
   ProcessingTaskType,
 } from "@/apiModels/models/ProcessingStatus"
+import { compareByAuthorSeriesTitle } from "@/archiveSort"
 import { pathBelongsTo } from "@/assets/library/paths"
 import {
   getMetadataFromAudiobook,
@@ -42,6 +43,7 @@ import { IMAGE_COLUMNS } from "./images"
 import type { DB } from "./schema"
 import type { NewSeries } from "./series"
 import {
+  type ArchivedMode,
   bookVisibleTo,
   buildBookSearchExpression,
   buildBookSearchRelevance,
@@ -588,6 +590,8 @@ const externalDataQuery = <EB extends ExpressionBuilder<DB, any>>(eb: EB) => {
 
 type BooksQueryOptions = {
   includeManifest?: boolean
+  /** with a userId, defaults to "exclude" (user-facing). */
+  archived?: ArchivedMode
 }
 
 export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
@@ -870,7 +874,10 @@ export function booksQuery(userId?: UUID, options?: BooksQueryOptions) {
     ])
     .$if(!!userId, (qb) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where((eb) => bookVisibleTo(eb, "book.uuid", userId!)),
+      qb.where((eb) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        bookVisibleTo(eb, "book.uuid", userId!, options?.archived),
+      ),
     )
     .groupBy("book.uuid")
 }
@@ -891,7 +898,8 @@ export async function hydrateBooks(
   const queryResult = await page.execute()
   const uuids = queryResult.map((row) => row.uuid)
 
-  const rows = await booksQuery(userId, options)
+  // the page query already applied the archive filter
+  const rows = await booksQuery(userId, { ...options, archived: "all" })
     // needs to be like this rather than where("book.uuid", "in", [...])
     // bc a: faster
     // b: where in has a 36k limit, not inconceivable
@@ -940,6 +948,20 @@ export type GetBooksOptions = {
   mediaFilter?: "ebook" | "audiobook" | "synced"
   status?: UUID
   includeManifest?: boolean
+  /**
+   * Archive handling. Defaults to "exclude" for a listing (no uuids given) and
+   * to "all" when specific uuids are asked for, so looking a book up by id
+   * still finds an archived one. Internal callers that must see every book
+   * (scanner, linker) pass "all".
+   */
+  archived?: ArchivedMode
+}
+
+function resolveArchivedMode(
+  bookUuids: UUID[] | null,
+  opts: GetBooksOptions | undefined,
+): ArchivedMode {
+  return opts?.archived ?? (bookUuids ? "all" : "exclude")
 }
 
 function applyBookFilters<O>(
@@ -952,6 +974,12 @@ function applyBookFilters<O>(
     query
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       .$if(!!bookUuids, (qb) => qb.where("book.uuid", "in", bookUuids!))
+      .$if(resolveArchivedMode(bookUuids, opts) === "exclude", (qb) =>
+        qb.where("book.archivedAt", "is", null),
+      )
+      .$if(resolveArchivedMode(bookUuids, opts) === "only", (qb) =>
+        qb.where("book.archivedAt", "is not", null),
+      )
       .$if(!!opts?.search, (qb) =>
         qb.where((eb) =>
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1071,7 +1099,7 @@ export async function countBooks(
   )
     .$if(!!userId, (qb) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      qb.where((eb) => bookVisibleTo(eb, "book.uuid", userId!)),
+      qb.where((eb) => bookVisibleTo(eb, "book.uuid", userId!, "all")),
     )
     .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
     .executeTakeFirst()
@@ -1079,11 +1107,61 @@ export async function countBooks(
   return row?.count ?? 0
 }
 
+/**
+ * The Archive view, ordered by author, series and title. The author key is a
+ * normalised name, which SQL cannot compute, so the (small) archive is loaded
+ * whole, sorted here and then paged.
+ */
+async function getArchivedBooksByAuthor(
+  bookUuids: UUID[] | null,
+  userId: UUID | undefined,
+  opts: GetBooksOptions,
+  direction: "asc" | "desc",
+) {
+  let page = applyBookFilters(
+    db.selectFrom("book").select("book.uuid"),
+    bookUuids,
+    userId,
+    opts,
+  )
+  if (userId) {
+    page = page.where((eb) => bookVisibleTo(eb, "book.uuid", userId, "all"))
+  }
+  const all = await hydrateBooks(page, userId, opts)
+  all.sort(compareByAuthorSeriesTitle)
+  if (direction === "desc") all.reverse()
+  const start = opts.offset ?? 0
+  return all.slice(start, opts.limit ? start + opts.limit : undefined)
+}
+
 export async function getBooks(
   bookUuids: UUID[] | null = null,
   userId?: UUID,
   opts?: GetBooksOptions,
 ) {
+  const firstSort =
+    opts?.sort?.[0] ??
+    (opts?.orderBy
+      ? { field: opts.orderBy, direction: opts.orderDirection ?? "desc" }
+      : undefined)
+  if (
+    opts?.archived === "only" &&
+    !opts.search &&
+    firstSort?.field === "authors"
+  ) {
+    const rows = await getArchivedBooksByAuthor(
+      bookUuids,
+      userId,
+      opts,
+      firstSort.direction,
+    )
+    return rows.map((row) => ({
+      ...row,
+      publicationDate: toIsoDateString(row.publicationDate),
+      releaseDate: toIsoDateString(row.releaseDate),
+    }))
+  }
+
   let page = applyBookFilters(
     db.selectFrom("book").select("book.uuid"),
     bookUuids,
@@ -1094,7 +1172,7 @@ export async function getBooks(
     .$if(!!opts?.offset, (qb) => qb.offset(opts?.offset ?? 0))
 
   if (userId) {
-    page = page.where((eb) => bookVisibleTo(eb, "book.uuid", userId))
+    page = page.where((eb) => bookVisibleTo(eb, "book.uuid", userId, "all"))
   }
 
   const sort: BookSort =
@@ -1839,6 +1917,45 @@ export async function touchBook(uuid: UUID, userId?: UUID) {
   return book
 }
 
+/**
+ * Moves books into the Archive or back to the library for everyone. Only the
+ * books whose state actually changes are touched. The book update trigger
+ * bumps updated_at and writes the event log row, which is what the phone's
+ * incremental sync looks at. Returns the uuids that changed.
+ */
+export async function setBooksArchived(
+  uuids: UUID[],
+  archived: boolean,
+): Promise<UUID[]> {
+  if (uuids.length === 0) return []
+
+  const changed: UUID[] = []
+  await db.transaction().execute(async (tr) => {
+    const rows = await tr
+      .updateTable("book")
+      .set({ archivedAt: archived ? sql`CURRENT_TIMESTAMP` : null })
+      .where(
+        sql<boolean>`book.uuid in (select value from json_each(${JSON.stringify(uuids)}))`,
+      )
+      .where("archivedAt", archived ? "is" : "is not", null)
+      .returning("uuid")
+      .execute()
+    changed.push(...rows.map((row) => row.uuid))
+  })
+
+  for (const uuid of changed) {
+    const book = await getBook(uuid)
+    if (!book) continue
+    BookEvents.emit("message", {
+      type: "bookUpdated",
+      bookUuid: uuid,
+      payload: book,
+    })
+  }
+
+  return changed
+}
+
 export type BookFormat = "ebook" | "audiobook" | "readaloud"
 
 /**
@@ -1890,6 +2007,7 @@ export async function getDistinctBookFieldValues(
     .selectFrom("book")
     .select(field)
     .distinct()
+    .where("archivedAt", "is", null)
     .where(field, "is not", null)
     .where(field, "!=", "")
     .orderBy(field)

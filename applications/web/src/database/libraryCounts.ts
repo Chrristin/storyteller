@@ -19,7 +19,11 @@ import { type UUID } from "@/uuid"
 
 import { db } from "./connection"
 import { FIELD_SQL, formatPredicate } from "./fieldSql"
-import { bookVisibleTo, buildFilterExpression } from "./shelfFilter"
+import {
+  type ArchivedMode,
+  bookVisibleTo,
+  buildFilterExpression,
+} from "./shelfFilter"
 import { statusSortRank } from "./statusKinds"
 import { type Permission, type UserPermissionSet } from "./users"
 
@@ -39,15 +43,25 @@ export const NONE_FACET_KEY = "__none__"
 
 export type LibraryCounts = Record<BadgeFacetSection, number> & {
   books: number
+  /** books in the Archive, for the sidebar entry */
+  archive: number
   collections: Record<string, number>
   shelves: Record<string, number>
   shelfIssues: Record<string, ShelfFilterIssue[]>
 }
 
-export function visibleBooks(userId: UUID, dab = db) {
+/**
+ * Books the user can see, without the archived ones unless `archived` says
+ * otherwise. Every facet and count goes through here.
+ */
+export function visibleBooks(
+  userId: UUID,
+  dab = db,
+  archived: ArchivedMode = "exclude",
+) {
   return dab
     .selectFrom("book")
-    .where((eb) => bookVisibleTo(eb, "book.uuid", userId))
+    .where((eb) => bookVisibleTo(eb, "book.uuid", userId, archived))
 }
 
 async function countSmartShelf(userId: UUID, filter: ShelfFilter) {
@@ -237,8 +251,14 @@ export async function getLibraryCounts(
     .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
     .executeTakeFirst()
 
+  const archiveP = visibleBooks(userId, db, "only")
+    .select((eb) => eb.fn.count<number>("book.uuid").distinct().as("count"))
+    .executeTakeFirst()
+
   const collectionRowsP = db
     .selectFrom("bookToCollection")
+    .innerJoin("book", "book.uuid", "bookToCollection.bookUuid")
+    .where("book.archivedAt", "is", null)
     .select((eb) => [
       "bookToCollection.collectionUuid as uuid",
       eb.fn.count<number>("bookToCollection.bookUuid").as("count"),
@@ -249,6 +269,8 @@ export async function getLibraryCounts(
   const manualShelfRowsP = db
     .selectFrom("shelfBook")
     .innerJoin("shelf", "shelf.uuid", "shelfBook.shelfUuid")
+    .innerJoin("book", "book.uuid", "shelfBook.bookUuid")
+    .where("book.archivedAt", "is", null)
     .where("shelf.userId", "=", userId)
     .select((eb) => [
       "shelfBook.shelfUuid as uuid",
@@ -264,23 +286,30 @@ export async function getLibraryCounts(
     .where("shelf.filter", "is not", null)
     .execute()
 
-  const [books, collectionRows, manualShelfRows, smartShelves, ...badgeCounts] =
-    await Promise.all([
-      booksP,
-      collectionRowsP,
-      manualShelfRowsP,
-      smartShelvesP,
-      ...BADGE_FACET_SECTIONS.map((section) => {
-        const counts: DistinctCounts = DISTINCT_COUNTS[section]
-        const permission = FACET_SECTION_REGISTRY[section].emptyValuesPermission
-        const count =
-          (permission &&
-            viewer.permissions?.[permission] &&
-            counts[permission]) ||
-          counts.everyone
-        return count(userId)
-      }),
-    ])
+  const [
+    books,
+    archive,
+    collectionRows,
+    manualShelfRows,
+    smartShelves,
+    ...badgeCounts
+  ] = await Promise.all([
+    booksP,
+    archiveP,
+    collectionRowsP,
+    manualShelfRowsP,
+    smartShelvesP,
+    ...BADGE_FACET_SECTIONS.map((section) => {
+      const counts: DistinctCounts = DISTINCT_COUNTS[section]
+      const permission = FACET_SECTION_REGISTRY[section].emptyValuesPermission
+      const count =
+        (permission &&
+          viewer.permissions?.[permission] &&
+          counts[permission]) ||
+        counts.everyone
+      return count(userId)
+    }),
+  ])
 
   const collections: Record<string, number> = {}
   for (const row of collectionRows) collections[row.uuid] = row.count
@@ -310,6 +339,7 @@ export async function getLibraryCounts(
   return {
     ...badges,
     books: books?.count ?? 0,
+    archive: archive?.count ?? 0,
     collections,
     shelves,
     shelfIssues,
@@ -423,6 +453,8 @@ async function collectionFacets(userId: UUID): Promise<FacetValue[]> {
       .execute(),
     db
       .selectFrom("bookToCollection")
+      .innerJoin("book", "book.uuid", "bookToCollection.bookUuid")
+      .where("book.archivedAt", "is", null)
       .select((eb) => [
         "bookToCollection.collectionUuid as key",
         eb.fn
@@ -609,11 +641,16 @@ async function shelfFacets(userId: UUID): Promise<FacetValue[]> {
   const shelves = await db
     .selectFrom("shelf")
     .leftJoin("shelfBook", "shelfBook.shelfUuid", "shelf.uuid")
+    .leftJoin("book", (join) =>
+      join
+        .onRef("book.uuid", "=", "shelfBook.bookUuid")
+        .on("book.archivedAt", "is", null),
+    )
     .select((eb) => [
       "shelf.uuid as key",
       "shelf.name as name",
       "shelf.filter as filter",
-      eb.fn.count<number>("shelfBook.bookUuid").distinct().as("manualCount"),
+      eb.fn.count<number>("book.uuid").distinct().as("manualCount"),
     ])
     .groupBy(["shelf.uuid", "shelf.name", "shelf.filter"])
     .where("shelf.userId", "=", userId)

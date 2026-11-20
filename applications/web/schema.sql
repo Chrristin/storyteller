@@ -22,7 +22,7 @@ CREATE TABLE "book" (
   language TEXT DEFAULT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-, publication_date TEXT, aligned_by_storyteller_version TEXT, aligned_at TEXT, aligned_with TEXT, description TEXT, rating REAL, subtitle TEXT, "duration" real, "page_count" integer, asset_dir text NOT NULL DEFAULT '', "cover_colors_override" text, release_date TEXT);
+, publication_date TEXT, aligned_by_storyteller_version TEXT, aligned_at TEXT, aligned_with TEXT, description TEXT, rating REAL, subtitle TEXT, "duration" real, "page_count" integer, asset_dir text NOT NULL DEFAULT '', "cover_colors_override" text, release_date TEXT, archived_at TEXT);
 CREATE TABLE "user_permission" (
   uuid TEXT PRIMARY KEY NOT NULL DEFAULT (uuid ()),
   id INTEGER,
@@ -1812,3 +1812,4 @@ CREATE TABLE title_cleanup_log (
 );
 CREATE INDEX idx_title_cleanup_log_batch ON title_cleanup_log (batch_id);
 CREATE INDEX idx_title_cleanup_log_book ON title_cleanup_log (book_uuid);
+CREATE INDEX idx_book_archived_at ON book (archived_at);

@@ -51,6 +51,7 @@ export async function getNextUpInSeries(
         )
         .innerJoin("status", "status.uuid", "bookToStatus.statusUuid")
         .innerJoin("book", "book.uuid", "bookToSeries.bookUuid")
+        .where("book.archivedAt", "is", null)
         .where("bookToStatus.userId", "=", userId)
         .where("status.name", "=", STATUS_TO_READ)
         .select((eb) => [
@@ -84,7 +85,7 @@ export async function getNextUpInSeries(
 
   // hydrate through getBooks so visibility rules and relations apply, then
   // restore the activity order (getBooks does not preserve input order)
-  const books = await getBooks(uuids, userId)
+  const books = await getBooks(uuids, userId, { archived: "exclude" })
   const byUuid = new Map(books.map((b) => [b.uuid, b]))
   return uuids
     .map((uuid) => byUuid.get(uuid))

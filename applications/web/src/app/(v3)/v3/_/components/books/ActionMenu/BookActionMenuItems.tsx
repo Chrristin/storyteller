@@ -76,6 +76,7 @@ import * as icon from "@/icons"
 import { kindleRefusal } from "@/kindle"
 import {
   useAddBooksToCollectionsMutation,
+  useArchiveBooksMutation,
   useBulkRelocateToInternalMutation,
   useClearBooksCacheMutation,
   useDeleteBooksMutation,
@@ -202,6 +203,7 @@ export function useBookActionItems({
   const [deleteBooks, { isLoading: isDeleting }] = useDeleteBooksMutation()
   const [mergeBooks, { isLoading: isMerging }] = useMergeBooksMutation()
   const [relocateToInternal] = useRelocateToInternalMutation()
+  const [archiveBooks] = useArchiveBooksMutation()
   const [bulkRelocateToInternal] = useBulkRelocateToInternalMutation()
 
   const processingRun = useProcessingRun(books)
@@ -243,6 +245,22 @@ export function useBookActionItems({
     },
     [deleteBooks, bookUuids, onAfterDestructive],
   )
+
+  // when the whole selection is archived the action moves it back
+  const allArchived = books.length > 0 && books.every((b) => b.archivedAt)
+  const handleArchive = useCallback(async () => {
+    const archived = !allArchived
+    try {
+      await archiveBooks({ books: bookUuids, archived }).unwrap()
+      toast.success(
+        t(archived ? "archivedToast" : "unarchivedToast", { count }),
+      )
+      onAfterDestructive?.()
+    } catch (error) {
+      console.error(error)
+      toast.error(t("archiveFailed"))
+    }
+  }, [archiveBooks, bookUuids, allArchived, count, t, onAfterDestructive])
 
   const handleClearCache = useCallback(async () => {
     await clearCache({ bookUuids }).unwrap()
@@ -625,6 +643,17 @@ export function useBookActionItems({
         },
       })
     }
+  }
+
+  if (canUpdate) {
+    entries.push({
+      key: "archive",
+      label: t.plain(allArchived ? "moveBackToLibrary" : "moveToArchive"),
+      icon: <icon.Archive className="size-4" />,
+      onSelect: () => {
+        void handleArchive()
+      },
+    })
   }
 
   if (canDownload) {

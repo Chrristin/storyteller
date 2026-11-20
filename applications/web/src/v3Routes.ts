@@ -25,6 +25,7 @@ export const V3_ROOTS = [
   "quality",
   "identify",
   "identifiers",
+  "archive",
   "not-found",
   "test",
   "theme",
