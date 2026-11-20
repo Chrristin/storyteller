@@ -523,9 +523,12 @@ Pure decision logic: `src/store/listenRequest.ts` (tests in
 `src/store/__tests__/listenRequest.test.ts`).
 
 Listen also forces `minimizedMiniPlayer` to false (expanded card) when it starts
-playback, only there. The book details hero shows a control row
-(`HeroPlayerControls`: PlayerControls, SpeedMenu, SeekBar) above the buttons while
-that audiobook is loaded, and the Listen button reads "Listening" with sound bars
-while playing (click pauses). While that hero is shown the floating mini player
+playback, only there. While this audiobook is loaded (playing or paused) the book details hero shows
+`HeroPlayerControls` (now playing caption, SpeedMenu, SeekBar, PlayerControls and
+a Stop button) INSTEAD of the reading status dropdown and the Listen button; the
+Read, Sync and Kindle buttons stay. Status stays reachable from the book's Actions
+menu (Set status). Stop pauses, dispatches `playerPositionUpdated` to flush the
+position (the regular sync is throttled and `closeMiniPlayer` does not flush), then
+`closeMiniPlayer`, so the hero returns to status and Listen. While that hero is shown the floating mini player
 for the same book hides itself (`heroPlayerPresence.ts`). The details overlay has
 no minimized state of its own.

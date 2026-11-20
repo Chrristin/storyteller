@@ -41,12 +41,11 @@ import { cn } from "@/cn"
 import { usePermissions } from "@/hooks/usePermissions"
 import * as icon from "@/icons"
 import { IconReadaloud } from "@/icons/IconReadaloud"
-import { pauseButtonPressed } from "@/store/actions"
 import {
   useDeleteUserBookRatingMutation,
   useSetUserBookRatingMutation,
 } from "@/store/api"
-import { useAppDispatch, useAppSelector } from "@/store/appState"
+import { useAppSelector } from "@/store/appState"
 import { listenButtonState } from "@/store/listenRequest"
 import {
   selectCurrentTrack,
@@ -60,21 +59,6 @@ import {
 const MAX_CREATORS = 5
 
 const XL_BOOK_REM = 36
-
-// three small bars that bounce while the audiobook plays
-function SoundBars() {
-  return (
-    <span aria-hidden="true" className="mr-1 flex h-4 items-end gap-0.5">
-      {[0, 150, 300].map((delay) => (
-        <span
-          key={delay}
-          className="h-full w-0.5 origin-bottom scale-y-50 rounded-full bg-current motion-safe:animate-[pulse_0.9s_ease-in-out_infinite]"
-          style={{ animationDelay: `${delay}ms` }}
-        />
-      ))}
-    </span>
-  )
-}
 
 // mirrors the @xl/book container query in js so the flex-col/flex-row switch
 // happens in a react render, where motion can flip-animate it.
@@ -119,7 +103,6 @@ export function HeroSection({
   } = useBookForm()
   const t = useTranslation("BookDetailsPage")
   const listen = useListenInMiniPlayer()
-  const dispatch = useAppDispatch()
   const tMini = useTranslation("Reader.miniPlayer")
   const sessionBook = useAppSelector(selectCurrentBook)
   const sessionMode = useAppSelector(selectReadingMode)
@@ -495,6 +478,7 @@ export function HeroSection({
               wide(`@xl/book:justify-between`, "justify-between"),
             )}
           >
+            {/* while this audiobook is loaded the player replaces the status and Listen buttons */}
             {showPlayer && <HeroPlayerControls book={book} />}
             <div
               className={cn(
@@ -502,7 +486,7 @@ export function HeroSection({
                 wide(`@xl/book:justify-start`, "justify-start"),
               )}
             >
-              <ReadingStatusButton book={book} size="sm" />
+              {!showPlayer && <ReadingStatusButton book={book} size="sm" />}
 
               <div className="flex flex-wrap justify-center gap-2">
                 {canCreateReadaloud && (
@@ -549,28 +533,21 @@ export function HeroSection({
                   />
                 )}
 
-                {book.readaloud?.status !== "ALIGNED" && book.audiobook && (
-                  <Button
-                    variant="cover"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => {
-                      // while it plays the button toggles to pause
-                      if (listenState === "playing")
-                        dispatch(pauseButtonPressed())
-                      else listen(book)
-                    }}
-                  >
-                    {listenState === "playing" ? (
-                      <SoundBars />
-                    ) : (
+                {!showPlayer &&
+                  book.readaloud?.status !== "ALIGNED" &&
+                  book.audiobook && (
+                    <Button
+                      variant="cover"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() => {
+                        listen(book)
+                      }}
+                    >
                       <icon.Headphones className="mr-1 h-4 w-4" />
-                    )}
-                    {tMini.plain(
-                      listenState === "playing" ? "listening" : "listen",
-                    )}
-                  </Button>
-                )}
+                      {tMini.plain("listen")}
+                    </Button>
+                  )}
 
                 <SyncToDriveButton book={book} />
                 <SendToKindleButton book={book} />
